@@ -1,77 +1,33 @@
-# =========================
-# Environment & Secrets
-# =========================
-.env
-.env.*
-!.env.example
-*.key
-*.pem
-secrets/
-credentials/
+HELP.md
+target/
+.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
 
-# =========================
-# Java / Spring Boot
-# =========================
-backend/target/
-*.class
-*.jar
-*.war
-
-# =========================
-# Flutter / Dart
-# =========================
-frontend/.dart_tool/
-frontend/.flutter-plugins
-frontend/.flutter-plugins-dependencies
-frontend/.packages
-frontend/build/
-frontend/.pub-cache/
-frontend/android/.gradle/
-frontend/android/local.properties
-
-# =========================
-# Python
-# =========================
-ai-service/__pycache__/
-ai-service/**/*.pyc
-ai-service/.venv/
-ai-service/venv/
-ai-service/env/
-*.py[cod]
-
-# =========================
-# IDEs
-# =========================
-.idea/
-*.iml
-.vscode/
-.project
+### STS ###
+.apt_generated
 .classpath
-.settings/
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
 
-# =========================
-# OS Files
-# =========================
-.DS_Store
-Thumbs.db
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
 
-# =========================
-# Logs
-# =========================
-*.log
-logs/
+### NetBeans ###
+/nbproject/private/
+/nbbuild/
+/dist/
+/nbdist/
+/.nb-gradle/
+build/
+!**/src/main/**/build/
+!**/src/test/**/build/
 
-# =========================
-# Temporary Files
-# =========================
-*.tmp
-*.temp
-*.swp
-*~
-
-# =========================
-# Database / Local Data
-# =========================
-*.db
-*.sqlite
-*.sqlite3
+### VS Code ###
+.vscode/
