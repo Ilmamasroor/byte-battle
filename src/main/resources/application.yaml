@@ -1,0 +1,45 @@
+spring:
+  application:
+    name: byte-battle-backend
+
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bytebattle_db
+    username: postgres
+    password: 01391980
+    driver-class-name: org.postgresql.Driver
+
+  jpa:
+    hibernate:
+      ddl-auto: update   # Flyway owns schema changes, not Hibernate
+    show-sql: true
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    open-in-view: false
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+    validate-on-migrate: true
+
+server:
+  port: 8080
+
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: DEBUG
+    com.bytebattle: DEBUG
+
+# JWT config — used once you write your JWT auth filter/SecurityConfig
+bytebattle:
+  jwt:
+    secret: change-this-to-a-long-random-secret-before-committing-anything
+    expiration-ms: 86400000   # 24 hours, adjust as needed
+
+  ai:
+    base-url: http://localhost:8000
+    timeout-ms: 5000
+    enabled: true
