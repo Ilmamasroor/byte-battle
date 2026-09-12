@@ -1,4 +1,84 @@
+<<<<<<< HEAD
 .env
 .venv/
 __pycache__/
 *.pyc
+=======
+# =========================
+# Environment & Secrets
+# =========================
+.env
+.env.*
+!.env.example
+*.key
+*.pem
+secrets/
+credentials/
+
+# =========================
+# Java / Spring Boot
+# =========================
+backend/target/
+*.class
+*.jar
+*.war
+
+# =========================
+# Flutter / Dart
+# =========================
+frontend/.dart_tool/
+frontend/.flutter-plugins
+frontend/.flutter-plugins-dependencies
+frontend/.packages
+frontend/build/
+frontend/.pub-cache/
+frontend/android/.gradle/
+frontend/android/local.properties
+
+# =========================
+# Python
+# =========================
+ai-service/__pycache__/
+ai-service/**/*.pyc
+ai-service/.venv/
+ai-service/venv/
+ai-service/env/
+*.py[cod]
+
+# =========================
+# IDEs
+# =========================
+.idea/
+*.iml
+.vscode/
+.project
+.classpath
+.settings/
+
+# =========================
+# OS Files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Logs
+# =========================
+*.log
+logs/
+
+# =========================
+# Temporary Files
+# =========================
+*.tmp
+*.temp
+*.swp
+*~
+
+# =========================
+# Database / Local Data
+# =========================
+*.db
+*.sqlite
+*.sqlite3
+>>>>>>> origin/main

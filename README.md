@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Byte Battle — AI Service
 
 > AI-powered intelligence layer for the Byte Battle technical learning and interview platform.
@@ -739,3 +740,7 @@ Never commit actual credentials.
 # License
 
 Add the project's official license here when the team finalizes the licensing decision.
+=======
+# byte-battle
+AI-integrated adaptive technical learning and interview readiness platform that helps learners turn theoretical knowledge into practical coding, debugging, and technical reasoning skills.
+>>>>>>> origin/main
