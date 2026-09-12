@@ -1,4 +1,4 @@
-package com.bytebattle.byte_battle_backend.security;
+package com.bytebattle.security;
 
 import org.junit.jupiter.api.Test;
 

@@ -1,7 +1,7 @@
-package com.bytebattle.byte_battle_backend.user;
+package com.bytebattle.user;
 
-import com.bytebattle.byte_battle_backend.exception.ResourceNotFoundException;
-import com.bytebattle.byte_battle_backend.security.CustomUserDetails;
+import com.bytebattle.exception.ResourceNotFoundException;
+import com.bytebattle.security.CustomUserDetails;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

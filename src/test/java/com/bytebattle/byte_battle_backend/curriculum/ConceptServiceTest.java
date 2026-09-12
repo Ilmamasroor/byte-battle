@@ -1,7 +1,7 @@
-package com.bytebattle.byte_battle_backend.curriculum;
+package com.bytebattle.curriculum;
 
-import com.bytebattle.byte_battle_backend.common.PageResponse;
-import com.bytebattle.byte_battle_backend.exception.ResourceNotFoundException;
+import com.bytebattle.common.PageResponse;
+import com.bytebattle.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

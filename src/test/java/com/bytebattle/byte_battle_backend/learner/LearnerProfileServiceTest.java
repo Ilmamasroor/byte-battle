@@ -1,8 +1,8 @@
-package com.bytebattle.byte_battle_backend.learner;
+package com.bytebattle.learner;
 
-import com.bytebattle.byte_battle_backend.security.CustomUserDetails;
-import com.bytebattle.byte_battle_backend.user.User;
-import com.bytebattle.byte_battle_backend.user.UserRepository;
+import com.bytebattle.security.CustomUserDetails;
+import com.bytebattle.user.User;
+import com.bytebattle.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

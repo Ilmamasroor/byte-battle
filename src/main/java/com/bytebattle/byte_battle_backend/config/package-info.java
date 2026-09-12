@@ -1,1 +1,1 @@
-package com.bytebattle.byte_battle_backend.config;
+package com.bytebattle.config;

@@ -1,11 +1,11 @@
-package com.bytebattle.byte_battle_backend.bytedna;
+package com.bytebattle.bytedna;
 
-import com.bytebattle.byte_battle_backend.bytedna.dto.ByteDNAResponseDTO;
-import com.bytebattle.byte_battle_backend.bytedna.dto.CreateByteDNARequestDTO;
-import com.bytebattle.byte_battle_backend.exception.ResourceNotFoundException;
-import com.bytebattle.byte_battle_backend.security.CustomUserDetails;
-import com.bytebattle.byte_battle_backend.user.User;
-import com.bytebattle.byte_battle_backend.user.UserRepository;
+import com.bytebattle.bytedna.dto.ByteDNAResponseDTO;
+import com.bytebattle.bytedna.dto.CreateByteDNARequestDTO;
+import com.bytebattle.exception.ResourceNotFoundException;
+import com.bytebattle.security.CustomUserDetails;
+import com.bytebattle.user.User;
+import com.bytebattle.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
