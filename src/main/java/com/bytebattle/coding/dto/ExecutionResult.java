@@ -1,5 +1,6 @@
 package com.bytebattle.coding.dto;
 
+import com.bytebattle.coding.enums.CodingSubmissionStatus;
 
 import java.util.List;
 
@@ -8,8 +9,10 @@ public record ExecutionResult(
         int testCasesPassed,
         int testCasesTotal,
         int executionTimeMs,
-        String errorMessage, // null on success
-        List<TestCaseOutcome> testCaseOutcomes
+        Long memoryUsedBytes,
+        String errorMessage,
+        List<TestCaseOutcome> testCaseOutcomes,
+        CodingSubmissionStatus status
 ) {
     public record TestCaseOutcome(int testCaseNumber, boolean passed, String actualOutput, String expectedOutput) {}
 }

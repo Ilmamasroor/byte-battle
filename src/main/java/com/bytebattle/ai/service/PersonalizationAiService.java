@@ -4,7 +4,9 @@ import com.bytebattle.ai.client.PersonalizationAiClient;
 import com.bytebattle.ai.dto.personalization.*;
 import com.bytebattle.bytedna.ByteDNA;
 import com.bytebattle.bytedna.ByteDNARepository;
+import com.bytebattle.coding.dto.ExecutionResult;
 import com.bytebattle.curriculum.Concept;
+import com.bytebattle.curriculum.ConceptRepository;
 import com.bytebattle.recommendation.dto.CreateRecommendationRequest;
 import com.bytebattle.recommendation.enums.RecommendationPriority;
 import com.bytebattle.recommendation.enums.RecommendationSource;
@@ -25,6 +27,7 @@ public class PersonalizationAiService {
 
     private final PersonalizationAiClient aiClient;
     private final ByteDNARepository byteDNARepository;
+    private final ConceptRepository conceptRepository;
     private final UserRepository userRepository;
     private final AiCurriculumResolver curriculumResolver;
     private final RecommendationService recommendationService;
@@ -32,12 +35,14 @@ public class PersonalizationAiService {
     public PersonalizationAiService(
             PersonalizationAiClient aiClient,
             ByteDNARepository byteDNARepository,
+            ConceptRepository conceptRepository,
             UserRepository userRepository,
             AiCurriculumResolver curriculumResolver,
             RecommendationService recommendationService) {
 
         this.aiClient = aiClient;
         this.byteDNARepository = byteDNARepository;
+        this.conceptRepository = conceptRepository;
         this.userRepository = userRepository;
         this.curriculumResolver = curriculumResolver;
         this.recommendationService = recommendationService;
@@ -87,6 +92,118 @@ public class PersonalizationAiService {
         byteDNARepository.save(dna);
 
         return response;
+    }
+
+    /**
+     * Processes one completed coding attempt through the personalization pipeline.
+     *
+     * The coding execution result is the source of truth for this event.
+     * Historical performance averages are intentionally not used here because
+     * Byte DNA evolution expects the accuracy of the new attempt.
+     */
+    public void processCodingAttempt(
+            java.util.UUID userId,
+            java.util.UUID conceptId,
+            ExecutionResult result) {
+
+        Concept concept = conceptRepository.findById(conceptId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Concept not found: " + conceptId));
+
+        if (concept.getTopic() == null
+                || concept.getTopic().getSlug() == null
+                || concept.getTopic().getSlug().isBlank()) {
+            throw new IllegalArgumentException(
+                    "Concept has no valid curriculum topic: " + conceptId);
+        }
+
+        String topic = concept.getTopic().getSlug();
+
+        int total = result.testCasesTotal();
+        int passed = result.testCasesPassed();
+
+        double accuracy = total > 0
+                ? (double) passed / total
+                : 0.0;
+
+        int score = (int) Math.round(accuracy * 100.0);
+
+        DiagnosisAiRequest diagnosisRequest =
+                new DiagnosisAiRequest(
+                        userId,
+                        "coding",
+                        accuracy,
+                        score,
+                        1,
+                        0,
+                        0,
+                        passed,
+                        total,
+                        result.status()
+                                == com.bytebattle.coding.enums.CodingSubmissionStatus.PASSED
+                );
+
+        DiagnosisAiResponse diagnosis =
+                diagnose(diagnosisRequest);
+
+        ByteDNA dna = byteDNARepository.findByUser_Id(userId)
+                .orElseThrow(() ->
+                        new IllegalArgumentException(
+                                "Byte DNA profile not found for user: " + userId));
+
+        ByteDnaEvolutionRequest evolutionRequest =
+                new ByteDnaEvolutionRequest(
+                        userId,
+                        topic,
+                        buildEvolutionByteDna(dna),
+                        new ByteDnaEvolutionRequest.Diagnosis(null),
+                        new ByteDnaEvolutionRequest.Performance(accuracy)
+                );
+
+        ByteDnaEvolutionResponse evolution =
+                evolveByteDna(evolutionRequest);
+
+        ByteDnaEvolutionResponse.ByteDna evolvedDna =
+                evolution.byteDNA();
+
+        if (evolvedDna == null) {
+            throw new IllegalStateException(
+                    "AI Byte DNA evolution returned no Byte DNA");
+        }
+
+        RecommendationAiRequest recommendationRequest =
+                new RecommendationAiRequest(
+                        userId,
+                        evolvedDna.technicalExperience(),
+                        topic,
+                        defaultList(evolvedDna.repeatedMistakes()),
+                        diagnosis.conceptUnderstanding(),
+                        diagnosis.decisionMaking(),
+                        diagnosis.boundaryConditions(),
+                        diagnosis.codingImplementation(),
+                        diagnosis.hintDependency()
+                );
+
+        recommend(recommendationRequest);
+    }
+
+    private ByteDnaEvolutionRequest.ByteDna buildEvolutionByteDna(
+            ByteDNA dna) {
+
+        String technicalExperience =
+                dna.getTechnicalExperience() == null
+                        ? "BEGINNER"
+                        : dna.getTechnicalExperience().name();
+
+        return new ByteDnaEvolutionRequest.ByteDna(
+                technicalExperience,
+                defaultList(dna.getRepeatedMistakes()),
+                defaultMap(dna.getTopicAccuracy()),
+                defaultList(dna.getConfidenceAreas()),
+                defaultList(dna.getDifficultyAreas()),
+                defaultMap(dna.getDifficultyProgression())
+        );
     }
 
     public DiagnosisAiResponse diagnose(DiagnosisAiRequest request) {

@@ -18,4 +18,8 @@ public interface PerformanceRecordRepository extends JpaRepository<PerformanceRe
     List<PerformanceRecord> findByUserIdAndActivityType(UUID userId, ActivityType activityType);
 
     Optional<PerformanceRecord> findByIdAndUserId(UUID id, UUID userId);
+
+    Optional<PerformanceRecord> findTopByUserIdAndConceptIdOrderByCreatedAtDesc(
+            UUID userId,
+            UUID conceptId);
 }

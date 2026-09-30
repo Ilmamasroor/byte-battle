@@ -50,6 +50,9 @@ public class CodingSubmission {
     @Column(name = "error_message", columnDefinition = "TEXT")
     private String errorMessage;
 
+    @Column(name = "ai_feedback", columnDefinition = "TEXT")
+    private String aiFeedback;
+
     @Column(name = "submitted_at")
     private Instant submittedAt;
 }

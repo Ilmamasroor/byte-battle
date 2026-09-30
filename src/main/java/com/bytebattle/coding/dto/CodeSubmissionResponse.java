@@ -11,8 +11,10 @@ public record CodeSubmissionResponse(
         UUID submissionId,
         CodingSubmissionStatus status,
         Integer executionTimeMs,
+        Long memoryUsedBytes,
         Integer testCasesPassed,
         Integer testCasesTotal,
         String errorMessage,
+        String aiFeedback,
         List<TestCaseResultResponse> testCaseResults
 ) {}

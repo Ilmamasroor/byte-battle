@@ -121,10 +121,11 @@ public class PerformanceService {
                 .build();
     }
 
-	public Optional<PerformanceRecord> getLatestAttempt(UUID userId, UUID conceptId) {
-		// TODO Auto-generated method stub
-		return null;
-	}
+    public Optional<PerformanceRecord> getLatestAttempt(UUID userId, UUID conceptId) {
+        return repository.findTopByUserIdAndConceptIdOrderByCreatedAtDesc(
+                userId,
+                conceptId);
+    }
     
     
 }

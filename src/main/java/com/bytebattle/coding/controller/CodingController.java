@@ -8,7 +8,9 @@ import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
-
+import org.springframework.security.core.Authentication;
+import org.springframework.web.server.ResponseStatusException;
+import com.bytebattle.security.CustomUserDetails;
 import java.util.List;
 import java.util.UUID;
 
@@ -30,18 +32,36 @@ public class CodingController {
     @PostMapping("/challenges/{challengeId}/submissions")
     public ResponseEntity<CodeSubmissionResponse> submit(
             @PathVariable UUID challengeId,
-            @RequestParam UUID userId,   // TEMPORARY — replace with authenticated principal once JWT is wired in
-            @RequestBody @Valid CodeSubmissionRequest request) {
-        return ResponseEntity.ok(codingService.submitCode(challengeId, userId, request));
+            @RequestBody @Valid CodeSubmissionRequest request,
+            Authentication authentication) {
+        return ResponseEntity.ok(codingService.submitCode(challengeId, resolveUserId(authentication), request));
     }
 
     @GetMapping("/submissions/{submissionId}")
     public ResponseEntity<CodeSubmissionResponse> getSubmission(
             @PathVariable UUID submissionId,
-            @RequestParam UUID userId) {   // TEMPORARY — same as above
-        return ResponseEntity.ok(codingService.getSubmission(submissionId, userId));
+            Authentication authentication) {
+        return ResponseEntity.ok(codingService.getSubmission(submissionId, resolveUserId(authentication)));
     }
     
+    private UUID resolveUserId(Authentication authentication) {
+    if (authentication == null || authentication.getPrincipal() == null) {
+        throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Authentication required"
+        );
+    }
+
+    if (!(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
+        throw new ResponseStatusException(
+                HttpStatus.UNAUTHORIZED,
+                "Invalid authenticated user"
+        );
+    }
+
+    return userDetails.getUser().getId();
+}
+
     @PostMapping("/challenges")
     public ResponseEntity<CodingChallengeResponse> createChallenge(
             @RequestBody @Valid CreateCodingChallengeRequest request) {
