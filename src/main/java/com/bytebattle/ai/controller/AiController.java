@@ -43,7 +43,7 @@ public class AiController {
 
     @PostMapping("/explanation")
     public AiResponse explanation(
-            @RequestParam java.util.UUID userId,
+            @RequestParam String userId,
             @RequestParam java.util.UUID conceptId) {
 
         return explanationService.explain(userId, conceptId);

@@ -29,8 +29,8 @@ public class BattleStateValidator {
      * "Not found" and "not yours" collapse into the same Optional.empty() —
      * one orElseThrow, no branch that could be skipped or misordered.
      */
-    public BattleSession requireOwnedSession(UUID sessionId, UUID userId) {
-        return battleSessionRepository.findByIdAndUserId(sessionId, userId)
+    public BattleSession requireOwnedSession(UUID sessionId, String string) {
+        return battleSessionRepository.findByIdAndUserId(sessionId, string)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Battle session not found"));
     }

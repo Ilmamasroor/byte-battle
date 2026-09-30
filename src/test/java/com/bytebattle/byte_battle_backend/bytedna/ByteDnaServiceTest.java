@@ -1,5 +1,8 @@
-package com.bytebattle.bytedna;
+package com.bytebattle.byte_battle_backend.bytedna;
 
+import com.bytebattle.bytedna.ByteDNA;
+import com.bytebattle.bytedna.ByteDNARepository;
+import com.bytebattle.bytedna.ByteDNAService;
 import com.bytebattle.bytedna.dto.ByteDNAResponseDTO;
 import com.bytebattle.bytedna.dto.CreateByteDNARequestDTO;
 import com.bytebattle.exception.ResourceNotFoundException;
@@ -17,7 +20,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
-import java.util.UUID;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -36,17 +39,17 @@ class ByteDnaServiceTest {
     private ByteDNAService byteDNAService;
 
     private User currentUser;
-    private UUID currentUserId;
+    private String currentUserId;
 
     @BeforeEach
     void setUp() {
-        currentUserId = UUID.randomUUID();
+        currentUserId = User.randomUUID();
         currentUser = new User();
         currentUser.setId(currentUserId);
         currentUser.setEmail("test@example.com");
         currentUser.setName("testuser");
 
-        CustomUserDetails userDetails = new CustomUserDetails(currentUser);
+        CustomUserDetailsService userDetails = new CustomUserDetailsService(currentUser);
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(
                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())

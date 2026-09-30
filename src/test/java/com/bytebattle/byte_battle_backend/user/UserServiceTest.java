@@ -1,7 +1,14 @@
-package com.bytebattle.user;
+package com.bytebattle.byte_battle_backend.user;
 
 import com.bytebattle.exception.ResourceNotFoundException;
 import com.bytebattle.security.CustomUserDetails;
+import com.bytebattle.user.ChangePasswordRequestDTO;
+import com.bytebattle.user.UpdateUserRequestDTO;
+import com.bytebattle.user.User;
+import com.bytebattle.user.UserRepository;
+import com.bytebattle.user.UserResponseDTO;
+import com.bytebattle.user.UserService;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
@@ -50,7 +57,7 @@ class UserServiceTest {
 
         // Simulate a logged-in user in the security context, the same way
         // JwtAuthFilter does for a real request.
-        CustomUserDetails userDetails = new CustomUserDetails(currentUser);
+        CustomUserDetailsService userDetails = new CustomUserDetailsService(currentUser);
         SecurityContext securityContext = mock(SecurityContext.class);
         lenient().when(securityContext.getAuthentication()).thenReturn(                new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())
         );

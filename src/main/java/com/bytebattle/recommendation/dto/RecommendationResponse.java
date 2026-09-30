@@ -12,7 +12,7 @@ import java.util.UUID;
 @Builder
 public record RecommendationResponse(
         UUID id,
-        UUID userId,
+        String userId,
         UUID conceptId,
         RecommendationType type,
         RecommendationSource source,

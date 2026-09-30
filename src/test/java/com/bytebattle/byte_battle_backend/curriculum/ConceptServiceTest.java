@@ -1,6 +1,12 @@
-package com.bytebattle.curriculum;
+package com.bytebattle.byte_battle_backend.curriculum;
 
 import com.bytebattle.common.PageResponse;
+import com.bytebattle.curriculum.Concept;
+import com.bytebattle.curriculum.ConceptRepository;
+import com.bytebattle.curriculum.ConceptResponseDTO;
+import com.bytebattle.curriculum.ConceptService;
+import com.bytebattle.curriculum.Topic;
+import com.bytebattle.curriculum.TopicRepository;
 import com.bytebattle.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;

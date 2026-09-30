@@ -9,7 +9,7 @@ import com.bytebattle.bytedna.ByteDNA;
 
 public class ByteDNAResponseDTO {
     private UUID id;
-    private UUID userId;
+    private String userId;
     private ByteDNA.TechnicalExperience technicalExperience;
     private String careerGoal;
     private List<String> interests;
@@ -50,8 +50,8 @@ public class ByteDNAResponseDTO {
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }
 
-    public UUID getUserId() { return userId; }
-    public void setUserId(UUID userId) { this.userId = userId; }
+    public String getUserId() { return userId; }
+    public void setUserId(String userId) { this.userId = userId; }
 
     public ByteDNA.TechnicalExperience getTechnicalExperience() { return technicalExperience; }
     public void setTechnicalExperience(ByteDNA.TechnicalExperience technicalExperience) { this.technicalExperience = technicalExperience; }

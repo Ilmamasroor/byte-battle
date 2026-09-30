@@ -1,5 +1,11 @@
-package com.bytebattle.learner;
+package com.bytebattle.byte_battle_backend.learner;
 
+import com.bytebattle.learner.dto.CreateLearnerProfileRequestDTO;
+import com.bytebattle.learner.dto.LearnerProfileResponseDTO;
+import com.bytebattle.learner.dto.UpdateLearnerProfileRequestDTO;
+import com.bytebattle.learner.entity.LearnerProfile;
+import com.bytebattle.learner.repository.LearnerProfileRepository;
+import com.bytebattle.learner.service.LearnerProfileService;
 import com.bytebattle.security.CustomUserDetails;
 import com.bytebattle.user.User;
 import com.bytebattle.user.UserRepository;
@@ -14,7 +20,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.util.Optional;
-import java.util.UUID;
+
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,17 +39,17 @@ class LearnerProfileServiceTest {
     private LearnerProfileService learnerProfileService;
 
     private User currentUser;
-    private UUID currentUserId;
+    private String currentUserId;
 
     @BeforeEach
     void setUp() {
-        currentUserId = UUID.randomUUID();
+        currentUserId = User.randomUUID();
         currentUser = new User();
         currentUser.setId(currentUserId);
         currentUser.setEmail("test@example.com");
         currentUser.setName("testuser");
 
-        CustomUserDetails userDetails = new CustomUserDetails(currentUser);
+        CustomUserDetailsService userDetails = new CustomUserDetailsService(currentUser);
         SecurityContext securityContext = mock(SecurityContext.class);
         when(securityContext.getAuthentication()).thenReturn(
                 new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities())

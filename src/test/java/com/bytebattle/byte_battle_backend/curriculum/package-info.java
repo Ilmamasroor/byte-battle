@@ -1,1 +1,1 @@
-package com.bytebattle.curriculum;
+package com.bytebattle.byte_battle_backend.curriculum;

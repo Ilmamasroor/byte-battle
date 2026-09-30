@@ -3,9 +3,13 @@ package com.bytebattle.ai.client;
 import com.bytebattle.ai.dto.feature.*;
 import com.bytebattle.ai.exception.AiServiceException;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.client.JdkClientHttpRequestFactory;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
+
+import java.net.http.HttpClient;
+import java.time.Duration;
 
 @Component
 public class AiFeatureClient {
@@ -13,11 +17,17 @@ public class AiFeatureClient {
     private final RestClient restClient;
 
     public AiFeatureClient(
-            @Value("${bytebattle.ai.personalization.base-url:http://localhost:8000}")
-            String baseUrl) {
+            @Value("${bytebattle.ai.personalization.base-url:http://localhost:8000}") String baseUrl,
+            @Value("${bytebattle.ai.personalization.timeout-ms:30000}") long timeoutMs) {
+
+        // CHANGED: without timeouts, a hung FastAPI hangs the request thread forever
+        JdkClientHttpRequestFactory factory = new JdkClientHttpRequestFactory(
+                HttpClient.newBuilder().connectTimeout(Duration.ofSeconds(3)).build());
+        factory.setReadTimeout(Duration.ofMillis(timeoutMs));
 
         this.restClient = RestClient.builder()
                 .baseUrl(baseUrl)
+                .requestFactory(factory)
                 .build();
     }
 

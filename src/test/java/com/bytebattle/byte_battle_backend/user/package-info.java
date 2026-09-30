@@ -1,1 +1,1 @@
-package com.bytebattle.user;
+package com.bytebattle.byte_battle_backend.user;

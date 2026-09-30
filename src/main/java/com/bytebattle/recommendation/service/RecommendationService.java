@@ -1,19 +1,33 @@
 package com.bytebattle.recommendation.service;
 
-
+import com.bytebattle.curriculum.Concept;
+import com.bytebattle.curriculum.ConceptRepository;
+import com.bytebattle.exception.BadRequestException;
+import com.bytebattle.exception.ResourceNotFoundException;
 import com.bytebattle.performance.dto.PerformanceSummaryResponse;
 import com.bytebattle.performance.service.PerformanceService;
-import com.bytebattle.recommendation.dto.*;
+import com.bytebattle.recommendation.dto.CreateRecommendationRequest;
+import com.bytebattle.recommendation.dto.NextBestActionResponse;
+import com.bytebattle.recommendation.dto.RecommendationResponse;
 import com.bytebattle.recommendation.entity.Recommendation;
+import com.bytebattle.recommendation.enums.RecommendationActivityType;
 import com.bytebattle.recommendation.enums.RecommendationPriority;
 import com.bytebattle.recommendation.enums.RecommendationSource;
 import com.bytebattle.recommendation.enums.RecommendationType;
 import com.bytebattle.recommendation.repository.RecommendationRepository;
-import org.springframework.http.HttpStatus;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.UUID;
@@ -21,91 +35,569 @@ import java.util.UUID;
 @Service
 public class RecommendationService {
 
+    private static final Logger log =
+            LoggerFactory.getLogger(RecommendationService.class);
+
+    private static final int MAX_PAGE_SIZE = 100;
+    private static final int MAX_TITLE = 255;
+
     private final RecommendationRepository repository;
     private final PerformanceService performanceService;
+    private final ConceptRepository conceptRepository;
 
-    public RecommendationService(RecommendationRepository repository, PerformanceService performanceService) {
+    public RecommendationService(
+            RecommendationRepository repository,
+            PerformanceService performanceService,
+            ConceptRepository conceptRepository) {
+
         this.repository = repository;
         this.performanceService = performanceService;
+        this.conceptRepository = conceptRepository;
     }
 
-    public RecommendationResponse create(CreateRecommendationRequest request) {
-        Recommendation rec = repository.save(Recommendation.builder()
-                .userId(request.userId())
+    /*
+     * ============================================================
+     * CREATE RECOMMENDATION
+     * ============================================================
+     *
+     * ADMIN / INTERNAL USE
+     *
+     * The userId is intentionally accepted here because an admin
+     * or internal recommendation-generation process may need to
+     * create a recommendation for a specific learner.
+     *
+     * Normal learners must never use this endpoint.
+     */
+    @Transactional
+    public RecommendationResponse create(
+            CreateRecommendationRequest request) {
+
+        validateConceptExists(request.conceptId());
+
+        Recommendation candidate = Recommendation.builder()
+                .userId(request.userId().trim())
                 .conceptId(request.conceptId())
                 .type(request.type())
                 .source(request.source())
                 .priority(request.priority())
-                .title(request.title())
+                .title(truncate(request.title().trim(), MAX_TITLE))
                 .message(request.message())
                 .reason(request.reason())
                 .isCompleted(false)
-                .expiresAt(Optional.ofNullable(request.expiresAt()).map(Instant::parse).orElse(null))
-                .build());
-        return toResponse(rec);
+                .expiresAt(parseExpiry(request.expiresAt()))
+                .build();
+
+        return toResponse(upsertActive(candidate));
     }
 
-    public List<RecommendationResponse> listActiveForUser(UUID userId) {
-        return repository.findByUserIdAndIsCompletedFalse(userId).stream()
+    /*
+     * ============================================================
+     * ACTIVE RECOMMENDATIONS
+     * ============================================================
+     */
+    @Transactional(readOnly = true)
+    public List<RecommendationResponse> listActiveForUser(
+            String userId) {
+
+        return repository
+                .findActive(userId, Instant.now())
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    public List<RecommendationResponse> listAllForUser(UUID userId) {
-        return repository.findByUserId(userId).stream()
+    /*
+     * ============================================================
+     * RECOMMENDATION HISTORY
+     * ============================================================
+     */
+    @Transactional(readOnly = true)
+    public List<RecommendationResponse> listAllForUser(
+            String userId,
+            int page,
+            int size) {
+
+        int safePage = Math.max(page, 0);
+
+        int safeSize = Math.min(
+                Math.max(size, 1),
+                MAX_PAGE_SIZE
+        );
+
+        PageRequest pageable =
+                PageRequest.of(safePage, safeSize);
+
+        return repository
+                .findByUserIdOrderByCreatedAtDesc(userId, pageable)
+                .stream()
                 .map(this::toResponse)
                 .toList();
     }
 
-    public RecommendationResponse markCompleted(UUID recommendationId, UUID userId) {
-        return repository.findByIdAndUserId(recommendationId, userId)
-                .map(rec -> { rec.setIsCompleted(true); return rec; })
-                .map(repository::save)
-                .map(this::toResponse)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Recommendation not found"));
+    /*
+     * ============================================================
+     * NEXT BEST ACTION
+     * ============================================================
+     *
+     * Highest priority wins.
+     *
+     * If priorities are equal:
+     * newest recommendation wins.
+     */
+    @Transactional(readOnly = true)
+    public Optional<NextBestActionResponse> nextBestAction(
+            String userId) {
+
+        return repository
+                .findActive(userId, Instant.now())
+                .stream()
+                .max(
+                        Comparator
+                                .<Recommendation>comparingInt(
+                                        recommendation ->
+                                                priorityWeight(
+                                                        recommendation.getPriority()
+                                                )
+                                )
+                                .thenComparing(
+                                        Recommendation::getCreatedAt
+                                )
+                )
+                .map(this::toNextBestAction);
     }
 
-    public void delete(UUID recommendationId, UUID userId) {
-        repository.findByIdAndUserId(recommendationId, userId)
-                .ifPresentOrElse(
-                        repository::delete,
-                        () -> { throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Recommendation not found"); }
+    /*
+     * ============================================================
+     * COMPLETE RECOMMENDATION
+     * ============================================================
+     *
+     * Ownership is enforced in the repository query:
+     *
+     * recommendationId + userId
+     *
+     * Therefore User A cannot complete User B's recommendation.
+     */
+    @Transactional
+    public RecommendationResponse markCompleted(
+            UUID recommendationId,
+            String userId) {
+
+        Recommendation recommendation =
+                repository
+                        .findByIdAndUserId(
+                                recommendationId,
+                                userId
+                        )
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                        "Recommendation not found"
+                                )
+                        );
+
+        recommendation.setIsCompleted(true);
+
+        return toResponse(
+                repository.save(recommendation)
+        );
+    }
+
+    /*
+     * ============================================================
+     * DELETE RECOMMENDATION
+     * ============================================================
+     *
+     * Ownership is checked before deletion.
+     */
+    @Transactional
+    public void delete(
+            UUID recommendationId,
+            String userId) {
+
+        Recommendation recommendation =
+                repository
+                        .findByIdAndUserId(
+                                recommendationId,
+                                userId
+                        )
+                        .orElseThrow(
+                                () -> new ResourceNotFoundException(
+                                        "Recommendation not found"
+                                )
+                        );
+
+        repository.delete(recommendation);
+    }
+
+    /*
+     * ============================================================
+     * GENERATE FROM PERFORMANCE
+     * ============================================================
+     *
+     * Deterministic recommendation generation.
+     *
+     * Performance evidence is used as the source.
+     * AI is NOT responsible for deciding whether the performance
+     * signal exists.
+     */
+    @Transactional
+    public List<RecommendationResponse> generateFromPerformance(
+            String userId) {
+
+        PerformanceSummaryResponse summary =
+                performanceService.getSummary(userId);
+
+        if (summary == null) {
+            return List.of();
+        }
+
+        Collection<String> weakConcepts =
+                summary.weakConcepts();
+
+        if (weakConcepts == null || weakConcepts.isEmpty()) {
+            return List.of();
+        }
+
+        List<RecommendationResponse> result =
+                new ArrayList<>();
+
+        for (String rawConceptId : weakConcepts) {
+
+            if (rawConceptId == null ||
+                    rawConceptId.isBlank()) {
+
+                log.warn(
+                        "Skipping empty weak concept ID for user {}",
+                        userId
+                );
+
+                continue;
+            }
+
+            UUID conceptId;
+
+            try {
+
+                conceptId =
+                        UUID.fromString(
+                                rawConceptId.trim()
+                        );
+
+            } catch (IllegalArgumentException exception) {
+
+                log.warn(
+                        "Skipping weak concept with invalid ID: {}",
+                        rawConceptId
+                );
+
+                continue;
+            }
+
+            /*
+             * Do not create a recommendation for a concept
+             * that does not exist.
+             */
+            if (!conceptRepository.existsById(conceptId)) {
+
+                log.warn(
+                        "Skipping recommendation for missing concept: {}",
+                        conceptId
+                );
+
+                continue;
+            }
+
+            Recommendation recommendation =
+                    upsertActive(
+                            Recommendation.builder()
+                                    .userId(userId)
+                                    .conceptId(conceptId)
+                                    .type(
+                                            RecommendationType.REVISE_CONCEPT
+                                    )
+                                    .source(
+                                            RecommendationSource.PERFORMANCE_SIGNAL
+                                    )
+                                    .priority(
+                                            RecommendationPriority.HIGH
+                                    )
+                                    .title(
+                                            "Revise this concept before your next battle"
+                                    )
+                                    .message(
+                                            "Your accuracy on this concept is below 50%."
+                                    )
+                                    .reason(
+                                            "Derived from low average accuracy in performance records."
+                                    )
+                                    .isCompleted(false)
+                                    .build()
+                    );
+
+            result.add(
+                    toResponse(recommendation)
+            );
+        }
+
+        return result;
+    }
+
+    /*
+     * ============================================================
+     * UPSERT ACTIVE RECOMMENDATION
+     * ============================================================
+     *
+     * Prevents duplicate active recommendations for the same:
+     *
+     * user
+     * concept
+     * type
+     * source
+     *
+     * Existing recommendation is refreshed.
+     */
+    private Recommendation upsertActive(
+            Recommendation candidate) {
+
+        return repository
+                .findFirstByUserIdAndConceptIdAndTypeAndSourceAndIsCompletedFalse(
+                        candidate.getUserId(),
+                        candidate.getConceptId(),
+                        candidate.getType(),
+                        candidate.getSource()
+                )
+                .map(existing -> {
+
+                    existing.setPriority(
+                            candidate.getPriority()
+                    );
+
+                    existing.setTitle(
+                            candidate.getTitle()
+                    );
+
+                    existing.setMessage(
+                            candidate.getMessage()
+                    );
+
+                    existing.setReason(
+                            candidate.getReason()
+                    );
+
+                    existing.setExpiresAt(
+                            candidate.getExpiresAt()
+                    );
+
+                    return repository.save(existing);
+                })
+                .orElseGet(
+                        () -> repository.save(candidate)
                 );
     }
 
-    /**
-     * Custom operation — doc §29-31: derive recommendations from Performance signals.
-     * Deterministic rule-based logic, not AI (AI-generated recommendations are a
-     * separate path via AiRecommendationService, built later in the AI module).
+    /*
+     * ============================================================
+     * PRIORITY WEIGHT
+     * ============================================================
+     *
+     * Do NOT use enum.ordinal() for business logic.
+     *
+     * Explicit weights make the business rule independent of
+     * enum declaration order.
      */
-    public List<RecommendationResponse> generateFromPerformance(UUID userId) {
-        PerformanceSummaryResponse summary = performanceService.getSummary(userId);
+    private int priorityWeight(
+            RecommendationPriority priority) {
 
-        List<Recommendation> generated = summary.weakConcepts().stream()
-                .map(conceptIdStr -> Recommendation.builder()
-                        .userId(userId)
-                        .conceptId(UUID.fromString(conceptIdStr))
-                        .type(RecommendationType.REVISE_CONCEPT)
-                        .source(RecommendationSource.PERFORMANCE_SIGNAL)
-                        .priority(RecommendationPriority.HIGH)
-                        .title("Revise this concept before your next battle")
-                        .message("Your accuracy on this concept is below 50%.")
-                        .reason("Derived from low average accuracy in performance records.")
-                        .isCompleted(false)
-                        .build())
-                .toList();
+        return switch (priority) {
 
-        return repository.saveAll(generated).stream()
-                .map(this::toResponse)
-                .toList();
+            case LOW -> 1;
+
+            case MEDIUM -> 2;
+
+            case HIGH -> 3;
+
+            case CRITICAL -> 4;
+        };
     }
 
-    private RecommendationResponse toResponse(Recommendation r) {
+    /*
+     * ============================================================
+     * ACTIVITY TYPE
+     * ============================================================
+     */
+    private RecommendationActivityType activityTypeFor(
+            RecommendationType type) {
+
+        return switch (type) {
+
+            case REVISE_CONCEPT,
+                 ADJUST_DIFFICULTY ->
+                    RecommendationActivityType.LEARNING;
+
+            case PRACTICE_CODING ->
+                    RecommendationActivityType.CODING;
+
+            case RETRY_BATTLE ->
+                    RecommendationActivityType.BATTLE;
+
+            case TAKE_INTERVIEW ->
+                    RecommendationActivityType.INTERVIEW;
+        };
+    }
+
+    /*
+     * ============================================================
+     * NEXT BEST ACTION MAPPER
+     * ============================================================
+     */
+    private NextBestActionResponse toNextBestAction(
+            Recommendation recommendation) {
+
+        String conceptName =
+                conceptRepository
+                        .findById(
+                                recommendation.getConceptId()
+                        )
+                        .map(Concept::getName)
+                        .orElse(null);
+
+        String reason =
+                recommendation.getMessage() != null &&
+                        !recommendation.getMessage().isBlank()
+                        ? recommendation.getMessage()
+                        : recommendation.getReason();
+
+        return new NextBestActionResponse(
+
+                recommendation.getId(),
+
+                recommendation.getConceptId(),
+
+                conceptName,
+
+                activityTypeFor(
+                        recommendation.getType()
+                ),
+
+                recommendation.getPriority(),
+
+                recommendation.getTitle(),
+
+                reason
+        );
+    }
+
+    /*
+     * ============================================================
+     * RESPONSE MAPPER
+     * ============================================================
+     */
+    private RecommendationResponse toResponse(
+            Recommendation recommendation) {
+
         return RecommendationResponse.builder()
-                .id(r.getId()).userId(r.getUserId()).conceptId(r.getConceptId())
-                .type(r.getType()).source(r.getSource()).priority(r.getPriority())
-                .title(r.getTitle()).message(r.getMessage()).reason(r.getReason())
-                .isCompleted(r.getIsCompleted()).createdAt(r.getCreatedAt()).expiresAt(r.getExpiresAt())
+
+                .id(recommendation.getId())
+
+                .userId(recommendation.getUserId())
+
+                .conceptId(recommendation.getConceptId())
+
+                .type(recommendation.getType())
+
+                .source(recommendation.getSource())
+
+                .priority(recommendation.getPriority())
+
+                .title(recommendation.getTitle())
+
+                .message(recommendation.getMessage())
+
+                .reason(recommendation.getReason())
+
+                .isCompleted(
+                        recommendation.getIsCompleted()
+                )
+
+                .createdAt(
+                        recommendation.getCreatedAt()
+                )
+
+                .expiresAt(
+                        recommendation.getExpiresAt()
+                )
+
                 .build();
+    }
+
+    /*
+     * ============================================================
+     * EXPIRY PARSER
+     * ============================================================
+     */
+    private Instant parseExpiry(String value) {
+
+        if (value == null ||
+                value.isBlank()) {
+
+            return null;
+        }
+
+        try {
+
+            Instant expiry =
+                    Instant.parse(value.trim());
+
+            /*
+             * Prevent creating already-expired recommendations.
+             */
+            if (expiry.isBefore(Instant.now())) {
+
+                throw new BadRequestException(
+                        "expiresAt must be in the future"
+                );
+            }
+
+            return expiry;
+
+        } catch (DateTimeParseException exception) {
+
+            throw new BadRequestException(
+                    "expiresAt must be an ISO-8601 instant, e.g. 2026-12-31T00:00:00Z"
+            );
+        }
+    }
+
+    /*
+     * ============================================================
+     * CONCEPT VALIDATION
+     * ============================================================
+     */
+    private void validateConceptExists(
+            UUID conceptId) {
+
+        if (!conceptRepository.existsById(conceptId)) {
+
+            throw new ResourceNotFoundException(
+                    "Concept not found"
+            );
+        }
+    }
+
+    /*
+     * ============================================================
+     * TITLE LENGTH PROTECTION
+     * ============================================================
+     */
+    private String truncate(
+            String text,
+            int maxLength) {
+
+        if (text == null) {
+            return null;
+        }
+
+        return text.length() > maxLength
+                ? text.substring(0, maxLength)
+                : text;
     }
 }

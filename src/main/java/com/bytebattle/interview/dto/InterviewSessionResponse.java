@@ -10,7 +10,7 @@ import java.util.UUID;
 @Builder
 public record InterviewSessionResponse(
         UUID id,
-        UUID userId,
+        String userId,
         UUID conceptId,
         InterviewStatus status,
         String difficulty,

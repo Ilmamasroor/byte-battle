@@ -10,7 +10,7 @@ import java.util.UUID;
 @Builder
 public record AiRequest(
         String operation,
-        UUID userId,
+        String userId,
         ConceptInfo concept,
         CanonicalKnowledge canonicalKnowledge,
         ByteDnaInfo byteDNA,

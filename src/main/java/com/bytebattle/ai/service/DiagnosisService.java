@@ -20,7 +20,7 @@ public class DiagnosisService {
     }
 
     /** Wraps a Debugging module ErrorCategory result into the shared AI contract. */
-    public AiResponse diagnose(UUID userId, UUID conceptId, String activityType, String errorCategory,
+    public AiResponse diagnose(String userId, UUID conceptId, String activityType, String errorCategory,
                                 String errorMessage, String sourceCode, String executionStatus,
                                 Integer executionTimeMs, Integer testCasesPassed, Integer testCasesTotal) {
 

@@ -114,7 +114,7 @@ public class AiFeatureService {
 
     private Map<String, Object> buildByteDNAData() {
 
-        UUID userId = getCurrentUserId();
+        String userId = getCurrentUserId();
 
         ByteDNA dna = byteDNARepository.findByUser_Id(userId)
                 .orElseThrow(() ->
@@ -158,9 +158,9 @@ public class AiFeatureService {
         return data;
     }
 
-    private UUID getCurrentUserId() {
+    private String getCurrentUserId() {
 
-        return ((com.bytebattle.security.CustomUserDetails)
+        return ((com.bytebattle.security.CustomUserDetailsService)
                 SecurityContextHolder
                         .getContext()
                         .getAuthentication()

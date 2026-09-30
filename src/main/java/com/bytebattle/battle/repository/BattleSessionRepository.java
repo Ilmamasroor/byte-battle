@@ -11,5 +11,5 @@ public interface BattleSessionRepository extends JpaRepository<BattleSession, UU
 
 
 
-	Optional<BattleSession> findByIdAndUserId(UUID sessionId, UUID userId);
+	Optional<BattleSession> findByIdAndUserId(UUID sessionId, String string);
 }

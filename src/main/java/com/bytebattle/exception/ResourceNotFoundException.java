@@ -5,7 +5,12 @@ package com.bytebattle.exception;
  * Example: throw new ResourceNotFoundException("User not found with id: " + id);
  */
 public class ResourceNotFoundException extends RuntimeException {
-    public ResourceNotFoundException(String message) {
+    /**
+	 * 
+	 */
+	private static final long serialVersionUID = 1L;
+
+	public ResourceNotFoundException(String message) {
         super(message);
     }
 }

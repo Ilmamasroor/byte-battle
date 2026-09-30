@@ -8,6 +8,6 @@ import java.util.UUID;
 
 @Repository
 public interface ByteDNARepository extends JpaRepository<ByteDNA, UUID> {
-    Optional<ByteDNA> findByUser_Id(UUID userId);
-    boolean existsByUser_Id(UUID userId);
+    Optional<ByteDNA> findByUser_Id(String userId);
+    boolean existsByUser_Id(String userId);
 }

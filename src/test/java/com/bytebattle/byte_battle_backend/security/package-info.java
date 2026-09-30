@@ -1,1 +1,1 @@
-package com.bytebattle.security;
+package com.bytebattle.byte_battle_backend.security;

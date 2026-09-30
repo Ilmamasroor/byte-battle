@@ -1,8 +1,14 @@
-package com.bytebattle.curriculum;
+package com.bytebattle.byte_battle_backend.curriculum;
 
 import com.bytebattle.common.PageResponse;
+import com.bytebattle.curriculum.CurriculumDomain;
+import com.bytebattle.curriculum.CurriculumDomainRepository;
+import com.bytebattle.curriculum.CurriculumDomainResponseDTO;
+import com.bytebattle.curriculum.CurriculumService;
+import com.bytebattle.curriculum.Topic;
+import com.bytebattle.curriculum.TopicRepository;
+import com.bytebattle.curriculum.TopicResponseDTO;
 import com.bytebattle.exception.ResourceNotFoundException;
-import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

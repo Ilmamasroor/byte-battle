@@ -1,12 +1,14 @@
-package com.bytebattle.security;
+package com.bytebattle.byte_battle_backend.security;
 
 import org.junit.jupiter.api.Test;
+
+import com.bytebattle.security.JwtUtil;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class JwtUtilTest {
 
-    private final JwtUtil jwtUtil = new JwtUtil();
+    private final JwtUtil jwtUtil = new JwtUtil(null, 0);
 
     @Test
     void generateToken_producesValidTokenForCorrectEmail() {

@@ -1,5 +1,12 @@
-package com.bytebattle.security;
+package com.bytebattle.byte_battle_backend.security;
 
+import com.bytebattle.security.AuthResponseDTO;
+import com.bytebattle.security.AuthService;
+import com.bytebattle.security.EmailService;
+import com.bytebattle.security.JwtUtil;
+import com.bytebattle.security.LoginRequestDTO;
+import com.bytebattle.security.PasswordResetTokenRepository;
+import com.bytebattle.security.RegisterRequestDTO;
 import com.bytebattle.user.User;
 import com.bytebattle.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -16,7 +23,7 @@ import java.util.UUID;
 
 import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyString;
+
 import static org.mockito.Mockito.*;
 
 /**

@@ -1,1 +1,1 @@
-package com.bytebattle.bytedna;
+package com.bytebattle.byte_battle_backend.bytedna;

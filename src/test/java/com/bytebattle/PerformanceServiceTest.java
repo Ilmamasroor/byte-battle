@@ -6,6 +6,8 @@ import com.bytebattle.performance.entity.PerformanceRecord;
 import com.bytebattle.performance.enums.ActivityType;
 import com.bytebattle.performance.repository.PerformanceRecordRepository;
 import com.bytebattle.performance.service.PerformanceService;
+import com.bytebattle.user.User;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -21,7 +23,7 @@ class PerformanceServiceTest {
 
     @Mock private PerformanceRecordRepository repository;
     private PerformanceService service;
-    private final UUID userId = UUID.randomUUID();
+    private final String userId = User.randomUUID();
 
     @BeforeEach
     void setUp() {

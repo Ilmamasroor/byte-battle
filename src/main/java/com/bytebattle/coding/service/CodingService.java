@@ -1,8 +1,11 @@
 package com.bytebattle.coding.service;
 
+<<<<<<< HEAD
 import com.bytebattle.ai.dto.feature.CodingFeedbackResponse;
 import com.bytebattle.ai.service.AiFeatureService;
 import com.bytebattle.ai.service.PersonalizationAiService;
+=======
+>>>>>>> a2ff2d8 (Update backend)
 import com.bytebattle.coding.dto.*;
 import com.bytebattle.coding.entities.CodingChallenge;
 import com.bytebattle.coding.entities.CodingSubmission;
@@ -121,11 +124,16 @@ public class CodingService {
                 .toList();
     }
 
+<<<<<<< HEAD
     public CodeSubmissionResponse submitCode(
             UUID challengeId,
             UUID userId,
             CodeSubmissionRequest request) {
 
+=======
+    @Transactional
+    public CodeSubmissionResponse submitCode(UUID challengeId, String string, CodeSubmissionRequest request) {
+>>>>>>> a2ff2d8 (Update backend)
         CodingChallenge challenge = codingChallengeRepository.findById(challengeId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
@@ -156,6 +164,7 @@ public class CodingService {
 
         CodingSubmissionStatus status = result.status();
 
+<<<<<<< HEAD
         CodingSubmission submission = codingSubmissionRepository.save(
                 CodingSubmission.builder()
                         .codingChallengeId(challengeId)
@@ -215,6 +224,20 @@ public class CodingService {
 
         submission.setAiFeedback(aiFeedback);
         codingSubmissionRepository.save(submission);
+=======
+        CodingSubmission submission = codingSubmissionRepository.save(CodingSubmission.builder()
+                .codingChallengeId(challengeId)
+                .userId(string)
+                .sourceCode(request.sourceCode())
+                .language(request.language())
+                .status(status)
+                .executionTimeMs(result.executionTimeMs())
+                .testCasesPassed(result.testCasesPassed())
+                .testCasesTotal(result.testCasesTotal())
+                .errorMessage(result.errorMessage())
+                .submittedAt(Instant.now())
+                .build());
+>>>>>>> a2ff2d8 (Update backend)
 
         return CodeSubmissionResponse.builder()
                 .submissionId(submission.getId())
@@ -224,18 +247,28 @@ public class CodingService {
                 .testCasesPassed(result.testCasesPassed())
                 .testCasesTotal(result.testCasesTotal())
                 .errorMessage(result.errorMessage())
+<<<<<<< HEAD
                 .aiFeedback(aiFeedback)
                 .testCaseResults(result.testCaseOutcomes().stream()
                         // Never return expected outputs to the learner.
+=======
+                // CHANGED: expected output is only revealed for failed test cases
+                .testCaseResults(result.testCaseOutcomes().stream()
+>>>>>>> a2ff2d8 (Update backend)
                         .map(o -> new TestCaseResultResponse(
                                 o.testCaseNumber(),
                                 o.passed(),
                                 o.actualOutput(),
+<<<<<<< HEAD
                                 null))
+=======
+                                o.passed() ? null : o.expectedOutput()))
+>>>>>>> a2ff2d8 (Update backend)
                         .toList())
                 .build();
     }
 
+<<<<<<< HEAD
     private void saveCodingPerformance(
             UUID userId,
             CodingChallenge challenge,
@@ -304,6 +337,10 @@ public class CodingService {
 
         CodingSubmission submission = codingSubmissionRepository
                 .findByIdAndUserId(submissionId, userId)
+=======
+    public CodeSubmissionResponse getSubmission(UUID submissionId, String string) {
+        CodingSubmission submission = codingSubmissionRepository.findByIdAndUserId(submissionId, string)
+>>>>>>> a2ff2d8 (Update backend)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND,
                         "Submission not found"));

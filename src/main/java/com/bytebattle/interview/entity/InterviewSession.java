@@ -1,6 +1,5 @@
 package com.bytebattle.interview.entity;
 
-
 import com.bytebattle.interview.enums.InterviewStatus;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +8,19 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "interview_sessions")
+@Table(
+        name = "interview_sessions",
+        indexes = {
+                @Index(
+                        name = "idx_interview_user_created",
+                        columnList = "user_id, created_at"
+                ),
+                @Index(
+                        name = "idx_interview_user_status",
+                        columnList = "user_id, status"
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor
@@ -22,7 +33,7 @@ public class InterviewSession {
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private String userId;
 
     @Column(name = "concept_id", nullable = false)
     private UUID conceptId;
@@ -31,7 +42,7 @@ public class InterviewSession {
     @Column(nullable = false)
     private InterviewStatus status;
 
-    @Column(nullable = false)
+    @Column(nullable = false, length = 30)
     private String difficulty;
 
     @Column(name = "started_at", nullable = false)
@@ -40,6 +51,7 @@ public class InterviewSession {
     @Column(name = "completed_at")
     private Instant completedAt;
 
+    @Column
     private Integer score;
 
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,11 +62,18 @@ public class InterviewSession {
 
     @PrePersist
     void onCreate() {
-        var now = Instant.now();
+        Instant now = Instant.now();
+
         createdAt = now;
         updatedAt = now;
-        if (startedAt == null) startedAt = now;
-        if (status == null) status = InterviewStatus.IN_PROGRESS;
+
+        if (startedAt == null) {
+            startedAt = now;
+        }
+
+        if (status == null) {
+            status = InterviewStatus.IN_PROGRESS;
+        }
     }
 
     @PreUpdate

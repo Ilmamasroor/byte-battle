@@ -10,7 +10,6 @@ import com.bytebattle.user.UserRepository;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 
-import java.util.UUID;
 
 @Service
 public class ByteDNAService {
@@ -23,21 +22,21 @@ public class ByteDNAService {
         this.userRepository = userRepository;
     }
 
-    private UUID getCurrentUserId() {
-        CustomUserDetails userDetails =
-                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+    private String getCurrentUserId() {
+        CustomUserDetailsService userDetails =
+                (CustomUserDetailsService) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
         return userDetails.getUser().getId();
     }
 
     public ByteDNAResponseDTO getMyByteDNA() {
-        UUID userId = getCurrentUserId();
+        String userId = getCurrentUserId();
         ByteDNA dna = byteDNARepository.findByUser_Id(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Byte DNA profile not found for this user"));
         return ByteDNAResponseDTO.fromEntity(dna);
     }
 
     public ByteDNAResponseDTO createByteDNA(CreateByteDNARequestDTO request) {
-        UUID userId = getCurrentUserId();
+        String userId = getCurrentUserId();
 
         if (byteDNARepository.existsByUser_Id(userId)) {
             throw new IllegalArgumentException("Byte DNA profile already exists for this user");
@@ -65,7 +64,7 @@ public class ByteDNAService {
     }
 
     public ByteDNAResponseDTO updateByteDNA(UpdateByteDNARequestDTO request) {
-        UUID userId = getCurrentUserId();
+        String userId = getCurrentUserId();
         ByteDNA dna = byteDNARepository.findByUser_Id(userId)
                 .orElseThrow(() -> new ResourceNotFoundException("Byte DNA profile not found for this user"));
 

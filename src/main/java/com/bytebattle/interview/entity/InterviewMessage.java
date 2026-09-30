@@ -1,6 +1,5 @@
 package com.bytebattle.interview.entity;
 
-
 import com.bytebattle.interview.enums.InterviewMessageRole;
 import jakarta.persistence.*;
 import lombok.*;
@@ -9,7 +8,24 @@ import java.time.Instant;
 import java.util.UUID;
 
 @Entity
-@Table(name = "interview_messages")
+@Table(
+        name = "interview_messages",
+        indexes = {
+                @Index(
+                        name = "idx_interview_message_session_sequence",
+                        columnList = "interview_session_id, sequence_number"
+                )
+        },
+        uniqueConstraints = {
+                @UniqueConstraint(
+                        name = "uk_interview_message_session_sequence",
+                        columnNames = {
+                                "interview_session_id",
+                                "sequence_number"
+                        }
+                )
+        }
+)
 @Getter
 @Setter
 @NoArgsConstructor

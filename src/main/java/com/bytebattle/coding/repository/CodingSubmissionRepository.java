@@ -13,5 +13,5 @@ public interface CodingSubmissionRepository extends JpaRepository<CodingSubmissi
 
     List<CodingSubmission> findByUserIdAndCodingChallengeId(UUID userId, UUID codingChallengeId);
 
-    Optional<CodingSubmission> findByIdAndUserId(UUID id, UUID userId);
+    Optional<CodingSubmission> findByIdAndUserId(UUID id, String string);
 }

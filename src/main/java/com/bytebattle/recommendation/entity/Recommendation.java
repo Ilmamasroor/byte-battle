@@ -24,7 +24,7 @@ public class Recommendation {
     private UUID id;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private String userId;
 
     @Column(name = "concept_id", nullable = false)
     private UUID conceptId;

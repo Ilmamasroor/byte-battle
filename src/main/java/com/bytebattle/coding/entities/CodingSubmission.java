@@ -25,7 +25,7 @@ public class CodingSubmission {
     private UUID codingChallengeId;
 
     @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    private String userId;
 
     @Column(name = "source_code", columnDefinition = "TEXT")
     private String sourceCode;

@@ -1,12 +1,19 @@
 package com.bytebattle.interview.service;
 
-import com.bytebattle.interview.dto.*;
+import com.bytebattle.interview.dto.InterviewMessageResponse;
+import com.bytebattle.interview.dto.InterviewResultResponse;
+import com.bytebattle.interview.dto.InterviewSessionResponse;
+import com.bytebattle.interview.dto.SendInterviewMessageRequest;
+import com.bytebattle.interview.dto.StartInterviewRequest;
 import com.bytebattle.interview.entity.InterviewMessage;
 import com.bytebattle.interview.entity.InterviewSession;
 import com.bytebattle.interview.enums.InterviewMessageRole;
 import com.bytebattle.interview.enums.InterviewStatus;
 import com.bytebattle.interview.repository.InterviewMessageRepository;
 import com.bytebattle.interview.repository.InterviewSessionRepository;
+
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -19,86 +26,247 @@ import java.util.UUID;
 @Service
 public class InterviewService {
 
+    private static final int MAX_PAGE_SIZE = 100;
+
     private final InterviewSessionRepository sessionRepository;
     private final InterviewMessageRepository messageRepository;
 
-    public InterviewService(InterviewSessionRepository sessionRepository,
-                             InterviewMessageRepository messageRepository) {
+    public InterviewService(
+            InterviewSessionRepository sessionRepository,
+            InterviewMessageRepository messageRepository) {
+
         this.sessionRepository = sessionRepository;
         this.messageRepository = messageRepository;
     }
 
-    @Transactional
-    public InterviewSessionResponse startInterview(StartInterviewRequest request) {
-        InterviewSession session = sessionRepository.save(InterviewSession.builder()
-                .userId(request.userId())
-                .conceptId(request.conceptId())
-                .difficulty(request.difficulty())
-                .status(InterviewStatus.IN_PROGRESS)
-                .build());
+    // ============================================================
+    // START INTERVIEW
+    // ============================================================
 
-        messageRepository.save(InterviewMessage.builder()
-                .interviewSessionId(session.getId())
-                .role(InterviewMessageRole.ASSISTANT)
-                .content(placeholderQuestion(request.difficulty(), 1))
-                .sequenceNumber(1)
-                .build());
+    @Transactional
+    public InterviewSessionResponse startInterview(
+            StartInterviewRequest request,
+            String userId) {
+
+        String difficulty = request.difficulty().trim();
+
+        InterviewSession session =
+                InterviewSession.builder()
+                        .userId(userId)
+                        .conceptId(request.conceptId())
+                        .difficulty(difficulty)
+                        .status(InterviewStatus.IN_PROGRESS)
+                        .build();
+
+        InterviewSession savedSession =
+                sessionRepository.save(session);
+
+        /*
+         * AI part intentionally ignored for now.
+         *
+         * If you already have an opening-question mechanism,
+         * connect it here.
+         */
+
+        InterviewMessage firstMessage =
+                InterviewMessage.builder()
+                        .interviewSessionId(savedSession.getId())
+                        .role(InterviewMessageRole.ASSISTANT)
+                        .content(
+                                "Welcome to your interview. "
+                                + "Let's begin."
+                        )
+                        .sequenceNumber(1)
+                        .build();
+
+        messageRepository.save(firstMessage);
+
+        return toSessionResponse(savedSession);
+    }
+
+    // ============================================================
+    // GET ONE INTERVIEW
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public InterviewSessionResponse getSession(
+            UUID sessionId,
+            String userId) {
+
+        InterviewSession session =
+                sessionRepository
+                        .findByIdAndUserId(sessionId, userId)
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Interview session not found"
+                                )
+                        );
 
         return toSessionResponse(session);
     }
 
-    public InterviewSessionResponse getSession(UUID sessionId, UUID userId) {
-        return sessionRepository.findByIdAndUserId(sessionId, userId)
-                .map(this::toSessionResponse)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
-    }
+    // ============================================================
+    // LIST USER INTERVIEWS
+    // ============================================================
 
-    public List<InterviewSessionResponse> listForUser(UUID userId) {
-        return sessionRepository.findByUserId(userId).stream()
+    @Transactional(readOnly = true)
+    public List<InterviewSessionResponse> listForUser(
+            String userId,
+            int page,
+            int size) {
+
+        int safePage = Math.max(page, 0);
+
+        int safeSize =
+                Math.min(
+                        Math.max(size, 1),
+                        MAX_PAGE_SIZE
+                );
+
+        PageRequest pageable =
+                PageRequest.of(
+                        safePage,
+                        safeSize,
+                        Sort.by(
+                                Sort.Direction.DESC,
+                                "createdAt"
+                        )
+                );
+
+        return sessionRepository
+                .findByUserIdOrderByCreatedAtDesc(
+                        userId,
+                        pageable
+                )
+                .getContent()
+                .stream()
                 .map(this::toSessionResponse)
                 .toList();
     }
 
-    public List<InterviewMessageResponse> getMessages(UUID sessionId) {
-        return messageRepository.findByInterviewSessionIdOrderBySequenceNumberAsc(sessionId).stream()
+    // ============================================================
+    // GET MESSAGES
+    // ============================================================
+
+    @Transactional(readOnly = true)
+    public List<InterviewMessageResponse> getMessages(
+            UUID sessionId,
+            String userId) {
+
+        /*
+         * First verify that this interview belongs
+         * to the authenticated user.
+         */
+        sessionRepository
+                .findByIdAndUserId(sessionId, userId)
+                .orElseThrow(() ->
+                        new ResponseStatusException(
+                                HttpStatus.NOT_FOUND,
+                                "Interview session not found"
+                        )
+                );
+
+        return messageRepository
+                .findByInterviewSessionIdOrderBySequenceNumberAsc(
+                        sessionId
+                )
+                .stream()
                 .map(this::toMessageResponse)
                 .toList();
     }
 
+    // ============================================================
+    // SEND MESSAGE
+    // ============================================================
+
     @Transactional
-    public InterviewMessageResponse sendMessage(UUID sessionId, UUID userId, SendInterviewMessageRequest request) {
-        InterviewSession session = requireInProgressSession(sessionId, userId);
+    public InterviewMessageResponse sendMessage(
+            UUID sessionId,
+            String userId,
+            SendInterviewMessageRequest request) {
 
-        long currentCount = messageRepository.countByInterviewSessionId(sessionId);
-        int nextSeq = (int) currentCount + 1;
+        InterviewSession session =
+                requireInProgressSession(
+                        sessionId,
+                        userId
+                );
 
-        messageRepository.save(InterviewMessage.builder()
-                .interviewSessionId(sessionId)
-                .role(InterviewMessageRole.USER)
-                .content(request.content())
-                .sequenceNumber(nextSeq)
-                .build());
+        String content = request.content().trim();
 
-        InterviewMessage assistantReply = messageRepository.save(InterviewMessage.builder()
-                .interviewSessionId(sessionId)
-                .role(InterviewMessageRole.ASSISTANT)
-                .content(placeholderQuestion(session.getDifficulty(), nextSeq + 1))
-                .sequenceNumber(nextSeq + 1)
-                .build());
+        int nextSequence =
+                messageRepository
+                        .findTopByInterviewSessionIdOrderBySequenceNumberDesc(
+                                sessionId
+                        )
+                        .map(message ->
+                                message.getSequenceNumber() + 1
+                        )
+                        .orElse(1);
 
-        return toMessageResponse(assistantReply);
+        InterviewMessage userMessage =
+                InterviewMessage.builder()
+                        .interviewSessionId(sessionId)
+                        .role(InterviewMessageRole.USER)
+                        .content(content)
+                        .sequenceNumber(nextSequence)
+                        .build();
+
+        messageRepository.save(userMessage);
+
+        /*
+         * AI response intentionally ignored.
+         *
+         * Temporary response so the Interview API can be
+         * tested independently of the AI module.
+         */
+        InterviewMessage response =
+                InterviewMessage.builder()
+                        .interviewSessionId(sessionId)
+                        .role(InterviewMessageRole.ASSISTANT)
+                        .content(
+                                "Thank you for your answer. "
+                                + "Please continue with the interview."
+                        )
+                        .sequenceNumber(nextSequence + 1)
+                        .build();
+
+        InterviewMessage savedResponse =
+                messageRepository.save(response);
+
+        return toMessageResponse(savedResponse);
     }
 
-    @Transactional
-    public InterviewResultResponse completeInterview(UUID sessionId, UUID userId) {
-        InterviewSession session = sessionRepository.findByIdAndUserId(sessionId, userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
+    // ============================================================
+    // COMPLETE INTERVIEW
+    // ============================================================
 
-        long totalMessages = messageRepository.countByInterviewSessionId(sessionId);
+    @Transactional
+    public InterviewResultResponse completeInterview(
+            UUID sessionId,
+            String userId) {
+
+        InterviewSession session =
+                requireInProgressSession(
+                        sessionId,
+                        userId
+                );
+
+        long totalMessages =
+                messageRepository.countByInterviewSessionId(
+                        sessionId
+                );
 
         session.setStatus(InterviewStatus.COMPLETED);
         session.setCompletedAt(Instant.now());
-        session.setScore(scoreFor(totalMessages));
+
+        /*
+         * AI/evaluation part intentionally ignored.
+         * Keep score null until the real evaluation logic
+         * is connected.
+         */
+        session.setScore(null);
+
         sessionRepository.save(session);
 
         return InterviewResultResponse.builder()
@@ -109,61 +277,99 @@ public class InterviewService {
                 .build();
     }
 
-    public void deleteSession(UUID sessionId, UUID userId) {
-        sessionRepository.findByIdAndUserId(sessionId, userId)
-                .ifPresentOrElse(
-                        sessionRepository::delete,
-                        () -> { throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"); }
-                );
+    // ============================================================
+    // DELETE INTERVIEW
+    // ============================================================
+
+    @Transactional
+    public void deleteSession(
+            UUID sessionId,
+            String userId) {
+
+        InterviewSession session =
+                sessionRepository
+                        .findByIdAndUserId(
+                                sessionId,
+                                userId
+                        )
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Interview session not found"
+                                )
+                        );
+
+        List<InterviewMessage> messages =
+                messageRepository
+                        .findByInterviewSessionIdOrderBySequenceNumberAsc(
+                                sessionId
+                        );
+
+        messageRepository.deleteAll(messages);
+
+        sessionRepository.delete(session);
     }
 
-    /**
-     * findByIdAndUserId() -> filter(IN_PROGRESS) -> orElseGet(...).
-     * An empty Optional here means either "session doesn't exist" or "session
-     * exists but isn't IN_PROGRESS" — both collapse to the same empty state.
-     * throwAppropriateStatusError() does one extra lookup ONLY on that empty
-     * path (never on the success path) to tell those two cases apart and
-     * throw the correct 404 vs 409.
-     */
-    private InterviewSession requireInProgressSession(UUID sessionId, UUID userId) {
-        return sessionRepository.findByIdAndUserId(sessionId, userId)
-                .filter(session -> session.getStatus() == InterviewStatus.IN_PROGRESS)
-                .orElseGet(() -> throwAppropriateStatusError(sessionId, userId));
+    // ============================================================
+    // REQUIRE IN-PROGRESS SESSION
+    // ============================================================
+
+    private InterviewSession requireInProgressSession(
+            UUID sessionId,
+            String userId) {
+
+        InterviewSession session =
+                sessionRepository
+                        .findByIdAndUserId(
+                                sessionId,
+                                userId
+                        )
+                        .orElseThrow(() ->
+                                new ResponseStatusException(
+                                        HttpStatus.NOT_FOUND,
+                                        "Interview session not found"
+                                )
+                        );
+
+        if (session.getStatus() != InterviewStatus.IN_PROGRESS) {
+
+            throw new ResponseStatusException(
+                    HttpStatus.CONFLICT,
+                    "Interview is already completed or abandoned"
+            );
+        }
+
+        return session;
     }
 
-    private InterviewSession throwAppropriateStatusError(UUID sessionId, UUID userId) {
-        return (InterviewSession) sessionRepository.findByIdAndUserId(sessionId, userId)
-                .map(session -> { throw new ResponseStatusException(
-                        HttpStatus.CONFLICT, "Interview is not in progress"); })
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Session not found"));
-    }
+    // ============================================================
+    // MAPPERS
+    // ============================================================
 
-    /** TEMPORARY STUB — real question generation belongs to AiInterviewService (doc §38). */
-    private String placeholderQuestion(String difficulty, int sequenceNumber) {
-        return "[stub question #" + sequenceNumber + ", difficulty=" + difficulty
-                + "] Tell me about a time you solved a challenging problem.";
-    }
+    private InterviewSessionResponse toSessionResponse(
+            InterviewSession session) {
 
-    /** Deterministic placeholder scoring — replace once real evaluation criteria exist. */
-    private int scoreFor(long totalMessages) {
-        return (int) Math.min(100, totalMessages * 10);
-    }
-
-    private InterviewSessionResponse toSessionResponse(InterviewSession s) {
         return InterviewSessionResponse.builder()
-                .id(s.getId()).userId(s.getUserId()).conceptId(s.getConceptId())
-                .status(s.getStatus()).difficulty(s.getDifficulty())
-                .startedAt(s.getStartedAt()).completedAt(s.getCompletedAt()).score(s.getScore())
+                .id(session.getId())
+                .userId(session.getUserId())
+                .conceptId(session.getConceptId())
+                .status(session.getStatus())
+                .difficulty(session.getDifficulty())
+                .startedAt(session.getStartedAt())
+                .completedAt(session.getCompletedAt())
+                .score(session.getScore())
                 .build();
     }
 
-    private InterviewMessageResponse toMessageResponse(InterviewMessage m) {
+    private InterviewMessageResponse toMessageResponse(
+            InterviewMessage message) {
+
         return InterviewMessageResponse.builder()
-                .id(m.getId()).role(m.getRole()).content(m.getContent())
-                .sequenceNumber(m.getSequenceNumber()).createdAt(m.getCreatedAt())
+                .id(message.getId())
+                .role(message.getRole())
+                .content(message.getContent())
+                .sequenceNumber(message.getSequenceNumber())
+                .createdAt(message.getCreatedAt())
                 .build();
     }
-    
-
-
 }

@@ -27,7 +27,7 @@ public class AiPromptBuilder {
      * that entity exists on your side. Performance is real, pulled from your
      * own PerformanceService right now.
      */
-    public AiRequest.AiRequestBuilder baseRequest(String operation, UUID userId, UUID conceptId) {
+    public AiRequest.AiRequestBuilder baseRequest(String operation, String userId, UUID conceptId) {
         PerformanceSummaryResponse summary = performanceService.getSummary(userId);
 
         return AiRequest.builder()

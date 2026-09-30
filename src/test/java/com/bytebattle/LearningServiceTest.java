@@ -7,6 +7,8 @@ import com.bytebattle.learning.entity.LearningProgress;
 import com.bytebattle.learning.enums.LearningStage;
 import com.bytebattle.learning.repository.LearningProgressRepository;
 import com.bytebattle.learning.service.LearningService;
+import com.bytebattle.user.User;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
@@ -24,7 +26,7 @@ class LearningServiceTest {
     @Mock private LearningProgressRepository repository;
     private LearningService service;
 
-    private final UUID userId = UUID.randomUUID();
+    private final String userId = User.randomUUID();
     private final UUID conceptId = UUID.randomUUID();
 
     @BeforeEach
@@ -42,7 +44,7 @@ class LearningServiceTest {
             return p;
         });
 
-        LearningProgressResponse response = service.startConcept(new StartLearningRequest(userId, conceptId));
+        LearningProgressResponse response = service.startConcept(new StartLearningRequest(conceptId), userId);
 
         assertThat(response.currentStage()).isEqualTo(LearningStage.UNDERSTAND);
         assertThat(response.progressPercentage()).isEqualTo(10);
@@ -58,7 +60,7 @@ class LearningServiceTest {
         when(repository.findByUserIdAndConceptId(userId, conceptId)).thenReturn(Optional.of(existing));
         when(repository.save(any())).thenReturn(existing);
 
-        LearningProgressResponse response = service.startConcept(new StartLearningRequest(userId, conceptId));
+        LearningProgressResponse response = service.startConcept(new StartLearningRequest(conceptId), userId);
 
         assertThat(response.currentStage()).isEqualTo(LearningStage.BATTLE);
     }
@@ -73,7 +75,7 @@ class LearningServiceTest {
         when(repository.findById(progress.getId())).thenReturn(Optional.of(progress));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        LearningProgressResponse result = service.completeStage(new CompleteStageRequest(progress.getId()));
+        LearningProgressResponse result = service.completeStage(new CompleteStageRequest(progress.getId()), userId);
 
         assertThat(result.currentStage()).isEqualTo(LearningStage.VISUALIZE);
         assertThat(result.progressPercentage()).isEqualTo(20);
@@ -89,7 +91,7 @@ class LearningServiceTest {
         when(repository.findById(progress.getId())).thenReturn(Optional.of(progress));
         when(repository.save(any())).thenAnswer(inv -> inv.getArgument(0));
 
-        LearningProgressResponse result = service.completeStage(new CompleteStageRequest(progress.getId()));
+        LearningProgressResponse result = service.completeStage(new CompleteStageRequest(progress.getId()), userId);
 
         assertThat(result.currentStage()).isEqualTo(LearningStage.COMPLETED);
         assertThat(result.completed()).isTrue();
@@ -102,6 +104,6 @@ class LearningServiceTest {
         when(repository.findById(missingId)).thenReturn(Optional.empty());
 
         org.junit.jupiter.api.Assertions.assertThrows(
-                IllegalArgumentException.class, () -> service.getProgress(missingId));
+                IllegalArgumentException.class, () -> service.getProgress(userId, missingId));
     }
 }

@@ -96,9 +96,9 @@ public class BattleService {
     // ---- Submit an answer (single transactional boundary — doc §48) ----
 
     @Transactional
-    public SubmitAnswerResponse submitAnswer(UUID sessionId, UUID userId, SubmitAnswerRequest request) {
+    public SubmitAnswerResponse submitAnswer(UUID sessionId, String string, SubmitAnswerRequest request) {
 
-        BattleSession session = battleStateValidator.requireOwnedSession(sessionId, userId);
+        BattleSession session = battleStateValidator.requireOwnedSession(sessionId, string);
         battleStateValidator.requireActiveSession(session);
 
         BattleQuestion question = battleQuestionRepository.findById(request.battleQuestionId())
@@ -168,8 +168,8 @@ public class BattleService {
 
     // ---- Result -----------------------------------------------------
 
-    public BattleResultResponse getResult(UUID sessionId, UUID userId) {
-        BattleSession session = battleStateValidator.requireOwnedSession(sessionId, userId);
+    public BattleResultResponse getResult(UUID sessionId, String string) {
+        BattleSession session = battleStateValidator.requireOwnedSession(sessionId, string);
 
         long correctAnswers = attemptRepository.findByBattleSessionId(sessionId)
                 .stream()

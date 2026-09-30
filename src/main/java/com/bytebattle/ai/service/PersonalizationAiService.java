@@ -57,7 +57,7 @@ public class PersonalizationAiService {
                 .orElseThrow(() ->
                         new IllegalArgumentException("User not found: " + request.userId()));
 
-        ByteDNA dna = byteDNARepository.findByUser_Id(request.userId())
+        ByteDNA dna = byteDNARepository.findById(request.userId())
                 .orElseGet(() -> {
                     ByteDNA newDna = new ByteDNA();
                     newDna.setUser(user);
@@ -223,7 +223,7 @@ public class PersonalizationAiService {
         ByteDnaEvolutionResponse response =
                 aiClient.evolveByteDna(request);
 
-        ByteDNA dna = byteDNARepository.findByUser_Id(request.userId())
+        ByteDNA dna = byteDNARepository.findById(request.userId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
                                 "Byte DNA profile not found for user: "
@@ -288,7 +288,7 @@ public class PersonalizationAiService {
 
         CreateRecommendationRequest createRequest =
                 new CreateRecommendationRequest(
-                        request.userId(),
+                        request.userId().toString(),
                         concept.getId(),
                         type,
                         RecommendationSource.AI_SUGGESTION,
@@ -296,8 +296,7 @@ public class PersonalizationAiService {
                         title,
                         response.reason(),
                         buildRecommendationReason(response),
-                        null
-                );
+                        null);
 
         recommendationService.create(createRequest);
 

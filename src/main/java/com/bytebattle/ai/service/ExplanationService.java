@@ -19,7 +19,7 @@ public class ExplanationService {
         this.aiService = aiService;
     }
 
-    public AiResponse explain(UUID userId, UUID conceptId) {
+    public AiResponse explain(String userId, UUID conceptId) {
         AiRequest request = promptBuilder.baseRequest("EXPLANATION", userId, conceptId).build();
         return aiService.process(request);
     }
