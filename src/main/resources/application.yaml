@@ -1,0 +1,75 @@
+spring:
+  application:
+    name: byte-battle-backend
+
+  # ===== Database (PostgreSQL) =====
+  datasource:
+    url: jdbc:postgresql://localhost:5432/bytebattle_db
+    username: postgres
+    password: 01391980
+    driver-class-name: org.postgresql.Driver
+
+  # ===== JPA / Hibernate =====
+  jpa:
+    hibernate:
+      ddl-auto: validate   # Flyway owns schema changes, Hibernate only validates
+    show-sql: false        # SQL is logged via org.hibernate.SQL below
+    open-in-view: false
+    properties:
+      hibernate:
+        format_sql: true
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+
+  # ===== Flyway =====
+  flyway:
+    enabled: false
+    locations: classpath:db/migration
+    baseline-on-migrate: false
+    validate-on-migrate: false
+
+  # ===== Email (Gmail SMTP) =====
+  mail:
+    host: smtp.gmail.com
+    port: 587
+    username: mubashshiram560@gmail.com
+    password: 
+    properties:
+      mail:
+        smtp:
+          auth: true
+          starttls:
+            enable: true
+
+server:
+  port: 8080
+
+# ===== Logging =====
+logging:
+  level:
+    root: INFO
+    org.hibernate.SQL: DEBUG
+    com.bytebattle: DEBUG
+
+# ===== Custom app config =====
+bytebattle:
+  jwt:
+    secret: ${JWT_SECRET}
+    expiration-ms: 86400000   # 24 hours
+
+  cors:
+    allowed-origins: http://localhost:3000,http://localhost:5173
+
+  battle:
+    pass-ratio: 0.6
+
+  # ===== AI (FastAPI) =====
+  ai:
+    enabled: false
+    base-url: ${AI_BASE_URL:http://localhost:8000}
+    timeout-ms: 5000
+    personalization:
+      base-url: ${AI_PERSONALIZATION_URL:http://localhost:8000}
+      timeout-ms: 30000
+
+app:
+  frontend-url: http://localhost:3000
