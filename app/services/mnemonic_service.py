@@ -1,4 +1,4 @@
-from app.models.mnemonic_models import MnemonicRequest
+from app.models.mnemonic_models import MnemonicRequest, MnemonicResponse
 from app.services.ai_service import generate_json
 
 
@@ -42,4 +42,4 @@ RETURN EXACTLY THIS STRUCTURE:
 }}
 """
 
-    return generate_json(prompt)
+    return generate_json(prompt, MnemonicResponse)

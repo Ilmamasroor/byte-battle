@@ -44,12 +44,19 @@ scripts/                # one-time content-processing scripts
    pip install -r requirements.txt
    ```
 
-3. Run the server:
+3. Configure environment variables:
+   Copy `.env.example` to `.env` and set your Groq API key:
+   ```
+   GROQ_API_KEY=your_groq_api_key_here
+   ```
+   Sign up for a free Groq API key at [https://console.groq.com/keys](https://console.groq.com/keys).
+
+4. Run the server:
    ```
    uvicorn app.main:app --reload
    ```
 
-4. View interactive API docs at `http://127.0.0.1:8000/docs`
+5. View interactive API docs at `http://127.0.0.1:8000/docs`
 
 ## Endpoints
 

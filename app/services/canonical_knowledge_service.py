@@ -1,4 +1,4 @@
-from app.models.canonical_knowledge_models import CanonicalKnowledgeRequest
+from app.models.canonical_knowledge_models import CanonicalKnowledgeRequest, CanonicalKnowledgeResponse
 from app.services.ai_service import generate_json
 
 
@@ -39,4 +39,4 @@ RETURN EXACTLY:
 }}
 """
 
-    return generate_json(prompt)
+    return generate_json(prompt, CanonicalKnowledgeResponse)

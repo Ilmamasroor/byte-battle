@@ -1,6 +1,8 @@
 from typing import Any, Dict, List
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
+
+from app.models.llm_response import LLMResponse
 
 
 class AIInterviewQuestionRequest(BaseModel):
@@ -9,8 +11,8 @@ class AIInterviewQuestionRequest(BaseModel):
     conversationHistory: List[Any] = []
 
 
-class AIInterviewQuestionResponse(BaseModel):
-    question: str
+class AIInterviewQuestionResponse(LLMResponse):
+    question: str = Field(min_length=1)
 
 
 class AIInterviewEvaluateRequest(BaseModel):
@@ -20,10 +22,10 @@ class AIInterviewEvaluateRequest(BaseModel):
     learnerAnswer: str = ""
 
 
-class AIInterviewEvaluateResponse(BaseModel):
-    conceptualCorrectness: float
-    completeness: float
-    technicalClarity: float
-    reasoning: float
-    explanation: float
-    feedback: str
+class AIInterviewEvaluateResponse(LLMResponse):
+    conceptualCorrectness: float = Field(ge=0.0, le=1.0)
+    completeness: float = Field(ge=0.0, le=1.0)
+    technicalClarity: float = Field(ge=0.0, le=1.0)
+    reasoning: float = Field(ge=0.0, le=1.0)
+    explanation: float = Field(ge=0.0, le=1.0)
+    feedback: str = Field(min_length=1)

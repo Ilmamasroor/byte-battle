@@ -1,4 +1,4 @@
-from app.models.boss_battle_models import BossBattleRequest
+from app.models.boss_battle_models import BossBattleRequest, BossBattleResponse
 from app.services.ai_service import generate_json
 
 
@@ -39,4 +39,4 @@ RETURN EXACTLY:
 }}
 """
 
-    return generate_json(prompt)
+    return generate_json(prompt, BossBattleResponse)

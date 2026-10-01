@@ -8,12 +8,4 @@ router = APIRouter()
 
 @router.post("/debugging/hint")
 def debugging_hint(data: DebuggingHintRequest):
-    try:
-        return generate_debugging_hint(data)
-
-    except Exception as e:
-        print("DEBUGGING HINT ERROR:", repr(e))
-        return {
-            "error": "AI service temporarily unavailable",
-            "details": str(e)
-        }
+    return generate_debugging_hint(data)

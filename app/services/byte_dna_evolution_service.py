@@ -18,6 +18,7 @@ EXPERIENCE_TO_DIFFICULTY = {
 def evolve_byte_dna(request: ByteDNAEvolutionRequest) -> ByteDNAEvolutionResponse:
     new_error_category = request.diagnosis.errorCategory if request.diagnosis else None
     new_accuracy = request.performance.accuracy if request.performance else None
+    canonical_topic = request.topic.strip().lower().replace(" ", "_")
 
     # --- repeatedMistakes ---
     updated_mistakes = list(request.byteDNA.repeatedMistakes)
@@ -27,17 +28,17 @@ def evolve_byte_dna(request: ByteDNAEvolutionRequest) -> ByteDNAEvolutionRespons
     # --- topicAccuracy ---
     updated_accuracy = dict(request.byteDNA.topicAccuracy)
     if new_accuracy is not None:
-        existing = updated_accuracy.get(request.topic)
+        existing = updated_accuracy.get(canonical_topic)
         if existing:
             total_correct = existing.averageAccuracy * existing.attemptCount
             new_count = existing.attemptCount + 1
             new_average = (total_correct + new_accuracy) / new_count
-            updated_accuracy[request.topic] = TopicAccuracyEntry(
+            updated_accuracy[canonical_topic] = TopicAccuracyEntry(
                 averageAccuracy=round(new_average, 3),
                 attemptCount=new_count
             )
         else:
-            updated_accuracy[request.topic] = TopicAccuracyEntry(
+            updated_accuracy[canonical_topic] = TopicAccuracyEntry(
                 averageAccuracy=round(new_accuracy, 3),
                 attemptCount=1
             )
@@ -47,7 +48,7 @@ def evolve_byte_dna(request: ByteDNAEvolutionRequest) -> ByteDNAEvolutionRespons
     if new_accuracy is not None:
         default_difficulty = EXPERIENCE_TO_DIFFICULTY.get(request.byteDNA.technicalExperience, "EASY")
         entry = updated_progression.get(
-            request.topic,
+            canonical_topic,
             DifficultyProgressionEntry(
                 currentDifficulty=default_difficulty,
                 consecutiveSuccesses=0,
@@ -75,7 +76,7 @@ def evolve_byte_dna(request: ByteDNAEvolutionRequest) -> ByteDNAEvolutionRespons
             current_difficulty = DIFFICULTY_LEVELS[idx - 1]
             failures = 0
 
-        updated_progression[request.topic] = DifficultyProgressionEntry(
+        updated_progression[canonical_topic] = DifficultyProgressionEntry(
             currentDifficulty=current_difficulty,
             consecutiveSuccesses=successes,
             consecutiveFailures=failures

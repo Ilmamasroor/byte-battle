@@ -8,12 +8,4 @@ router = APIRouter()
 
 @router.post("/boss-battle/generate-content")
 def boss_battle_content(data: BossBattleRequest):
-    try:
-        return generate_boss_battle_content(data)
-
-    except Exception as e:
-        print("BOSS BATTLE ERROR:", repr(e))
-        return {
-            "error": "AI service temporarily unavailable",
-            "details": str(e)
-        }
+    return generate_boss_battle_content(data)

@@ -1,5 +1,8 @@
 from typing import Any, Dict
-from pydantic import BaseModel
+
+from pydantic import BaseModel, Field
+
+from app.models.llm_response import LLMResponse
 
 
 class MnemonicRequest(BaseModel):
@@ -8,6 +11,6 @@ class MnemonicRequest(BaseModel):
     byteDNA: Dict[str, Any] = {}
 
 
-class MnemonicResponse(BaseModel):
-    mnemonic: str
-    memoryTip: str
+class MnemonicResponse(LLMResponse):
+    mnemonic: str = Field(min_length=1)
+    memoryTip: str = Field(min_length=1)

@@ -1,4 +1,4 @@
-from app.models.coding_feedback_models import CodingFeedbackRequest
+from app.models.coding_feedback_models import CodingFeedbackRequest, CodingFeedbackResponse
 from app.services.ai_service import generate_json
 
 
@@ -34,4 +34,4 @@ RETURN EXACTLY THIS STRUCTURE:
 }}
 """
 
-    return generate_json(prompt)
+    return generate_json(prompt, CodingFeedbackResponse)

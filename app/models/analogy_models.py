@@ -1,5 +1,8 @@
 from typing import Any, Dict
-from pydantic import BaseModel
+
+from pydantic import BaseModel, Field
+
+from app.models.llm_response import LLMResponse
 
 
 class AnalogyRequest(BaseModel):
@@ -8,7 +11,7 @@ class AnalogyRequest(BaseModel):
     byteDNA: Dict[str, Any] = {}
 
 
-class AnalogyResponse(BaseModel):
-    analogy: str
-    connection: str
-    memoryTip: str
+class AnalogyResponse(LLMResponse):
+    analogy: str = Field(min_length=1)
+    connection: str = Field(min_length=1)
+    memoryTip: str = Field(min_length=1)

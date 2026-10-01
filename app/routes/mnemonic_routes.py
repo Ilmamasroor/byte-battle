@@ -8,16 +8,9 @@ router = APIRouter()
 
 @router.post("/ai/mnemonic")
 def mnemonic(data: MnemonicRequest):
-    try:
-        mnemonic_data = generate_mnemonic(data)
-        return {
-            "concept": data.concept,
-            "mnemonic": mnemonic_data
-        }
+    mnemonic_data = generate_mnemonic(data)
 
-    except Exception as e:
-        print("MNEMONIC ERROR:", repr(e))
-        return {
-            "error": "AI service temporarily unavailable",
-            "details": str(e)
-        }
+    return {
+        "concept": data.concept,
+        "mnemonic": mnemonic_data,
+    }

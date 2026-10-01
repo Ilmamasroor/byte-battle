@@ -8,16 +8,9 @@ router = APIRouter()
 
 @router.post("/ai/analogy")
 def analogy(data: AnalogyRequest):
-    try:
-        analogy_data = generate_analogy(data)
-        return {
-            "concept": data.concept,
-            **analogy_data
-        }
+    analogy_data = generate_analogy(data)
 
-    except Exception as e:
-        print("ANALOGY ERROR:", repr(e))
-        return {
-            "error": "AI service temporarily unavailable",
-            "details": str(e)
-        }
+    return {
+        "concept": data.concept,
+        **analogy_data,
+    }

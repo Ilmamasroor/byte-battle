@@ -1,4 +1,4 @@
-from app.models.analogy_models import AnalogyRequest
+from app.models.analogy_models import AnalogyRequest, AnalogyResponse
 from app.services.ai_service import generate_json
 
 
@@ -41,4 +41,4 @@ RETURN EXACTLY THIS STRUCTURE:
 }}
 """
 
-    return generate_json(prompt)
+    return generate_json(prompt, AnalogyResponse)

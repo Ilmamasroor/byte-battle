@@ -8,17 +8,10 @@ router = APIRouter()
 
 @router.post("/ai/battle-hint")
 def battle_hint(data: BattleHintRequest):
-    try:
-        hint_data = generate_battle_hint(data)
-        return {
-            "concept": data.concept,
-            "question": data.question,
-            "hint": hint_data
-        }
+    hint_data = generate_battle_hint(data)
 
-    except Exception as e:
-        print("BATTLE HINT ERROR:", repr(e))
-        return {
-            "error": "AI service temporarily unavailable",
-            "details": str(e)
-        }
+    return {
+        "concept": data.concept,
+        "question": data.question,
+        "hint": hint_data,
+    }

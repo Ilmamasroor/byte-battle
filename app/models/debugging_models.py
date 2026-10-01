@@ -1,5 +1,8 @@
 from typing import Any, Dict
-from pydantic import BaseModel
+
+from pydantic import BaseModel, Field
+
+from app.models.llm_response import LLMResponse
 
 
 class DebuggingHintRequest(BaseModel):
@@ -8,5 +11,5 @@ class DebuggingHintRequest(BaseModel):
     hintLevel: int = 1
 
 
-class DebuggingHintResponse(BaseModel):
-    hint: str
+class DebuggingHintResponse(LLMResponse):
+    hint: str = Field(min_length=1)

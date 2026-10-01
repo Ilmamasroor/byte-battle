@@ -1,5 +1,8 @@
-from typing import Any, Dict
-from pydantic import BaseModel
+from typing import Any, Dict, Optional
+
+from pydantic import BaseModel, Field
+
+from app.models.llm_response import LLMResponse
 
 
 class BattleHintRequest(BaseModel):
@@ -9,7 +12,7 @@ class BattleHintRequest(BaseModel):
     hintLevel: int = 1
 
 
-class BattleHintResponse(BaseModel):
-    hintLevel: int
-    hint: str
-    nextStep: str
+class BattleHintResponse(LLMResponse):
+    hintLevel: Optional[int] = None
+    hint: str = Field(min_length=1)
+    nextStep: str = Field(min_length=1)
