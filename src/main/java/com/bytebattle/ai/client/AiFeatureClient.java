@@ -1,24 +1,20 @@
 package com.bytebattle.ai.client;
 
 import com.bytebattle.ai.dto.feature.*;
-import com.bytebattle.ai.exception.AiServiceException;
-import org.springframework.beans.factory.annotation.Value;
+import com.bytebattle.ai.config.AiProperties;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
 @Component
 public class AiFeatureClient {
 
     private final RestClient restClient;
+    private final AiProperties props;
 
-    public AiFeatureClient(
-            @Value("${bytebattle.ai.personalization.base-url:http://localhost:8000}")
-            String baseUrl) {
-
-        this.restClient = RestClient.builder()
-                .baseUrl(baseUrl)
-                .build();
+    public AiFeatureClient(@Qualifier("aiRestClient") RestClient restClient, AiProperties props) {
+        this.restClient = restClient;
+        this.props = props;
     }
 
     public AnalogyResponse generateAnalogy(AnalogyRequest request) {
@@ -93,24 +89,7 @@ public class AiFeatureClient {
         );
     }
 
-    private <T> T post(
-            String path,
-            Object request,
-            Class<T> responseType) {
-
-        try {
-            return restClient.post()
-                    .uri(path)
-                    .body(request)
-                    .retrieve()
-                    .body(responseType);
-
-        } catch (RestClientException e) {
-            throw new AiServiceException(
-                    "FastAPI AI feature call failed for "
-                            + path + ": " + e.getMessage(),
-                    e
-            );
-        }
+    private <T> T post(String path, Object request, Class<T> responseType) {
+        return AiHttp.post(restClient, props, path, request, responseType);
     }
 }

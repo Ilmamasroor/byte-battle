@@ -20,8 +20,9 @@ public class DebuggingService {
         this.codingSubmissionRepository = codingSubmissionRepository;
     }
 
-    public DebugResponse analyze(DebugRequest request) {
-        CodingSubmission submission = codingSubmissionRepository.findById(request.submissionId())
+    public DebugResponse analyze(java.util.UUID userId, DebugRequest request) {
+        // ownership check: a submission that is not the caller's is indistinguishable from a missing one
+        CodingSubmission submission = codingSubmissionRepository.findByIdAndUserId(request.submissionId(), userId)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Submission not found"));
 
@@ -43,7 +44,7 @@ public class DebuggingService {
             case RUNTIME_ERROR -> ErrorCategory.RUNTIME_ERROR;
             case TIMEOUT -> ErrorCategory.TIMEOUT;
             case FAILED -> ErrorCategory.LOGIC_ERROR; // ran fine, wrong output
-            case PENDING, RUNNING -> ErrorCategory.RUNTIME_ERROR; // shouldn't reach here normally
+            case PENDING, RUNNING, EXECUTION_UNAVAILABLE -> ErrorCategory.RUNTIME_ERROR; // shouldn't reach here normally
         };
     }
 

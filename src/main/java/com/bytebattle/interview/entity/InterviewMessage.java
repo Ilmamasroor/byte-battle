@@ -34,6 +34,12 @@ public class InterviewMessage {
     @Column(name = "sequence_number", nullable = false)
     private Integer sequenceNumber;
 
+    /** AI rubric evaluation of a USER answer (0-100) and the feedback text; null for assistant messages. */
+    private Integer score;
+
+    @Column(columnDefinition = "TEXT")
+    private String feedback;
+
     @Column(name = "created_at", nullable = false, updatable = false)
     private Instant createdAt;
 

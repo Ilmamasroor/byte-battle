@@ -1,22 +1,15 @@
 package com.bytebattle.battle.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 import java.util.UUID;
 
-public record SubmitAnswerRequest() {
-
-	public int timeTakenSeconds() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
-
-	public String answer() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
-	public UUID battleQuestionId() {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
+/** One answer inside a battle session. Correctness is decided server-side only. */
+public record SubmitAnswerRequest(
+        @NotNull UUID battleQuestionId,
+        @NotBlank String answer,
+        @NotNull @Min(0) Integer timeTakenSeconds
+) {
 }

@@ -8,5 +8,7 @@ public enum CodingSubmissionStatus {
     FAILED,
     COMPILATION_ERROR,
     RUNTIME_ERROR,
-    TIMEOUT
+    TIMEOUT,
+    /** Judge0 disabled, unreachable, timed out or returned an internal error. Never persisted as learner evidence. */
+    EXECUTION_UNAVAILABLE
 }

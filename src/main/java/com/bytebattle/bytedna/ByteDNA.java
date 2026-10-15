@@ -75,11 +75,11 @@ public class ByteDNA {
     }
 
     public enum LearningStyle {
-        INTERVEIW_PREP, EXAM_READY, CONCEPTUAL_DEPTH, AUDITORY
+        INTERVIEW_PREP, EXAM_READY, CONCEPTUAL_DEPTH, AUDITORY
     }
 
     public enum ExplanationStyle {
-        STORY,FUN,CINEMATIC,
+        STORY, FUN, CINEMATIC, DIRECT
     }
 
     public ByteDNA() {

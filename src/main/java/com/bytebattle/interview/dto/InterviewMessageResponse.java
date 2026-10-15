@@ -13,5 +13,8 @@ public record InterviewMessageResponse(
         InterviewMessageRole role,
         String content,
         Integer sequenceNumber,
-        Instant createdAt
+        Instant createdAt,
+        /** On a USER message: its evaluation. On the assistant reply to sendMessage: the evaluation of the learner's last answer. */
+        Integer score,
+        String feedback
 ) {}

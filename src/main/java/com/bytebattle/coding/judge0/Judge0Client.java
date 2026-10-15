@@ -3,214 +3,321 @@ package com.bytebattle.coding.judge0;
 import com.bytebattle.coding.dto.ExecutionRequest;
 import com.bytebattle.coding.dto.ExecutionResult;
 import com.bytebattle.coding.enums.CodingSubmissionStatus;
+import com.bytebattle.coding.testcase.CodingTestCase;
+import com.bytebattle.coding.testcase.CodingTestCases;
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
 import org.springframework.web.client.RestClientException;
-import com.fasterxml.jackson.core.JsonProcessingException;
 
+import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
+import java.util.Base64;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 
+/**
+ * Runs a source file against every test case of a challenge using Judge0's batch API:
+ * one POST /submissions/batch (base64 encoded) followed by polling GET /submissions/batch.
+ * Source code, stdin and request bodies are never logged.
+ */
 @Component
 public class Judge0Client {
 
+    private static final Logger log = LoggerFactory.getLogger(Judge0Client.class);
+
+    static final int STATUS_IN_QUEUE = 1;
+    static final int STATUS_PROCESSING = 2;
+    static final int STATUS_ACCEPTED = 3;
+    static final int STATUS_WRONG_ANSWER = 4;
+    static final int STATUS_TIME_LIMIT = 5;
+    static final int STATUS_COMPILATION_ERROR = 6;
+    static final int STATUS_INTERNAL_ERROR = 13;
+    static final int STATUS_EXEC_FORMAT_ERROR = 14;
+
+    private static final String RESULT_FIELDS = "token,status,stdout,stderr,compile_output,message,time,memory";
+    private static final int MAX_ERROR_CHARS = 2000;
+
     private final RestClient restClient;
     private final Judge0Properties properties;
-    private final ObjectMapper objectMapper;
 
-    public Judge0Client(
-            RestClient judge0RestClient,
-            Judge0Properties properties,
-            ObjectMapper objectMapper) {
+    public Judge0Client(RestClient judge0RestClient, Judge0Properties properties) {
         this.restClient = judge0RestClient;
         this.properties = properties;
-        this.objectMapper = objectMapper;
     }
 
+    /**
+     * @return the execution result; {@link ExecutionResult#unavailable(String)} when Judge0 is disabled,
+     *         unreachable, times out or reports an internal error (never throws for infrastructure problems)
+     * @throws IllegalArgumentException for a malformed challenge (bad language, no/invalid test cases)
+     */
     public ExecutionResult execute(ExecutionRequest request) {
 
         if (!properties.isEnabled()) {
-            throw new IllegalStateException("Judge0 execution is disabled");
+            return ExecutionResult.unavailable("Code execution is disabled");
         }
 
-        List<TestCase> testCases = parseTestCases(request.testCasesJson());
-
+        List<CodingTestCase> testCases = CodingTestCases.parse(request.testCasesJson());
         if (testCases.isEmpty()) {
             throw new IllegalArgumentException("Coding challenge has no test cases");
         }
-
         if (testCases.size() > properties.getMaxTestCases()) {
-            throw new IllegalArgumentException(
-                    "Coding challenge exceeds the maximum number of test cases");
+            throw new IllegalArgumentException("Coding challenge exceeds the maximum number of test cases");
         }
 
         int languageId = resolveLanguageId(request.language());
-        int cpuTimeLimitMs = boundedTimeLimit(request.timeLimitMs());
-        int memoryLimitKb = boundedMemoryLimit(request.memoryLimitMb());
-
-        List<Judge0Submission> results = new ArrayList<>();
-
-        for (TestCase testCase : testCases) {
-
-            Judge0Submission result = executeSingle(
-                    request,
-                    testCase,
-                    languageId,
-                    cpuTimeLimitMs,
-                    memoryLimitKb
-            );
-
-            results.add(result);
-        }
-
-        return toExecutionResult(results, testCases);
-    }
-
-    private Judge0Submission executeSingle(
-            ExecutionRequest request,
-            TestCase testCase,
-            int languageId,
-            int cpuTimeLimitMs,
-            int memoryLimitKb) {
-
-        Map<String, Object> submission = Map.of(
-                "source_code", request.sourceCode(),
-                "language_id", languageId,
-                "stdin", nullToEmpty(testCase.input()),
-                "expected_output", nullToEmpty(testCase.expectedOutput()),
-                "cpu_time_limit", cpuTimeLimitMs / 1000.0,
-                "wall_time_limit", Math.max(
-                        1.0,
-                        cpuTimeLimitMs / 1000.0 + 1.0
-                ),
-                "memory_limit", memoryLimitKb,
-                "enable_network", false,
-                "max_file_size", 1024
-        );
+        int cpuTimeLimitMs = clampTimeLimit(request.timeLimitMs());
+        int memoryLimitKb = clampMemoryLimitMb(request.memoryLimitMb()) * 1024;
 
         try {
-            String requestJson = objectMapper.writeValueAsString(submission);
+            long deadlineNanos = System.nanoTime()
+                    + TimeUnit.MILLISECONDS.toNanos(properties.getOverallDeadlineMs());
+            List<Judge0Result> results = new ArrayList<>();
+            int batchSize = Math.max(1, properties.getBatchSize());
+            for (int from = 0; from < testCases.size(); from += batchSize) {
+                List<CodingTestCase> chunk = testCases.subList(from, Math.min(testCases.size(), from + batchSize));
+                results.addAll(runBatch(request.sourceCode(), languageId, chunk,
+                        cpuTimeLimitMs, memoryLimitKb, deadlineNanos));
+            }
+            return toExecutionResult(results, testCases);
+        } catch (Judge0UnavailableException ex) {
+            log.warn("Judge0 unavailable: {}", ex.getMessage());
+            return ExecutionResult.unavailable("Code execution service is temporarily unavailable");
+        }
+    }
 
-            System.out.println("===== JUDGE0 JSON BODY =====");
-            System.out.println(requestJson);
-            System.out.println("============================");
+    // ------------------------------------------------------------------ submit + poll
 
+    private List<Judge0Result> runBatch(
+            String sourceCode,
+            int languageId,
+            List<CodingTestCase> cases,
+            int cpuTimeLimitMs,
+            int memoryLimitKb,
+            long deadlineNanos) {
+
+        List<Map<String, Object>> submissions = new ArrayList<>();
+        for (CodingTestCase testCase : cases) {
+            submissions.add(buildSubmission(sourceCode, languageId, testCase, cpuTimeLimitMs, memoryLimitKb));
+        }
+
+        List<String> tokens = submitBatch(submissions);
+        if (tokens.size() != cases.size()) {
+            throw new Judge0UnavailableException("Judge0 returned an unexpected number of tokens");
+        }
+        return pollBatch(tokens, deadlineNanos);
+    }
+
+    private Map<String, Object> buildSubmission(
+            String sourceCode, int languageId, CodingTestCase testCase, int cpuTimeLimitMs, int memoryLimitKb) {
+
+        int wallMs = Math.min(properties.getMaxWallTimeLimitMs(), cpuTimeLimitMs + properties.getWallTimeExtraMs());
+
+        Map<String, Object> body = new LinkedHashMap<>();
+        body.put("source_code", b64(sourceCode));
+        body.put("language_id", languageId);
+        body.put("stdin", b64(testCase.inputOrEmpty()));
+        body.put("expected_output", b64(testCase.expectedOrEmpty()));
+        body.put("cpu_time_limit", cpuTimeLimitMs / 1000.0);
+        body.put("wall_time_limit", wallMs / 1000.0);
+        body.put("memory_limit", memoryLimitKb);
+        body.put("stack_limit", properties.getStackLimitKb());
+        body.put("max_processes_and_or_threads", properties.getMaxProcessesAndOrThreads());
+        body.put("enable_per_process_and_thread_time_limit", false);
+        body.put("enable_per_process_and_thread_memory_limit", false);
+        body.put("max_file_size", properties.getMaxFileSizeKb());
+        body.put("number_of_runs", 1);
+        body.put("enable_network", false);
+        String compilerOptions = compilerOptionsFor(languageId);
+        if (compilerOptions != null) {
+            body.put("compiler_options", compilerOptions);
+        }
+        return body;
+    }
+
+    private static final ObjectMapper JSON = new ObjectMapper();
+
+    private String compilerOptionsFor(int languageId) {
+        Integer javaId = properties.getLanguageIds().get("JAVA");
+        String options = properties.getJavaCompilerOptions();
+        return javaId != null && javaId == languageId && options != null && !options.isBlank() ? options.trim() : null;
+    }
+
+    private List<String> submitBatch(List<Map<String, Object>> submissions) {
+        // Send a fixed-length body: with a streamed (chunked) body Judge0's Puma sees an empty batch and answers
+        // "there should be at least one submission in a batch".
+        byte[] payload;
+        try {
+            payload = JSON.writeValueAsBytes(Map.of("submissions", submissions));
+        } catch (JsonProcessingException ex) {
+            throw new Judge0UnavailableException("Could not encode the Judge0 batch submission", ex);
+        }
+        try {
             JsonNode response = restClient.post()
-                    .uri("/submissions?base64_encoded=false&wait=true")
+                    .uri("/submissions/batch?base64_encoded=true")
                     .contentType(MediaType.APPLICATION_JSON)
-                    .body(requestJson)
+                    .contentLength(payload.length)
+                    .body(payload)
                     .retrieve()
                     .body(JsonNode.class);
 
-            if (response == null || !response.isObject()) {
-                throw new IllegalStateException(
-                        "Judge0 returned an invalid submission response");
+            if (response == null || !response.isArray()) {
+                throw new Judge0UnavailableException("Judge0 returned an invalid batch submission response");
             }
-
-            JsonNode statusNode = response.path("status");
-
-            return new Judge0Submission(
-                    response.path("token").asText(null),
-                    statusNode.path("id").asInt(13),
-                    statusNode.path("description").asText("Unknown"),
-                    nullableText(response, "stdout"),
-                    nullableText(response, "stderr"),
-                    nullableText(response, "compile_output"),
-                    nullableText(response, "message"),
-                    response.path("time").asText(null),
-                    response.path("memory").isNumber()
-                            ? response.path("memory").asLong()
-                            : null
-            );
-
-        } catch (JsonProcessingException ex) {
-            throw new IllegalStateException(
-                    "Failed to serialize Judge0 submission",
-                    ex
-            );
+            List<String> tokens = new ArrayList<>();
+            for (JsonNode item : response) {
+                String token = item.path("token").asText(null);
+                if (token == null || token.isBlank()) {
+                    throw new Judge0UnavailableException("Judge0 rejected a submission in the batch");
+                }
+                tokens.add(token);
+            }
+            return tokens;
         } catch (RestClientException ex) {
-            throw new IllegalStateException(
-                    "Judge0 submission failed: " + ex.getMessage(),
-                    ex
-            );
+            throw new Judge0UnavailableException("Judge0 batch submission failed: " + ex.getClass().getSimpleName()
+                    + " " + safeMessage(ex), ex);
         }
     }
 
-    private ExecutionResult toExecutionResult(
-            List<Judge0Submission> results,
-            List<TestCase> testCases) {
+    private List<Judge0Result> pollBatch(List<String> tokens, long deadlineNanos) {
+        String joined = String.join(",", tokens);
+        int maxAttempts = Math.max(1, properties.getMaxPollAttempts());
+
+        for (int attempt = 1; attempt <= maxAttempts; attempt++) {
+            List<Judge0Result> results = fetchBatch(joined, tokens.size());
+            boolean pending = results.stream().anyMatch(r -> r.statusId() == STATUS_IN_QUEUE
+                    || r.statusId() == STATUS_PROCESSING);
+            if (!pending) {
+                return results;
+            }
+            if (attempt == maxAttempts || System.nanoTime() >= deadlineNanos) {
+                break;
+            }
+            sleepQuietly(properties.getPollIntervalMs());
+            if (System.nanoTime() >= deadlineNanos) {
+                break;
+            }
+        }
+        throw new Judge0UnavailableException("Timed out waiting for Judge0 results");
+    }
+
+    private List<Judge0Result> fetchBatch(String joinedTokens, int expected) {
+        try {
+            JsonNode response = restClient.get()
+                    .uri(uriBuilder -> uriBuilder.path("/submissions/batch")
+                            .queryParam("tokens", joinedTokens)
+                            .queryParam("base64_encoded", "true")
+                            .queryParam("fields", RESULT_FIELDS)
+                            .build())
+                    .retrieve()
+                    .body(JsonNode.class);
+
+            JsonNode array = response == null ? null : response.path("submissions");
+            if (array == null || !array.isArray() || array.size() != expected) {
+                throw new Judge0UnavailableException("Judge0 returned an invalid batch result");
+            }
+            List<Judge0Result> results = new ArrayList<>();
+            for (JsonNode item : array) {
+                JsonNode status = item.path("status");
+                results.add(new Judge0Result(
+                        status.path("id").asInt(STATUS_INTERNAL_ERROR),
+                        status.path("description").asText("Unknown"),
+                        decode(item, "stdout"),
+                        decode(item, "stderr"),
+                        decode(item, "compile_output"),
+                        decode(item, "message"),
+                        item.path("time").isNull() ? null : item.path("time").asText(null),
+                        item.path("memory").isNumber() ? item.path("memory").asLong() : null));
+            }
+            return results;
+        } catch (RestClientException ex) {
+            throw new Judge0UnavailableException("Judge0 polling failed: " + ex.getClass().getSimpleName()
+                    + " " + safeMessage(ex), ex);
+        }
+    }
+
+    private void sleepQuietly(int millis) {
+        try {
+            Thread.sleep(Math.max(0, millis));
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            throw new Judge0UnavailableException("Interrupted while waiting for Judge0");
+        }
+    }
+
+    // ------------------------------------------------------------------ result mapping
+
+    private ExecutionResult toExecutionResult(List<Judge0Result> results, List<CodingTestCase> testCases) {
 
         if (results.size() != testCases.size()) {
-            throw new IllegalStateException(
-                    "Judge0 returned an unexpected number of results");
+            throw new Judge0UnavailableException("Judge0 returned an unexpected number of results");
         }
 
         int passed = 0;
         int totalExecutionMs = 0;
-        long maxMemoryBytes = 0;
-
+        long maxMemoryKb = 0;
         String errorMessage = null;
-
-        CodingSubmissionStatus overallStatus =
-                CodingSubmissionStatus.PASSED;
-
-        List<ExecutionResult.TestCaseOutcome> outcomes =
-                new ArrayList<>();
+        CodingSubmissionStatus overall = CodingSubmissionStatus.PASSED;
+        List<ExecutionResult.TestCaseOutcome> outcomes = new ArrayList<>();
 
         for (int i = 0; i < results.size(); i++) {
+            Judge0Result result = results.get(i);
+            CodingTestCase testCase = testCases.get(i);
+            boolean accepted = result.statusId() == STATUS_ACCEPTED;
+            CodingSubmissionStatus mapped = mapStatus(result.statusId());
 
-            Judge0Submission result = results.get(i);
-
-            boolean accepted = result.statusId() == 3;
-
+            if (mapped == CodingSubmissionStatus.EXECUTION_UNAVAILABLE) {
+                throw new Judge0UnavailableException("Judge0 reported an internal error (status "
+                        + result.statusId() + ")");
+            }
+            if (result.statusId() == STATUS_COMPILATION_ERROR && isCompilerResourceFailure(result.compileOutput())) {
+                // The sandbox ran out of time compiling (e.g. a busy worker): that is not the learner's mistake
+                throw new Judge0UnavailableException("Judge0 compiler hit its own time limit; submission not judged");
+            }
             if (accepted) {
                 passed++;
             }
 
-            if (result.time() != null) {
-                try {
-                    totalExecutionMs +=
-                            (int) Math.round(
-                                    Double.parseDouble(result.time()) * 1000
-                            );
-                } catch (NumberFormatException ignored) {
-                }
+            Integer timeMs = parseTimeMs(result.time());
+            if (timeMs != null) {
+                totalExecutionMs += timeMs;
+            }
+            Integer memoryKb = result.memoryKb() == null ? null : (int) Math.min(Integer.MAX_VALUE, result.memoryKb());
+            if (result.memoryKb() != null) {
+                maxMemoryKb = Math.max(maxMemoryKb, result.memoryKb());
             }
 
-            if (result.memoryBytes() != null) {
-                maxMemoryBytes = Math.max(
-                        maxMemoryBytes,
-                        result.memoryBytes() * 1024
-                );
+            if (!accepted && errorMessage == null && mapped != CodingSubmissionStatus.FAILED) {
+                errorMessage = truncate(firstNonBlank(
+                        result.compileOutput(), result.stderr(), result.message(), result.statusDescription()));
             }
 
-            if (!accepted && errorMessage == null) {
-                errorMessage = firstNonBlank(
-                        result.compileOutput(),
-                        result.stderr(),
-                        result.message(),
-                        result.statusDescription()
-                );
+            if (priority(mapped) > priority(overall)) {
+                overall = mapped;
             }
 
-            overallStatus = mergeStatus(
-                    overallStatus,
-                    result.statusId()
-            );
+            outcomes.add(new ExecutionResult.TestCaseOutcome(
+                    i + 1,
+                    accepted,
+                    result.stdout(),
+                    testCase.expectedOutput(),
+                    testCase.input(),
+                    testCase.hidden(),
+                    caseStatusName(result.statusId()),
+                    timeMs,
+                    memoryKb));
+        }
 
-            outcomes.add(
-                    new ExecutionResult.TestCaseOutcome(
-                            i + 1,
-                            accepted,
-                            result.stdout(),
-                            testCases.get(i).expectedOutput()
-                    )
-            );
+        if (overall == CodingSubmissionStatus.FAILED && errorMessage == null) {
+            errorMessage = "Wrong answer on " + (results.size() - passed) + " of " + results.size() + " test cases";
         }
 
         return new ExecutionResult(
@@ -218,49 +325,43 @@ public class Judge0Client {
                 passed,
                 results.size(),
                 totalExecutionMs,
-                maxMemoryBytes == 0 ? null : maxMemoryBytes,
+                maxMemoryKb == 0 ? null : maxMemoryKb * 1024,
                 errorMessage,
                 outcomes,
-                overallStatus
-        );
+                overall);
     }
 
-    private CodingSubmissionStatus mergeStatus(
-            CodingSubmissionStatus current,
-            int judge0StatusId) {
-
-        CodingSubmissionStatus candidate;
-
-        if (judge0StatusId == 6) {
-            candidate = CodingSubmissionStatus.COMPILATION_ERROR;
-
-        } else if (judge0StatusId == 5) {
-            candidate = CodingSubmissionStatus.TIMEOUT;
-
-        } else if (
-                judge0StatusId == 7
-                        || judge0StatusId == 8
-                        || judge0StatusId == 9
-                        || judge0StatusId == 10
-                        || judge0StatusId >= 11
-        ) {
-            candidate = CodingSubmissionStatus.RUNTIME_ERROR;
-
-        } else if (judge0StatusId == 4) {
-            candidate = CodingSubmissionStatus.FAILED;
-
-        } else {
-            candidate = current;
-        }
-
-        return statusPriority(candidate) > statusPriority(current)
-                ? candidate
-                : current;
+    static boolean isCompilerResourceFailure(String compileOutput) {
+        return compileOutput != null && compileOutput.toLowerCase(Locale.ROOT).contains("compilation time limit exceeded");
     }
 
-    private int statusPriority(CodingSubmissionStatus status) {
+    /** 3 accepted, 4 wrong answer, 5 TLE, 6 compile error, 7-12 runtime errors, 13 internal, 14 exec format. */
+    static CodingSubmissionStatus mapStatus(int judge0StatusId) {
+        return switch (judge0StatusId) {
+            case STATUS_ACCEPTED -> CodingSubmissionStatus.PASSED;
+            case STATUS_WRONG_ANSWER -> CodingSubmissionStatus.FAILED;
+            case STATUS_TIME_LIMIT -> CodingSubmissionStatus.TIMEOUT;
+            case STATUS_COMPILATION_ERROR -> CodingSubmissionStatus.COMPILATION_ERROR;
+            case 7, 8, 9, 10, 11, 12, STATUS_EXEC_FORMAT_ERROR -> CodingSubmissionStatus.RUNTIME_ERROR;
+            default -> CodingSubmissionStatus.EXECUTION_UNAVAILABLE; // 13 internal error, unknown ids
+        };
+    }
 
+    static String caseStatusName(int judge0StatusId) {
+        return switch (judge0StatusId) {
+            case STATUS_ACCEPTED -> "ACCEPTED";
+            case STATUS_WRONG_ANSWER -> "WRONG_ANSWER";
+            case STATUS_TIME_LIMIT -> "TIME_LIMIT_EXCEEDED";
+            case STATUS_COMPILATION_ERROR -> "COMPILATION_ERROR";
+            case 7, 8, 9, 10, 11, 12 -> "RUNTIME_ERROR";
+            case STATUS_EXEC_FORMAT_ERROR -> "EXEC_FORMAT_ERROR";
+            default -> "INTERNAL_ERROR";
+        };
+    }
+
+    private static int priority(CodingSubmissionStatus status) {
         return switch (status) {
+            case EXECUTION_UNAVAILABLE -> 6;
             case COMPILATION_ERROR -> 5;
             case TIMEOUT -> 4;
             case RUNTIME_ERROR -> 3;
@@ -270,135 +371,81 @@ public class Judge0Client {
         };
     }
 
-    private int resolveLanguageId(String language) {
+    // ------------------------------------------------------------------ helpers
 
+    private int resolveLanguageId(String language) {
         if (language == null || language.isBlank()) {
             throw new IllegalArgumentException("Language is required");
         }
-
-        Integer id = properties
-                .getLanguageIds()
-                .get(language.trim().toUpperCase(Locale.ROOT));
-
+        Integer id = properties.getLanguageIds().get(language.trim().toUpperCase(Locale.ROOT));
         if (id == null) {
-            throw new IllegalArgumentException(
-                    "Unsupported coding language: " + language);
+            throw new IllegalArgumentException("Unsupported coding language: " + language);
         }
-
         return id;
     }
 
-    private int boundedTimeLimit(Integer requestedMs) {
-
-        int value = requestedMs == null
-                ? properties.getDefaultTimeLimitMs()
-                : requestedMs;
-
-        int max = properties.getMaxTimeLimitMs();
-
-        if (value < 100 || value > max) {
-            throw new IllegalArgumentException(
-                    "Time limit must be between 100ms and " + max + "ms");
-        }
-
-        return value;
+    /** Per-challenge limit when given, otherwise the default; always clamped into [100, configured max]. */
+    private int clampTimeLimit(Integer requestedMs) {
+        int value = requestedMs == null ? properties.getDefaultTimeLimitMs() : requestedMs;
+        return Math.max(100, Math.min(value, properties.getMaxTimeLimitMs()));
     }
 
-    private int boundedMemoryLimit(Integer requestedMb) {
-
-        int value = requestedMb == null
-                ? properties.getDefaultMemoryLimitMb()
-                : requestedMb;
-
-        int max = properties.getMaxMemoryLimitMb();
-
-        if (value < 16 || value > max) {
-            throw new IllegalArgumentException(
-                    "Memory limit must be between 16MB and " + max + "MB");
-        }
-
-        return value * 1024;
+    private int clampMemoryLimitMb(Integer requestedMb) {
+        int value = requestedMb == null ? properties.getDefaultMemoryLimitMb() : requestedMb;
+        return Math.max(16, Math.min(value, properties.getMaxMemoryLimitMb()));
     }
 
-    private List<TestCase> parseTestCases(String json) {
-
+    private static Integer parseTimeMs(String seconds) {
+        if (seconds == null) {
+            return null;
+        }
         try {
-
-            JsonNode node = objectMapper.readTree(json);
-
-            if (!node.isArray()) {
-                throw new IllegalArgumentException(
-                        "testCases must be a JSON array");
-            }
-
-            List<TestCase> cases = new ArrayList<>();
-
-            for (JsonNode item : node) {
-
-                if (!item.has("input")
-                        || !item.has("expectedOutput")) {
-
-                    throw new IllegalArgumentException(
-                            "Each test case requires input and expectedOutput");
-                }
-
-                cases.add(
-                        new TestCase(
-                                item.get("input").asText(),
-                                item.get("expectedOutput").asText()
-                        )
-                );
-            }
-
-            return cases;
-
-        } catch (Exception ex) {
-
-            if (ex instanceof IllegalArgumentException iae) {
-                throw iae;
-            }
-
-            throw new IllegalArgumentException(
-                    "Invalid coding challenge testCases JSON",
-                    ex
-            );
+            return (int) Math.round(Double.parseDouble(seconds) * 1000);
+        } catch (NumberFormatException ex) {
+            return null;
         }
     }
 
-    private static String nullableText(
-            JsonNode node,
-            String field) {
+    private static String b64(String value) {
+        return Base64.getEncoder().encodeToString((value == null ? "" : value).getBytes(StandardCharsets.UTF_8));
+    }
 
+    /** Judge0 wraps base64 output at 60 chars with newlines, hence the MIME decoder. */
+    private static String decode(JsonNode node, String field) {
         JsonNode value = node.get(field);
-
-        return value == null || value.isNull()
-                ? null
-                : value.asText();
+        if (value == null || value.isNull()) {
+            return null;
+        }
+        String text = value.asText();
+        try {
+            return new String(Base64.getMimeDecoder().decode(text), StandardCharsets.UTF_8);
+        } catch (IllegalArgumentException ex) {
+            return text;
+        }
     }
 
     private static String firstNonBlank(String... values) {
-
         for (String value : values) {
-
             if (value != null && !value.isBlank()) {
                 return value;
             }
         }
-
         return "Execution failed";
     }
 
-    private static String nullToEmpty(String value) {
-        return value == null ? "" : value;
+    private static String truncate(String value) {
+        return value.length() <= MAX_ERROR_CHARS ? value : value.substring(0, MAX_ERROR_CHARS);
     }
 
-    private record TestCase(
-            String input,
-            String expectedOutput) {
+    private static String safeMessage(Exception ex) {
+        String message = ex.getMessage();
+        if (message == null) {
+            return "";
+        }
+        return message.length() > 200 ? message.substring(0, 200) : message;
     }
 
-    private record Judge0Submission(
-            String token,
+    private record Judge0Result(
             int statusId,
             String statusDescription,
             String stdout,
@@ -406,6 +453,17 @@ public class Judge0Client {
             String compileOutput,
             String message,
             String time,
-            Long memoryBytes) {
+            Long memoryKb) {
+    }
+
+    /** Infrastructure problem (disabled, unreachable, timeout, internal error); mapped to EXECUTION_UNAVAILABLE. */
+    static class Judge0UnavailableException extends RuntimeException {
+        Judge0UnavailableException(String message) {
+            super(message);
+        }
+
+        Judge0UnavailableException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }

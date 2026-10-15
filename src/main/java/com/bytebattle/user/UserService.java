@@ -1,8 +1,7 @@
 package com.bytebattle.user;
 
 import com.bytebattle.exception.ResourceNotFoundException;
-import com.bytebattle.security.CustomUserDetails;
-import org.springframework.security.core.context.SecurityContextHolder;
+import com.bytebattle.security.CurrentUser;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
@@ -10,6 +9,8 @@ import java.util.UUID;
 
 @Service
 public class UserService {
+
+    private static final CurrentUser CURRENT_USER = new CurrentUser();
 
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
@@ -20,9 +21,7 @@ public class UserService {
     }
 
     private UUID getCurrentUserId() {
-        CustomUserDetails userDetails =
-                (CustomUserDetails) SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        return userDetails.getUser().getId();
+        return CURRENT_USER.id();
     }
 
     public UserResponseDTO getUserById(UUID id) {

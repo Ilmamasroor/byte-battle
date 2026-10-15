@@ -61,8 +61,4 @@ public class LearningProgress {
         updatedAt = Instant.now();
     }
 
-	public List<String> getCompletedStages() {
-		// TODO Auto-generated method stub
-		return null;
-	}
 }

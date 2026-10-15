@@ -9,6 +9,7 @@ import com.bytebattle.battle.dto.StartBattleResponse;
 import com.bytebattle.battle.dto.UpdateBattleRequest;
 import com.bytebattle.battle.service.BattleService;
 import jakarta.validation.Valid;
+import com.bytebattle.security.CurrentUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -21,9 +22,11 @@ import java.util.UUID;
 public class BattleController {
 
     private final BattleService battleService;
+    private final CurrentUser currentUser;
 
-    public BattleController(BattleService battleService) {
+    public BattleController(BattleService battleService, CurrentUser currentUser) {
         this.battleService = battleService;
+        this.currentUser = currentUser;
     }
 
     @GetMapping("/{battleId}")
@@ -33,8 +36,9 @@ public class BattleController {
 
     @PostMapping("/{battleId}/start")
     public ResponseEntity<StartBattleResponse> startBattle(@PathVariable UUID battleId,
-                                                             @Valid @RequestBody StartBattleRequest request) {
-        StartBattleResponse response = battleService.startBattle(battleId, request);
+                                                             @RequestBody(required = false) StartBattleRequest ignored) {
+        // any userId in the body is ignored: the session always belongs to the authenticated caller
+        StartBattleResponse response = battleService.startBattle(battleId, new StartBattleRequest(currentUser.id()));
         return ResponseEntity.status(HttpStatus.CREATED).body(response);
     }
 

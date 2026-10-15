@@ -4,7 +4,6 @@ import com.bytebattle.learning.dto.*;
 import com.bytebattle.learning.entity.LearningProgress;
 import com.bytebattle.learning.enums.LearningStage;
 import com.bytebattle.learning.repository.LearningProgressRepository;
-import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
@@ -15,10 +14,13 @@ import java.util.Optional;
 import java.util.UUID;
 
 @Service
-@RequiredArgsConstructor
 public class LearningService {
 
     private final LearningProgressRepository repository;
+
+    public LearningService(LearningProgressRepository repository) {
+        this.repository = repository;
+    }
 
     public LearningProgressResponse startConcept(StartLearningRequest request) {
         LearningProgress progress = repository
@@ -42,6 +44,41 @@ public class LearningService {
                 .map(this::toResponse)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Progress not found: " + request.progressId()));
+    }
+
+    // ---- Ownership-checked variants: controllers MUST use these (never trust a bare progress id) ----
+
+    public LearningProgressResponse getProgressForUser(UUID progressId, UUID userId) {
+        return repository.findByIdAndUserId(progressId, userId)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Progress not found"));
+    }
+
+    /** Stages that only verified results may complete (see {@link #advanceIfAt}); a learner cannot skip them. */
+    private static final java.util.Set<LearningStage> EVIDENCE_STAGES = java.util.EnumSet.of(
+            LearningStage.BATTLE, LearningStage.CODE, LearningStage.DEBUG, LearningStage.INTERVIEW);
+
+    public LearningProgressResponse completeStageForUser(CompleteStageRequest request, UUID userId) {
+        return repository.findByIdAndUserId(request.progressId(), userId)
+                .map(progress -> {
+                    if (EVIDENCE_STAGES.contains(progress.getCurrentStage())) {
+                        throw new ResponseStatusException(HttpStatus.CONFLICT,
+                                "The " + progress.getCurrentStage() + " stage is completed by a passing result, not manually");
+                    }
+                    return progress;
+                })
+                .map(this::advanceStage)
+                .map(repository::save)
+                .map(this::toResponse)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Progress not found"));
+    }
+
+    public void deleteProgressForUser(UUID progressId, UUID userId) {
+        repository.findByIdAndUserId(progressId, userId)
+                .ifPresentOrElse(
+                        repository::delete,
+                        () -> { throw new ResponseStatusException(HttpStatus.NOT_FOUND, "Progress not found"); }
+                );
     }
 
     public List<LearningProgressResponse> getAllForUser(UUID userId) {
@@ -123,6 +160,19 @@ public class LearningService {
                 .startedAt(p.getStartedAt())
                 .completedAt(p.getCompletedAt())
                 .build();
+    }
+
+    /**
+     * Server-side progression driven by verified evidence: moves the learner to the next stage only when
+     * they are currently exactly at {@code expected} (so replaying an earlier stage never skips ahead).
+     * No-op when the learner has not started the concept.
+     */
+    public Optional<LearningProgressResponse> advanceIfAt(UUID userId, UUID conceptId, LearningStage expected) {
+        return repository.findByUserIdAndConceptId(userId, conceptId)
+                .filter(p -> p.getCurrentStage() == expected)
+                .map(this::advanceStage)
+                .map(repository::save)
+                .map(this::toResponse);
     }
 
     public Optional<LearningProgress> getProgress(UUID userId, UUID conceptId) {

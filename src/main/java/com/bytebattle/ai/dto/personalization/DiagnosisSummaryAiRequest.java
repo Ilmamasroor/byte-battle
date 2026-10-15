@@ -19,4 +19,14 @@ public record DiagnosisSummaryAiRequest(
             Integer testCasesTotal,
             Boolean success
     ) {}
+
+    /** Returns a copy bound to the authenticated user (top level and every activity). */
+    public DiagnosisSummaryAiRequest withUserId(UUID userId) {
+        java.util.List<DiagnosisActivity> bound = activities == null ? null : activities.stream()
+                .map(a -> new DiagnosisActivity(userId, a.activityType(), a.accuracy(), a.score(),
+                        a.attemptCount(), a.timeSpentSeconds(), a.hintsUsed(),
+                        a.testCasesPassed(), a.testCasesTotal(), a.success()))
+                .toList();
+        return new DiagnosisSummaryAiRequest(userId, bound);
+    }
 }

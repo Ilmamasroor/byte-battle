@@ -13,4 +13,9 @@ public record RecommendationAiRequest(
         Double boundaryConditions,
         Double codingImplementation,
         Double hintDependency
-) {}
+) {
+    /** Returns a copy bound to the authenticated user; client-supplied userId must never be trusted. */
+    public RecommendationAiRequest withUserId(UUID userId) {
+        return new RecommendationAiRequest(userId, technicalExperience, topic, repeatedMistakes, conceptUnderstanding, decisionMaking, boundaryConditions, codingImplementation, hintDependency);
+    }
+}

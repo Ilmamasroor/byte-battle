@@ -5,6 +5,7 @@ import com.bytebattle.coding.dto.*;
 import com.bytebattle.coding.service.CodingService;
 import jakarta.validation.Valid;
 
+import com.bytebattle.security.CurrentUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -19,9 +20,11 @@ import java.util.UUID;
 public class CodingController {
 
     private final CodingService codingService;
+    private final CurrentUser currentUser;
 
-    public CodingController(CodingService codingService) {
+    public CodingController(CodingService codingService, CurrentUser currentUser) {
         this.codingService = codingService;
+        this.currentUser = currentUser;
     }
 
     @GetMapping("/challenges/{challengeId}")
@@ -45,22 +48,8 @@ public class CodingController {
     }
     
     private UUID resolveUserId(Authentication authentication) {
-    if (authentication == null || authentication.getPrincipal() == null) {
-        throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Authentication required"
-        );
+        return currentUser.id(authentication);
     }
-
-    if (!(authentication.getPrincipal() instanceof CustomUserDetails userDetails)) {
-        throw new ResponseStatusException(
-                HttpStatus.UNAUTHORIZED,
-                "Invalid authenticated user"
-        );
-    }
-
-    return userDetails.getUser().getId();
-}
 
     @PostMapping("/challenges")
     public ResponseEntity<CodingChallengeResponse> createChallenge(

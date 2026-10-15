@@ -7,6 +7,7 @@ public class AuthResponseDTO {
     private UUID userId;
     private String email;
     private String username;
+    private boolean onboardingCompleted;
 
     public AuthResponseDTO() {
     }
@@ -16,6 +17,20 @@ public class AuthResponseDTO {
         this.userId = userId;
         this.email = email;
         this.username = username;
+    }
+
+    public AuthResponseDTO(String token, UUID userId, String email, String username,
+                           boolean onboardingCompleted) {
+        this(token, userId, email, username);
+        this.onboardingCompleted = onboardingCompleted;
+    }
+
+    public boolean isOnboardingCompleted() {
+        return onboardingCompleted;
+    }
+
+    public void setOnboardingCompleted(boolean onboardingCompleted) {
+        this.onboardingCompleted = onboardingCompleted;
     }
 
     public String getToken() {

@@ -13,4 +13,9 @@ public record DiagnosisAiRequest(
         Integer testCasesPassed,
         Integer testCasesTotal,
         Boolean success
-) {}
+) {
+    /** Returns a copy bound to the authenticated user; client-supplied userId must never be trusted. */
+    public DiagnosisAiRequest withUserId(UUID userId) {
+        return new DiagnosisAiRequest(userId, activityType, accuracy, score, attemptCount, timeSpentSeconds, hintsUsed, testCasesPassed, testCasesTotal, success);
+    }
+}

@@ -13,6 +13,14 @@ import com.bytebattle.battle.repository.BattleQuestionRepository;
 import com.bytebattle.battle.repository.BattleRepository;
 import com.bytebattle.battle.repository.BattleSessionRepository;
 import com.bytebattle.battle.validator.BattleStateValidator;
+import com.bytebattle.ai.service.PersonalizationAiService.ActivityEvidence;
+import com.bytebattle.battle.enums.BattleType;
+import com.bytebattle.learning.service.ActivityEvidenceEvent;
+import com.bytebattle.learning.service.ProgressionService;
+import com.bytebattle.performance.dto.CreatePerformanceRecordRequest;
+import com.bytebattle.performance.enums.ActivityType;
+import com.bytebattle.performance.service.PerformanceService;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -32,19 +40,28 @@ public class BattleService {
     private final AttemptRepository attemptRepository;
     private final BattleStateValidator battleStateValidator;
     private final ScoringService scoringService;
+    private final PerformanceService performanceService;
+    private final ProgressionService progressionService;
+    private final ApplicationEventPublisher eventPublisher;
 
     public BattleService(BattleRepository battleRepository,
                           BattleQuestionRepository battleQuestionRepository,
                           BattleSessionRepository battleSessionRepository,
                           AttemptRepository attemptRepository,
                           BattleStateValidator battleStateValidator,
-                          ScoringService scoringService) {
+                          ScoringService scoringService,
+                          PerformanceService performanceService,
+                          ProgressionService progressionService,
+                          ApplicationEventPublisher eventPublisher) {
         this.battleRepository = battleRepository;
         this.battleQuestionRepository = battleQuestionRepository;
         this.battleSessionRepository = battleSessionRepository;
         this.attemptRepository = attemptRepository;
         this.battleStateValidator = battleStateValidator;
         this.scoringService = scoringService;
+        this.performanceService = performanceService;
+        this.progressionService = progressionService;
+        this.eventPublisher = eventPublisher;
     }
 
     // ---- Lookup -------------------------------------------------------
@@ -156,6 +173,10 @@ public class BattleService {
 
         battleSessionRepository.save(session);
 
+        if (sessionCompleted) {
+            recordSessionEvidence(session, battle);
+        }
+
         return SubmitAnswerResponse.builder()
                 .correct(correct)
                 .pointsEarned(pointsEarned)
@@ -166,15 +187,33 @@ public class BattleService {
                 .build();
     }
 
-    // ---- Result -----------------------------------------------------
+    // ---- Complete / result ------------------------------------------------
+
+    /**
+     * Ends the session if the learner is finishing early (idempotent for sessions that already ended by
+     * answering the last question or losing the last life) and returns the result.
+     */
+    @Transactional
+    public BattleResultResponse completeSession(UUID sessionId, UUID userId) {
+        BattleSession session = battleStateValidator.requireOwnedSession(sessionId, userId);
+
+        if (session.getStatus() == BattleSessionStatus.ACTIVE) {
+            session.setStatus(BattleSessionStatus.COMPLETED);
+            session.setCompletedAt(Instant.now());
+            battleSessionRepository.save(session);
+            Battle battle = battleRepository.findById(session.getBattleId())
+                    .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Battle not found"));
+            recordSessionEvidence(session, battle);
+        }
+
+        return getResult(sessionId, userId);
+    }
 
     public BattleResultResponse getResult(UUID sessionId, UUID userId) {
         BattleSession session = battleStateValidator.requireOwnedSession(sessionId, userId);
 
-        long correctAnswers = attemptRepository.findByBattleSessionId(sessionId)
-                .stream()
-                .filter(Attempt::getCorrect)
-                .count();
+        List<Attempt> attempts = attemptRepository.findByBattleSessionId(sessionId);
+        long correctAnswers = attempts.stream().filter(Attempt::getCorrect).count();
 
         Battle battle = battleRepository.findById(session.getBattleId())
                 .orElseThrow(() -> new ResponseStatusException(
@@ -185,8 +224,44 @@ public class BattleService {
                 .finalScore(session.getScore())
                 .totalQuestions(battle.getTotalQuestions())
                 .correctAnswers((int) correctAnswers)
-                .won(session.getRemainingLives() > 0)
+                .won(hasWon(session, battle, attempts.size()))
                 .build();
+    }
+
+    /** Won = survived (lives left) and answered every question. Abandoning early is never a win. */
+    private static boolean hasWon(BattleSession session, Battle battle, int answered) {
+        return session.getRemainingLives() > 0
+                && battle.getTotalQuestions() != null
+                && answered >= battle.getTotalQuestions();
+    }
+
+    /**
+     * Turns the finished session into verified evidence (once, at the ACTIVE -> COMPLETED transition):
+     * a performance record, streak/XP and learning-stage progression for a win, and an asynchronous
+     * diagnosis / Byte DNA / recommendation update. Correctness was already decided server-side.
+     */
+    private void recordSessionEvidence(BattleSession session, Battle battle) {
+        List<Attempt> attempts = attemptRepository.findByBattleSessionId(session.getId());
+        int answered = attempts.size();
+        int correct = (int) attempts.stream().filter(Attempt::getCorrect).count();
+        double accuracy = answered > 0 ? (double) correct / answered : 0.0;
+        int score = (int) Math.round(accuracy * 100.0);
+        int timeSpent = attempts.stream()
+                .map(Attempt::getTimeTakenSeconds)
+                .filter(t -> t != null && t > 0)
+                .mapToInt(Integer::intValue).sum();
+        boolean won = hasWon(session, battle, answered);
+
+        performanceService.createRecord(new CreatePerformanceRecordRequest(
+                session.getUserId(), battle.getConceptId(), ActivityType.BATTLE,
+                score, accuracy, timeSpent, Math.max(1, answered), won));
+
+        progressionService.onActivity(session.getUserId(), battle.getConceptId(), ActivityType.BATTLE,
+                won, battle.getBattleType() == BattleType.BOSS_BATTLE);
+
+        eventPublisher.publishEvent(new ActivityEvidenceEvent(new ActivityEvidence(
+                session.getUserId(), battle.getConceptId(), "battle", accuracy, score,
+                Math.max(1, answered), timeSpent, 0, null, null, won)));
     }
 
     // ---- Mapping helpers ---------------------------------------------

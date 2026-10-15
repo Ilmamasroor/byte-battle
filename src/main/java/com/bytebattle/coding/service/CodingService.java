@@ -1,52 +1,59 @@
 package com.bytebattle.coding.service;
 
-import com.bytebattle.ai.dto.feature.CodingFeedbackResponse;
-import com.bytebattle.ai.service.AiFeatureService;
-import com.bytebattle.ai.service.PersonalizationAiService;
 import com.bytebattle.coding.dto.*;
 import com.bytebattle.coding.entities.CodingChallenge;
 import com.bytebattle.coding.entities.CodingSubmission;
+import com.bytebattle.coding.entities.CodingSubmissionTestResult;
+import com.bytebattle.coding.testcase.CodingTestCase;
+import com.bytebattle.coding.testcase.CodingTestCases;
 import com.bytebattle.coding.enums.CodingSubmissionStatus;
 import com.bytebattle.coding.execution.CodeExecutor;
 import com.bytebattle.coding.repository.CodingChallengeRepository;
 import com.bytebattle.coding.repository.CodingSubmissionRepository;
 import com.bytebattle.performance.dto.CreatePerformanceRecordRequest;
 import com.bytebattle.performance.enums.ActivityType;
+import com.bytebattle.learning.service.ProgressionService;
 import com.bytebattle.performance.service.PerformanceService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.time.Instant;
-import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
 
 @Service
 public class CodingService {
 
+    private static final Logger log = LoggerFactory.getLogger(CodingService.class);
+
     private final CodingChallengeRepository codingChallengeRepository;
     private final CodingSubmissionRepository codingSubmissionRepository;
     private final CodeExecutor codeExecutor;
-    private final AiFeatureService aiFeatureService;
     private final PerformanceService performanceService;
-    private final PersonalizationAiService personalizationAiService;
+    private final CodingSubmissionStore submissionStore;
+    private final ApplicationEventPublisher eventPublisher;
+    private final ProgressionService progressionService;
 
     public CodingService(
             CodingChallengeRepository codingChallengeRepository,
             CodingSubmissionRepository codingSubmissionRepository,
             CodeExecutor codeExecutor,
-            AiFeatureService aiFeatureService,
             PerformanceService performanceService,
-            PersonalizationAiService personalizationAiService) {
+            CodingSubmissionStore submissionStore,
+            ApplicationEventPublisher eventPublisher,
+            ProgressionService progressionService) {
         this.codingChallengeRepository = codingChallengeRepository;
         this.codingSubmissionRepository = codingSubmissionRepository;
         this.codeExecutor = codeExecutor;
-        this.aiFeatureService = aiFeatureService;
         this.performanceService = performanceService;
-        this.personalizationAiService = personalizationAiService;
+        this.submissionStore = submissionStore;
+        this.eventPublisher = eventPublisher;
+        this.progressionService = progressionService;
     }
 
     public CodingChallengeResponse getChallenge(UUID challengeId) {
@@ -57,6 +64,7 @@ public class CodingService {
     }
 
     public CodingChallengeResponse createChallenge(CreateCodingChallengeRequest request) {
+        CodingTestCases.parse(request.testCases());
         CodingChallenge challenge = codingChallengeRepository.save(CodingChallenge.builder()
                 .conceptId(request.conceptId())
                 .title(request.title())
@@ -91,7 +99,10 @@ public class CodingService {
         Optional.ofNullable(request.difficulty()).ifPresent(challenge::setDifficulty);
         Optional.ofNullable(request.starterCode()).ifPresent(challenge::setStarterCode);
         Optional.ofNullable(request.solutionCode()).ifPresent(challenge::setSolutionCode);
-        Optional.ofNullable(request.testCases()).ifPresent(challenge::setTestCases);
+        Optional.ofNullable(request.testCases()).ifPresent(tc -> {
+            CodingTestCases.parse(tc);
+            challenge.setTestCases(tc);
+        });
 
         challenge.setUpdatedAt(Instant.now());
 
@@ -121,6 +132,10 @@ public class CodingService {
                 .toList();
     }
 
+    /**
+     * Not transactional on purpose: the PENDING row and the result are saved in separate short
+     * transactions (CodingSubmissionStore) so no DB transaction is held open while Judge0 runs.
+     */
     public CodeSubmissionResponse submitCode(
             UUID challengeId,
             UUID userId,
@@ -144,94 +159,66 @@ public class CodingService {
                     "Unsupported language for this challenge");
         }
 
+        UUID submissionId = submissionStore.createPending(
+                challengeId, userId, request.sourceCode(), request.language());
+
         /*
          * Judge0 remains the source of truth for execution and correctness.
          */
-        ExecutionResult result = codeExecutor.execute(new ExecutionRequest(
-                request.sourceCode(),
-                request.language(),
-                challenge.getTestCases(),
-                challenge.getTimeLimitMs(),
-                challenge.getMemoryLimitMb()));
+        ExecutionResult result;
+        try {
+            result = codeExecutor.execute(new ExecutionRequest(
+                    request.sourceCode(),
+                    request.language(),
+                    challenge.getTestCases(),
+                    challenge.getTimeLimitMs(),
+                    challenge.getMemoryLimitMb()));
+        } catch (IllegalArgumentException e) {
+            submissionStore.discard(submissionId);
+            throw e;
+        } catch (RuntimeException e) {
+            log.error("Unexpected code execution failure for challenge {}", challengeId, e);
+            result = ExecutionResult.unavailable("Code execution failed unexpectedly");
+        }
 
-        CodingSubmissionStatus status = result.status();
+        if (result.unavailable()) {
+            // Nothing was judged: do not keep a bogus submission, and never count it as learner evidence.
+            submissionStore.discard(submissionId);
+            throw new ResponseStatusException(
+                    HttpStatus.SERVICE_UNAVAILABLE,
+                    "Code execution is temporarily unavailable. Your submission was not judged; please try again shortly.");
+        }
 
-        CodingSubmission submission = codingSubmissionRepository.save(
-                CodingSubmission.builder()
-                        .codingChallengeId(challengeId)
-                        .userId(userId)
-                        .sourceCode(request.sourceCode())
-                        .language(request.language())
-                        .status(status)
-                        .executionTimeMs(result.executionTimeMs())
-                        .memoryUsedBytes(result.memoryUsedBytes())
-                        .testCasesPassed(result.testCasesPassed())
-                        .testCasesTotal(result.testCasesTotal())
-                        .errorMessage(result.errorMessage())
-                        .submittedAt(Instant.now())
-                        .build());
+        submissionStore.complete(submissionId, result);
 
         /*
-         * Persist coding performance independently of AI feedback.
-         *
-         * Judge0 is the source of truth for correctness. AI feedback is
-         * explanatory only and must never influence this record.
+         * Judge0 is the source of truth for correctness; the performance record is cheap and written
+         * synchronously. Personalization and AI feedback run asynchronously after this method returns.
          */
         saveCodingPerformance(userId, challenge, result);
 
-        /*
-         * Personalization AI consumes the completed coding event.
-         *
-         * This is deliberately non-blocking from the correctness perspective:
-         * Judge0 and PerformanceService remain the source of truth. If the
-         * personalization service is unavailable or returns invalid data,
-         * the coding submission itself must still succeed.
-         */
-        try {
-            personalizationAiService.processCodingAttempt(
-                    userId,
-                    challenge.getConceptId(),
-                    result);
-        } catch (RuntimeException e) {
-            // Personalization failure must never invalidate a valid submission.
-            System.err.println(
-                    "Coding personalization failed for submission "
-                            + submission.getId()
-                            + ": "
-                            + e.getMessage());
-        }
-
-        /*
-         * AI feedback is explanatory only.
-         *
-         * If the AI service is unavailable, the coding submission must still
-         * succeed because Judge0 has already determined the execution result.
-         */
-        String aiFeedback = generateAiFeedback(
-                challenge,
-                request.sourceCode(),
+        eventPublisher.publishEvent(new CodingSubmissionCompletedEvent(
+                submissionId,
+                userId,
+                challengeId,
+                challenge.getConceptId(),
+                challenge.getTitle(),
+                challenge.getDifficulty(),
                 request.language(),
-                result);
-
-        submission.setAiFeedback(aiFeedback);
-        codingSubmissionRepository.save(submission);
+                request.sourceCode(),
+                result));
 
         return CodeSubmissionResponse.builder()
-                .submissionId(submission.getId())
-                .status(status)
+                .submissionId(submissionId)
+                .status(result.status())
                 .executionTimeMs(result.executionTimeMs())
                 .memoryUsedBytes(result.memoryUsedBytes())
                 .testCasesPassed(result.testCasesPassed())
                 .testCasesTotal(result.testCasesTotal())
                 .errorMessage(result.errorMessage())
-                .aiFeedback(aiFeedback)
+                .aiFeedback(null)
                 .testCaseResults(result.testCaseOutcomes().stream()
-                        // Never return expected outputs to the learner.
-                        .map(o -> new TestCaseResultResponse(
-                                o.testCaseNumber(),
-                                o.passed(),
-                                o.actualOutput(),
-                                null))
+                        .map(TestCaseResultResponse::from)
                         .toList())
                 .build();
     }
@@ -260,42 +247,9 @@ public class CodingService {
                         0,
                         1,
                         result.status() == CodingSubmissionStatus.PASSED));
-    }
 
-    private String generateAiFeedback(
-            CodingChallenge challenge,
-            String sourceCode,
-            String language,
-            ExecutionResult result) {
-
-        Map<String, Object> concept = new LinkedHashMap<>();
-        concept.put("conceptId", challenge.getConceptId());
-        concept.put("title", challenge.getTitle());
-        concept.put("difficulty", challenge.getDifficulty());
-        concept.put("language", language);
-
-        Map<String, Object> diagnosis = new LinkedHashMap<>();
-        diagnosis.put("activityType", "coding");
-        diagnosis.put("executionStatus", result.status().name());
-        diagnosis.put("executionTimeMs", result.executionTimeMs());
-        diagnosis.put("testCasesPassed", result.testCasesPassed());
-        diagnosis.put("testCasesTotal", result.testCasesTotal());
-        diagnosis.put("errorMessage", result.errorMessage());
-        diagnosis.put("sourceCode", sourceCode);
-
-        try {
-            CodingFeedbackResponse response =
-                    aiFeatureService.generateCodingFeedback(concept, diagnosis);
-
-            return response == null ? null : response.feedback();
-
-        } catch (RuntimeException ex) {
-            /*
-             * AI failure must never turn a successfully executed submission
-             * into a failed coding submission.
-             */
-            return null;
-        }
+        progressionService.onActivity(userId, challenge.getConceptId(), ActivityType.CODING,
+                result.status() == CodingSubmissionStatus.PASSED, false);
     }
 
     public CodeSubmissionResponse getSubmission(
@@ -308,6 +262,15 @@ public class CodingService {
                         HttpStatus.NOT_FOUND,
                         "Submission not found"));
 
+        List<CodingTestCase> currentCases = codingChallengeRepository
+                .findById(submission.getCodingChallengeId())
+                .map(c -> CodingTestCases.parseLenient(c.getTestCases()))
+                .orElse(List.of());
+
+        List<TestCaseResultResponse> caseResults = submissionStore.results(submissionId).stream()
+                .map(row -> toLearnerView(row, currentCases))
+                .toList();
+
         return CodeSubmissionResponse.builder()
                 .submissionId(submission.getId())
                 .status(submission.getStatus())
@@ -317,12 +280,34 @@ public class CodingService {
                 .testCasesTotal(submission.getTestCasesTotal())
                 .errorMessage(submission.getErrorMessage())
                 .aiFeedback(submission.getAiFeedback())
-                .testCaseResults(List.of())
+                .testCaseResults(caseResults)
                 .build();
+    }
+
+    private TestCaseResultResponse toLearnerView(CodingSubmissionTestResult row, List<CodingTestCase> currentCases) {
+        int index = row.getCaseNumber() - 1;
+        boolean stillVisible = index >= 0 && index < currentCases.size() && !currentCases.get(index).hidden();
+        if (Boolean.TRUE.equals(row.getHidden()) || !stillVisible) {
+            return TestCaseResultResponse.hiddenCase(
+                    row.getCaseNumber(), Boolean.TRUE.equals(row.getPassed()), row.getStatus(), row.getTimeMs());
+        }
+        CodingTestCase testCase = currentCases.get(index);
+        return new TestCaseResultResponse(
+                row.getCaseNumber(), row.getPassed(), row.getStatus(), false, row.getTimeMs(),
+                testCase.input(), testCase.expectedOutput(), row.getStdoutSnippet());
     }
 
     private CodingChallengeResponse toChallengeResponse(
             CodingChallenge challenge) {
+
+        List<CodingTestCase> cases = CodingTestCases.parseLenient(challenge.getTestCases());
+        List<CodingChallengeResponse.SampleTestCase> samples = new java.util.ArrayList<>();
+        for (int i = 0; i < cases.size(); i++) {
+            if (!cases.get(i).hidden()) {
+                samples.add(new CodingChallengeResponse.SampleTestCase(
+                        i + 1, cases.get(i).input(), cases.get(i).expectedOutput()));
+            }
+        }
 
         return CodingChallengeResponse.builder()
                 .id(challenge.getId())
@@ -337,6 +322,9 @@ public class CodingService {
                 .starterCode(challenge.getStarterCode())
                 .timeLimitMs(challenge.getTimeLimitMs())
                 .memoryLimitMb(challenge.getMemoryLimitMb())
+                .sampleTestCases(samples)
+                .totalTestCases(cases.size())
+                .hiddenTestCases((int) cases.stream().filter(CodingTestCase::hidden).count())
                 .build();
     }
 }

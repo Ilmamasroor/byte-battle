@@ -4,6 +4,7 @@ import com.bytebattle.ai.dto.AiResponse;
 import com.bytebattle.ai.dto.personalization.*;
 import com.bytebattle.ai.service.ExplanationService;
 import com.bytebattle.ai.service.PersonalizationAiService;
+import com.bytebattle.security.CurrentUser;
 import org.springframework.web.bind.annotation.*;
 import com.bytebattle.ai.dto.feature.CanonicalKnowledgeResponse;
 import com.bytebattle.ai.service.AiFeatureService;
@@ -31,11 +32,15 @@ public class AiController {
     private final PersonalizationAiService personalizationAiService;
     private final AiFeatureService aiFeatureService;
 
+    private final CurrentUser currentUser;
+
     public AiController(
             ExplanationService explanationService,
             PersonalizationAiService personalizationAiService,
-            AiFeatureService aiFeatureService) {
+            AiFeatureService aiFeatureService,
+            CurrentUser currentUser) {
 
+        this.currentUser = currentUser;
         this.explanationService = explanationService;
         this.personalizationAiService = personalizationAiService;
         this.aiFeatureService = aiFeatureService;
@@ -43,45 +48,44 @@ public class AiController {
 
     @PostMapping("/explanation")
     public AiResponse explanation(
-            @RequestParam java.util.UUID userId,
             @RequestParam java.util.UUID conceptId) {
 
-        return explanationService.explain(userId, conceptId);
+        return explanationService.explain(currentUser.id(), conceptId);
     }
 
     @PostMapping("/onboarding")
     public ByteDnaAiResponse onboarding(
             @RequestBody OnboardingAiRequest request) {
 
-        return personalizationAiService.onboard(request);
+        return personalizationAiService.onboard(request.withUserId(currentUser.id()));
     }
 
     @PostMapping("/diagnose")
     public DiagnosisAiResponse diagnose(
             @RequestBody DiagnosisAiRequest request) {
 
-        return personalizationAiService.diagnose(request);
+        return personalizationAiService.diagnose(request.withUserId(currentUser.id()));
     }
 
     @PostMapping("/diagnose/summary")
     public DiagnosisSummaryAiResponse diagnoseSummary(
             @RequestBody DiagnosisSummaryAiRequest request) {
 
-        return personalizationAiService.diagnoseSummary(request);
+        return personalizationAiService.diagnoseSummary(request.withUserId(currentUser.id()));
     }
 
     @PostMapping("/recommend")
     public RecommendationAiResponse recommend(
             @RequestBody RecommendationAiRequest request) {
 
-        return personalizationAiService.recommend(request);
+        return personalizationAiService.recommend(request.withUserId(currentUser.id()));
     }
 
     @PostMapping("/byte-dna/evolve")
     public ByteDnaEvolutionResponse evolveByteDna(
             @RequestBody ByteDnaEvolutionRequest request) {
 
-        return personalizationAiService.evolveByteDna(request);
+        return personalizationAiService.evolveByteDnaForUser(currentUser.id(), request);
     }
 
 @PostMapping("/canonical-knowledge")

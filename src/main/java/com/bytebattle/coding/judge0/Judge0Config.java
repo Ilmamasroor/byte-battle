@@ -14,11 +14,14 @@ import java.time.Duration;
 public class Judge0Config {
     @Bean
     RestClient judge0RestClient(Judge0Properties properties) {
+        // HTTP/1.1 only: the JDK client's default h2c upgrade makes Judge0's Puma drop the POST body
+        // ("there should be at least one submission in a batch").
         HttpClient httpClient = HttpClient.newBuilder()
-                .connectTimeout(Duration.ofSeconds(3))
+                .version(HttpClient.Version.HTTP_1_1)
+                .connectTimeout(Duration.ofMillis(properties.getConnectTimeoutMs()))
                 .build();
         JdkClientHttpRequestFactory requestFactory = new JdkClientHttpRequestFactory(httpClient);
-        requestFactory.setReadTimeout(Duration.ofSeconds(10));
+        requestFactory.setReadTimeout(Duration.ofMillis(properties.getReadTimeoutMs()));
 
         RestClient.Builder builder = RestClient.builder()
                 .baseUrl(properties.getBaseUrl())

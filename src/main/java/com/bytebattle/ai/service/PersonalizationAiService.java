@@ -11,12 +11,17 @@ import com.bytebattle.recommendation.dto.CreateRecommendationRequest;
 import com.bytebattle.recommendation.enums.RecommendationPriority;
 import com.bytebattle.recommendation.enums.RecommendationSource;
 import com.bytebattle.recommendation.enums.RecommendationType;
+import com.bytebattle.recommendation.repository.RecommendationRepository;
 import com.bytebattle.recommendation.service.RecommendationService;
 import com.bytebattle.user.User;
 import com.bytebattle.user.UserRepository;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -25,12 +30,18 @@ import java.util.Map;
 @Service
 public class PersonalizationAiService {
 
+    private static final Logger log = LoggerFactory.getLogger(PersonalizationAiService.class);
+
+    /** Recommendations for the same user + type + concept are not re-created within this window. */
+    static final Duration RECOMMENDATION_DEDUPE_WINDOW = Duration.ofHours(24);
+
     private final PersonalizationAiClient aiClient;
     private final ByteDNARepository byteDNARepository;
     private final ConceptRepository conceptRepository;
     private final UserRepository userRepository;
     private final AiCurriculumResolver curriculumResolver;
     private final RecommendationService recommendationService;
+    private final RecommendationRepository recommendationRepository;
 
     public PersonalizationAiService(
             PersonalizationAiClient aiClient,
@@ -38,7 +49,8 @@ public class PersonalizationAiService {
             ConceptRepository conceptRepository,
             UserRepository userRepository,
             AiCurriculumResolver curriculumResolver,
-            RecommendationService recommendationService) {
+            RecommendationService recommendationService,
+            RecommendationRepository recommendationRepository) {
 
         this.aiClient = aiClient;
         this.byteDNARepository = byteDNARepository;
@@ -46,18 +58,24 @@ public class PersonalizationAiService {
         this.userRepository = userRepository;
         this.curriculumResolver = curriculumResolver;
         this.recommendationService = recommendationService;
+        this.recommendationRepository = recommendationRepository;
     }
 
     @Transactional
     public ByteDnaAiResponse onboard(OnboardingAiRequest request) {
 
-        ByteDnaAiResponse response = aiClient.onboard(request);
+        return saveOnboarding(request.userId(), aiClient.onboard(request));
+    }
 
-        User user = userRepository.findById(request.userId())
+    /** Persists an onboarding result as the user's Byte DNA (create or overwrite). Joins a surrounding transaction. */
+    @Transactional
+    public ByteDnaAiResponse saveOnboarding(java.util.UUID userId, ByteDnaAiResponse response) {
+
+        User user = userRepository.findById(userId)
                 .orElseThrow(() ->
-                        new IllegalArgumentException("User not found: " + request.userId()));
+                        new IllegalArgumentException("User not found: " + userId));
 
-        ByteDNA dna = byteDNARepository.findByUser_Id(request.userId())
+        ByteDNA dna = byteDNARepository.findByUser_Id(userId)
                 .orElseGet(() -> {
                     ByteDNA newDna = new ByteDNA();
                     newDna.setUser(user);
@@ -106,86 +124,116 @@ public class PersonalizationAiService {
             java.util.UUID conceptId,
             ExecutionResult result) {
 
-        Concept concept = conceptRepository.findById(conceptId)
+        try {
+            doProcessCodingAttempt(userId, conceptId, result);
+        } catch (RuntimeException e) {
+            // Best effort: personalization must never invalidate a valid coding submission.
+            log.error("Coding personalization failed for user={} concept={}", userId, conceptId, e);
+        }
+    }
+
+    private void doProcessCodingAttempt(
+            java.util.UUID userId,
+            java.util.UUID conceptId,
+            ExecutionResult result) {
+
+        int total = result.testCasesTotal();
+        int passed = result.testCasesPassed();
+        double accuracy = total > 0 ? (double) passed / total : 0.0;
+
+        runPipeline(new ActivityEvidence(
+                userId, conceptId, "coding", accuracy, (int) Math.round(accuracy * 100.0),
+                1, 0, 0, passed, total,
+                result.status() == com.bytebattle.coding.enums.CodingSubmissionStatus.PASSED));
+    }
+
+    /** Evidence of one finished activity (battle, debugging, interview, coding) for the personalization pipeline. */
+    public record ActivityEvidence(
+            java.util.UUID userId,
+            java.util.UUID conceptId,
+            String activityType,          // battle | coding | debugging | interview (the AI service's vocabulary)
+            double accuracy,
+            int score,
+            int attemptCount,
+            int timeSpentSeconds,
+            int hintsUsed,
+            Integer testCasesPassed,
+            Integer testCasesTotal,
+            boolean success) {
+    }
+
+    /**
+     * Same pipeline as coding, for any activity: diagnose, evolve Byte DNA, recommend. Best effort:
+     * personalization must never invalidate a result that was already graded and stored.
+     */
+    public void processActivity(ActivityEvidence evidence) {
+        try {
+            runPipeline(evidence);
+        } catch (RuntimeException e) {
+            log.error("Personalization failed for user={} concept={} activity={}",
+                    evidence.userId(), evidence.conceptId(), evidence.activityType(), e);
+        }
+    }
+
+    private void runPipeline(ActivityEvidence e) {
+        java.util.UUID userId = e.userId();
+
+        Concept concept = conceptRepository.findById(e.conceptId())
                 .orElseThrow(() ->
                         new IllegalArgumentException(
-                                "Concept not found: " + conceptId));
+                                "Concept not found: " + e.conceptId()));
 
         if (concept.getTopic() == null
                 || concept.getTopic().getSlug() == null
                 || concept.getTopic().getSlug().isBlank()) {
             throw new IllegalArgumentException(
-                    "Concept has no valid curriculum topic: " + conceptId);
+                    "Concept has no valid curriculum topic: " + e.conceptId());
         }
 
         String topic = concept.getTopic().getSlug();
 
-        int total = result.testCasesTotal();
-        int passed = result.testCasesPassed();
+        ByteDNA dna = byteDNARepository.findByUser_Id(userId).orElse(null);
+        if (dna == null) {
+            log.warn("Skipping personalization: user {} has no Byte DNA (onboarding not completed)", userId);
+            return;
+        }
 
-        double accuracy = total > 0
-                ? (double) passed / total
-                : 0.0;
+        DiagnosisAiResponse diagnosis = diagnose(new DiagnosisAiRequest(
+                userId,
+                e.activityType(),
+                e.accuracy(),
+                e.score(),
+                e.attemptCount(),
+                e.timeSpentSeconds(),
+                e.hintsUsed(),
+                e.testCasesPassed(),
+                e.testCasesTotal(),
+                e.success()));
 
-        int score = (int) Math.round(accuracy * 100.0);
+        ByteDnaEvolutionResponse evolution = evolveByteDna(new ByteDnaEvolutionRequest(
+                userId,
+                topic,
+                buildEvolutionByteDna(dna),
+                new ByteDnaEvolutionRequest.Diagnosis(null),
+                new ByteDnaEvolutionRequest.Performance(e.accuracy())));
 
-        DiagnosisAiRequest diagnosisRequest =
-                new DiagnosisAiRequest(
-                        userId,
-                        "coding",
-                        accuracy,
-                        score,
-                        1,
-                        0,
-                        0,
-                        passed,
-                        total,
-                        result.status()
-                                == com.bytebattle.coding.enums.CodingSubmissionStatus.PASSED
-                );
-
-        DiagnosisAiResponse diagnosis =
-                diagnose(diagnosisRequest);
-
-        ByteDNA dna = byteDNARepository.findByUser_Id(userId)
-                .orElseThrow(() ->
-                        new IllegalArgumentException(
-                                "Byte DNA profile not found for user: " + userId));
-
-        ByteDnaEvolutionRequest evolutionRequest =
-                new ByteDnaEvolutionRequest(
-                        userId,
-                        topic,
-                        buildEvolutionByteDna(dna),
-                        new ByteDnaEvolutionRequest.Diagnosis(null),
-                        new ByteDnaEvolutionRequest.Performance(accuracy)
-                );
-
-        ByteDnaEvolutionResponse evolution =
-                evolveByteDna(evolutionRequest);
-
-        ByteDnaEvolutionResponse.ByteDna evolvedDna =
-                evolution.byteDNA();
+        ByteDnaEvolutionResponse.ByteDna evolvedDna = evolution.byteDNA();
 
         if (evolvedDna == null) {
             throw new IllegalStateException(
                     "AI Byte DNA evolution returned no Byte DNA");
         }
 
-        RecommendationAiRequest recommendationRequest =
-                new RecommendationAiRequest(
-                        userId,
-                        evolvedDna.technicalExperience(),
-                        topic,
-                        defaultList(evolvedDna.repeatedMistakes()),
-                        diagnosis.conceptUnderstanding(),
-                        diagnosis.decisionMaking(),
-                        diagnosis.boundaryConditions(),
-                        diagnosis.codingImplementation(),
-                        diagnosis.hintDependency()
-                );
-
-        recommend(recommendationRequest);
+        recommend(new RecommendationAiRequest(
+                userId,
+                evolvedDna.technicalExperience(),
+                topic,
+                defaultList(evolvedDna.repeatedMistakes()),
+                diagnosis.conceptUnderstanding(),
+                diagnosis.decisionMaking(),
+                diagnosis.boundaryConditions(),
+                diagnosis.codingImplementation(),
+                diagnosis.hintDependency()));
     }
 
     private ByteDnaEvolutionRequest.ByteDna buildEvolutionByteDna(
@@ -204,6 +252,20 @@ public class PersonalizationAiService {
                 defaultList(dna.getDifficultyAreas()),
                 defaultMap(dna.getDifficultyProgression())
         );
+    }
+
+    /**
+     * Evolves ONLY the caller's own Byte DNA. The userId and the Byte DNA snapshot in the request are
+     * ignored and replaced by the caller's id and the stored DNA; only the diagnosis/topic/performance
+     * of the event come from the client.
+     */
+    public ByteDnaEvolutionResponse evolveByteDnaForUser(java.util.UUID userId, ByteDnaEvolutionRequest request) {
+        ByteDNA dna = byteDNARepository.findByUser_Id(userId)
+                .orElseThrow(() -> new com.bytebattle.exception.ResourceNotFoundException(
+                        "Byte DNA profile not found; complete onboarding first"));
+        ByteDnaEvolutionRequest bound = new ByteDnaEvolutionRequest(
+                userId, request.topic(), buildEvolutionByteDna(dna), request.diagnosis(), request.performance());
+        return evolveByteDna(bound);
     }
 
     public DiagnosisAiResponse diagnose(DiagnosisAiRequest request) {
@@ -299,7 +361,16 @@ public class PersonalizationAiService {
                         null
                 );
 
-        recommendationService.create(createRequest);
+        boolean duplicate = recommendationRepository.existsByUserIdAndTypeAndConceptIdAndCreatedAtAfter(
+                request.userId(), type, concept.getId(),
+                Instant.now().minus(RECOMMENDATION_DEDUPE_WINDOW));
+
+        if (duplicate) {
+            log.debug("Skipping duplicate recommendation user={} type={} concept={}",
+                    request.userId(), type, concept.getId());
+        } else {
+            recommendationService.create(createRequest);
+        }
 
         return response;
     }
@@ -373,50 +444,32 @@ public class PersonalizationAiService {
         };
     }
 
-    private ByteDNA.TechnicalExperience parseTechnicalExperience(
-            String value) {
-
-        if (value == null || value.isBlank()) {
-            return ByteDNA.TechnicalExperience.BEGINNER;
-        }
-
-        return ByteDNA.TechnicalExperience.valueOf(
-                value.trim().toUpperCase()
-        );
+    private ByteDNA.TechnicalExperience parseTechnicalExperience(String value) {
+        return parseEnum(ByteDNA.TechnicalExperience.class, value, ByteDNA.TechnicalExperience.BEGINNER);
     }
 
-    private ByteDNA.LearningStyle parseLearningStyle(
-            String value) {
-
-        if (value == null || value.isBlank()) {
-            return null;
-        }
-
-        String normalized = value.trim()
-                .toUpperCase()
-                .replace('-', '_')
-                .replace(' ', '_');
-
-        if ("INTERVIEW_PREP".equals(normalized)) {
-            normalized = "INTERVEIW_PREP";
-        }
-
-        return ByteDNA.LearningStyle.valueOf(normalized);
+    private ByteDNA.LearningStyle parseLearningStyle(String value) {
+        // "INTERVEIW_PREP" was the legacy (typo) spelling of the constant
+        String v = value == null ? null : value.trim().toUpperCase().replace("INTERVEIW", "INTERVIEW");
+        return parseEnum(ByteDNA.LearningStyle.class, v, null);
     }
 
-    private ByteDNA.ExplanationStyle parseExplanationStyle(
-            String value) {
+    private ByteDNA.ExplanationStyle parseExplanationStyle(String value) {
+        return parseEnum(ByteDNA.ExplanationStyle.class, value, null);
+    }
 
+    /** Never throws: unknown/blank AI strings fall back to the default (with a warning). */
+    static <E extends Enum<E>> E parseEnum(Class<E> type, String value, E defaultValue) {
         if (value == null || value.isBlank()) {
-            return null;
+            return defaultValue;
         }
-
-        return ByteDNA.ExplanationStyle.valueOf(
-                value.trim()
-                        .toUpperCase()
-                        .replace('-', '_')
-                        .replace(' ', '_')
-        );
+        String normalized = value.trim().toUpperCase().replace('-', '_').replace(' ', '_');
+        try {
+            return Enum.valueOf(type, normalized);
+        } catch (IllegalArgumentException e) {
+            log.warn("Unknown {} value from AI: '{}'; using default {}", type.getSimpleName(), value, defaultValue);
+            return defaultValue;
+        }
     }
 
     private List<String> defaultList(List<String> value) {

@@ -21,17 +21,20 @@ public class AuthService {
     private final AuthenticationManager authenticationManager;
     private final PasswordResetTokenRepository passwordResetTokenRepository;
     private final EmailService emailService;
+    private final OnboardingStatusProvider onboardingStatusProvider;
 
     public AuthService(UserRepository userRepository, PasswordEncoder passwordEncoder,
                         JwtUtil jwtUtil, AuthenticationManager authenticationManager,
                         PasswordResetTokenRepository passwordResetTokenRepository,
-                        EmailService emailService) {
+                        EmailService emailService,
+                        OnboardingStatusProvider onboardingStatusProvider) {
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.jwtUtil = jwtUtil;
         this.authenticationManager = authenticationManager;
         this.passwordResetTokenRepository = passwordResetTokenRepository;
         this.emailService = emailService;
+        this.onboardingStatusProvider = onboardingStatusProvider;
     }
 
     public AuthResponseDTO register(RegisterRequestDTO request) {
@@ -49,7 +52,8 @@ public class AuthService {
         User saved = userRepository.save(user);
 
         String token = jwtUtil.generateToken(saved.getEmail());
-        return new AuthResponseDTO(token, saved.getId(), saved.getEmail(), saved.getName());
+        // a brand-new account can never have completed onboarding
+        return new AuthResponseDTO(token, saved.getId(), saved.getEmail(), saved.getName(), false);
     }
 
     public AuthResponseDTO login(LoginRequestDTO request) {
@@ -61,7 +65,8 @@ public class AuthService {
                 .orElseThrow(() -> new IllegalArgumentException("Invalid email or password"));
 
         String token = jwtUtil.generateToken(user.getEmail());
-        return new AuthResponseDTO(token, user.getId(), user.getEmail(), user.getName());
+        return new AuthResponseDTO(token, user.getId(), user.getEmail(), user.getName(),
+                onboardingStatusProvider.isOnboardingCompleted(user.getId()));
     }
 
     // POST /api/auth/forgot-password

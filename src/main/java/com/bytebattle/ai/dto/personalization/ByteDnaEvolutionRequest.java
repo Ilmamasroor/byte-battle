@@ -28,4 +28,8 @@ public record ByteDnaEvolutionRequest(
             List<String> difficultyAreas,
             Map<String, Object> difficultyProgression
     ) {}
+
+    public ByteDnaEvolutionRequest withUserId(UUID userId) {
+        return new ByteDnaEvolutionRequest(userId, topic, byteDNA, diagnosis, performance);
+    }
 }

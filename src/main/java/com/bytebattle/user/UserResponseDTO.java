@@ -9,6 +9,7 @@ public class UserResponseDTO {
     private String username; // maps to User.name internally; kept as "username" in the API for compatibility
     private User.Role role;
     private Instant createdAt;
+    private boolean onboardingCompleted;
 
     public UserResponseDTO() {
     }
@@ -30,6 +31,9 @@ public class UserResponseDTO {
                 user.getCreatedAt()
         );
     }
+
+    public boolean isOnboardingCompleted() { return onboardingCompleted; }
+    public void setOnboardingCompleted(boolean onboardingCompleted) { this.onboardingCompleted = onboardingCompleted; }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }

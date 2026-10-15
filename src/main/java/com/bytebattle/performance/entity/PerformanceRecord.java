@@ -54,8 +54,4 @@ public class PerformanceRecord {
         createdAt = Instant.now();
     }
 
-	public int getHintsUsed() {
-		// TODO Auto-generated method stub
-		return 0;
-	}
 }

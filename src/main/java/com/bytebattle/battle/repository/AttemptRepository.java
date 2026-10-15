@@ -1,7 +1,6 @@
 package com.bytebattle.battle.repository;
 
 import com.bytebattle.battle.entity.Attempt;
-import com.bytebattle.battle.entity.BattleSession;
 
 import org.springframework.data.jpa.repository.JpaRepository;
 
@@ -13,7 +12,5 @@ public interface AttemptRepository extends JpaRepository<Attempt, UUID> {
 
     List<Attempt> findByBattleSessionId(UUID battleSessionId);
 
-   
-
-	Optional<BattleSession> findByBattleSessionIdAndBattleQuestionId(UUID sessionId, UUID questionId);
+    Optional<Attempt> findByBattleSessionIdAndBattleQuestionId(UUID sessionId, UUID questionId);
 }

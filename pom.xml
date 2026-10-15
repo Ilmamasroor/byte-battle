@@ -90,6 +90,14 @@
         <scope>test</scope>
     </dependency>
 
+    <!-- In-memory DB for the context-load smoke test only (version pinned to what is available offline) -->
+    <dependency>
+        <groupId>com.h2database</groupId>
+        <artifactId>h2</artifactId>
+        <version>2.2.224</version>
+        <scope>test</scope>
+    </dependency>
+
     <!-- JWT -->
     <dependency>
         <groupId>io.jsonwebtoken</groupId>

@@ -1,37 +1,33 @@
 package com.bytebattle.ai.client;
 
-
+import com.bytebattle.ai.config.AiProperties;
 import com.bytebattle.ai.dto.AiRequest;
 import com.bytebattle.ai.dto.AiResponse;
-import com.bytebattle.ai.exception.AiServiceException;
-
-import org.springframework.beans.factory.annotation.Value;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import org.springframework.web.client.RestClient;
-import org.springframework.web.client.RestClientException;
 
-// Real implementation — talks to the separate Python FastAPI service (doc §37).
-// Not registered as @Primary yet; wire this in over StubLlmClient once FastAPI is live.
+/**
+ * The real, default LlmClient: POST /ai/process on the Python FastAPI service. Replaced only by the
+ * explicit "stub" profile or by bytebattle.ai.enabled=false (see DisabledLlmClient).
+ */
 @Component
+@Profile("!stub")
+@ConditionalOnProperty(name = "bytebattle.ai.enabled", havingValue = "true", matchIfMissing = true)
 public class FastApiLlmClient implements LlmClient {
 
     private final RestClient restClient;
+    private final AiProperties props;
 
-    public FastApiLlmClient(@Value("${bytebattle.ai.base-url}") String baseUrl,
-                             @Value("${bytebattle.ai.timeout-ms}") int timeoutMs) {
-        this.restClient = RestClient.builder().baseUrl(baseUrl).build();
+    public FastApiLlmClient(@Qualifier("aiRestClient") RestClient restClient, AiProperties props) {
+        this.restClient = restClient;
+        this.props = props;
     }
 
     @Override
     public AiResponse call(AiRequest request) {
-        try {
-            return restClient.post()
-                    .uri("/ai/process")
-                    .body(request)
-                    .retrieve()
-                    .body(AiResponse.class);
-        } catch (RestClientException e) {
-            throw new AiServiceException("FastAPI call failed: " + e.getMessage(), e);
-        }
+        return AiHttp.post(restClient, props, "/ai/process", request, AiResponse.class);
     }
 }

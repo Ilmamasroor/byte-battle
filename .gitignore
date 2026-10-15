@@ -35,3 +35,18 @@ build/
 # Local AI/Python environment
 .env
 .venv/
+
+# Secrets / local artifacts
+.env
+tatus
+*.log
+/target
+
+# Local AI-assistant / planning tooling (not part of the product)
+.agents/
+.claude/
+.cline/
+_bmad/
+_bmad-output/
+.pytest_cache/
+__pycache__/

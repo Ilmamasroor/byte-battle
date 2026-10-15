@@ -5,6 +5,7 @@ import com.bytebattle.battle.dto.SubmitAnswerRequest;
 import com.bytebattle.battle.dto.SubmitAnswerResponse;
 import com.bytebattle.battle.service.BattleService;
 import jakarta.validation.Valid;
+import com.bytebattle.security.CurrentUser;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
@@ -19,36 +20,26 @@ import java.util.UUID;
 public class AttemptController {
 
     private final BattleService battleService;
+    private final CurrentUser currentUser;
 
-    public AttemptController(BattleService battleService) {
+    public AttemptController(BattleService battleService, CurrentUser currentUser) {
         this.battleService = battleService;
+        this.currentUser = currentUser;
     }
 
     @PostMapping("/{sessionId}/attempts")
     public ResponseEntity<SubmitAnswerResponse> submitAnswer(@PathVariable UUID sessionId,
                                                                @Valid @RequestBody SubmitAnswerRequest request,
                                                                Authentication authentication) {
-        UUID userId = resolveUserId(authentication);
+        UUID userId = currentUser.id(authentication);
         return ResponseEntity.ok(battleService.submitAnswer(sessionId, userId, request));
     }
 
     @PostMapping("/{sessionId}/complete")
     public ResponseEntity<BattleResultResponse> completeSession(@PathVariable UUID sessionId,
                                                                   Authentication authentication) {
-        UUID userId = resolveUserId(authentication);
-        return ResponseEntity.ok(battleService.getResult(sessionId, userId));
+        UUID userId = currentUser.id(authentication);
+        return ResponseEntity.ok(battleService.completeSession(sessionId, userId));
     }
 
-    /**
-     * Optional.ofNullable(authentication) covers "no token at all";
-     * the two .map() calls cover "token present but malformed name."
-     * Either failure collapses to the same 401 — one exit path, not two.
-     */
-    private UUID resolveUserId(Authentication authentication) {
-        return Optional.ofNullable(authentication)
-                .map(Authentication::getName)
-                .map(UUID::fromString)
-                .orElseThrow(() -> new ResponseStatusException(
-                        HttpStatus.UNAUTHORIZED, "Authentication required"));
-    }
 }

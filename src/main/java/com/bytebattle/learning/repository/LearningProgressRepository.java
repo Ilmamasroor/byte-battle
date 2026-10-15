@@ -12,4 +12,6 @@ public interface LearningProgressRepository extends JpaRepository<LearningProgre
     Optional<LearningProgress> findByUserIdAndConceptId(UUID userId, UUID conceptId);
  // LearningProgressRepository.java — add this line inside the interface
     List<LearningProgress> findByUserId(UUID userId);
+
+    Optional<LearningProgress> findByIdAndUserId(UUID id, UUID userId);
 }
