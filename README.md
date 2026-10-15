@@ -24,7 +24,7 @@ Root package: `com.bytebattle`
 
 ## 2. Quick Start
 
-Repository layout: this folder is the Spring Boot backend; `ai-service/` is the Python AI service; `judge0/` is the code-execution sandbox (Docker). Architecture and diagrams: [docs/architecture.md](docs/architecture.md).
+Repository layout: this folder is the Spring Boot backend; `ai-service/` is the Python AI service; `judge0/` is the code-execution sandbox (Docker); `frontend/` is the Flutter client. Architecture and diagrams: [docs/architecture.md](docs/architecture.md).
 
 **Prerequisites:** Java 17+, Docker (with Compose), Python 3.11+, a free [Groq API key](https://console.groq.com/keys) for the LLM features.
 
@@ -44,7 +44,11 @@ cd ..
 export SPRING_PROFILES_ACTIVE=dev DB_PASSWORD=devpass JUDGE0_AUTH_TOKEN=<JUDGE0_AUTHN_TOKEN from judge0/.env>
 ./mvnw spring-boot:run
 
-# 5. Verify the whole stack (registers a throwaway learner and walks the full loop)
+# 5. Flutter client (needs the Flutter SDK; base URL is in frontend/lib/app/constants/api_endpoints.dart,
+#    use http://10.0.2.2:8080 from an Android emulator)
+cd frontend && flutter pub get && flutter run && cd ..
+
+# 6. Verify the whole stack (registers a throwaway learner and walks the full loop)
 python3 scripts/e2e_smoke.py
 ```
 
@@ -247,7 +251,7 @@ With the whole stack running (Postgres, Judge0, AI service, backend) `python3 sc
 
 ## 7. Known Limitations / Next Steps
 
-- There is no Flutter client in this repository; everything above is exercised over HTTP.
+- The Flutter client in `frontend/` was written against an earlier version of this API (it uses `/api/ai/onboarding` + `/api/learner-profile` for onboarding, which still works) and does not yet use `/api/onboarding`, `/api/visualize`, `/api/learning/*` or `/api/gamification/me`. It has not been build-tested against the current backend.
 - The visualizer understands Java thread code (race, safe, deadlock); other languages/concepts need extractor support in the AI service. The onboarding guard remembers completed users in memory (cleared on restart, then re-checked in the DB).
 - Concept/Topic/Domain have read APIs only; content is managed through Flyway seed migrations.
 - Password reset emails need valid SMTP credentials configured locally.

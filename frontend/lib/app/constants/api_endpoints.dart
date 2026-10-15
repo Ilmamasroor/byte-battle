@@ -10,7 +10,9 @@ class ApiEndpoints {
   // Toggle this one flag to switch every request between your local
   // backend and the ngrok tunnel — nothing else in the app needs to
   // change.
-  static const bool _useNgrok = true;
+  // Default is the local backend. Set to true only while a tunnel is running and
+  // _ngrokBaseUrl below has been updated to its current URL (the committed one has expired).
+  static const bool _useNgrok = false;
 
   static const String _localBaseUrl = 'http://localhost:8080';
 
