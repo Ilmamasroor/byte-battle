@@ -1,0 +1,17 @@
+from fastapi import APIRouter
+
+from app.models.battle_hint_models import BattleHintRequest
+from app.services.battle_hint_service import generate_battle_hint
+
+router = APIRouter()
+
+
+@router.post("/ai/battle-hint")
+def battle_hint(data: BattleHintRequest):
+    hint_data = generate_battle_hint(data)
+
+    return {
+        "concept": data.concept,
+        "question": data.question,
+        "hint": hint_data,
+    }
