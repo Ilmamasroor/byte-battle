@@ -1,0 +1,395 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001048",
+ "title": "Sharding splits data, replication copies it",
+ "kind": "structure",
+ "intro": "One database is full and a single copy is risky. Sharding splits the users; replication copies each piece.",
+ "predict": {
+  "question": "Users are placed on shard (id mod 3). Which shard stores user 5?",
+  "options": [
+   "Shard 0",
+   "Shard 1",
+   "Shard 2"
+  ],
+  "answer": 2,
+  "reveal": "5 divided by 3 leaves remainder 2, so user 5 lives on shard 2. Any app server can compute that without searching."
+ },
+ "takeaway": "Sharding splits data by a key so each shard holds a slice; replication copies a slice to several machines for safety and read capacity.",
+ "steps": [
+  {
+   "say": "Six users all live in one database (shard 0). It is getting full and slow. Let's split them up.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u1",
+         "s": "idle"
+        },
+        {
+         "v": "u2",
+         "s": "idle"
+        },
+        {
+         "v": "u3",
+         "s": "idle"
+        },
+        {
+         "v": "u4",
+         "s": "idle"
+        },
+        {
+         "v": "u5",
+         "s": "idle"
+        },
+        {
+         "v": "u6",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Sharding rule: shard = user id mod 3 (the remainder after dividing by 3). The key picks the shard.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u1",
+         "s": "cur"
+        },
+        {
+         "v": "u2",
+         "s": "cur"
+        },
+        {
+         "v": "u3",
+         "s": "cur"
+        },
+        {
+         "v": "u4",
+         "s": "cur"
+        },
+        {
+         "v": "u5",
+         "s": "cur"
+        },
+        {
+         "v": "u6",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "User 1 goes to shard 1, user 2 to shard 2, user 3 to shard 0 (3 mod 3 is 0).",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u3",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "u1",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "u2",
+         "s": "done"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Users 4, 5 and 6 follow the same rule: shards 1, 2, 0. Each shard now holds only two users.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u3",
+         "s": "idle"
+        },
+        {
+         "v": "u6",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "u1",
+         "s": "idle"
+        },
+        {
+         "v": "u4",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "u2",
+         "s": "idle"
+        },
+        {
+         "v": "u5",
+         "s": "done"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Finding user 5: compute 5 mod 3 = 2 and ask only shard 2. The other shards are never touched.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u3",
+         "s": "dim"
+        },
+        {
+         "v": "u6",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "u1",
+         "s": "dim"
+        },
+        {
+         "v": "u4",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "u2",
+         "s": "cur"
+        },
+        {
+         "v": "u5",
+         "s": "found"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "But each shard has one copy. If shard 2 dies, users 2 and 5 are lost. Sharding alone is not safety.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "shards (id mod 3)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "u3",
+         "s": "idle"
+        },
+        {
+         "v": "u6",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "u1",
+         "s": "idle"
+        },
+        {
+         "v": "u4",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "u2",
+         "s": "bad"
+        },
+        {
+         "v": "u5",
+         "s": "bad"
+        }
+       ]
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Replication: shard 2 gets a primary (takes writes) and two replicas (copies). A write arrives: u2 changes name.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "shard 2 copies",
+     "cells": [
+      {
+       "v": "Primary",
+       "s": "cur"
+      },
+      {
+       "v": "Rep 1",
+       "s": "idle"
+      },
+      {
+       "v": "Rep 2",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "The primary copies that write to both replicas. Now all three copies hold the same data.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "shard 2 copies",
+     "cells": [
+      {
+       "v": "Primary",
+       "s": "done"
+      },
+      {
+       "v": "Rep 1",
+       "s": "swap"
+      },
+      {
+       "v": "Rep 2",
+       "s": "swap"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Reads can be served by the replicas, so the primary is not the bottleneck. Note a replica may lag a moment behind.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "shard 2 copies",
+     "cells": [
+      {
+       "v": "Primary",
+       "s": "idle"
+      },
+      {
+       "v": "Rep 1",
+       "s": "found"
+      },
+      {
+       "v": "Rep 2",
+       "s": "found"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "If the primary dies, a replica is promoted and the data survives. Sharding spreads size; replication gives safety.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "shard 2 copies",
+     "cells": [
+      {
+       "v": "Primary",
+       "s": "bad"
+      },
+      {
+       "v": "Rep 1",
+       "s": "found"
+      },
+      {
+       "v": "Rep 2",
+       "s": "done"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

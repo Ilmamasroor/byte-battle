@@ -2,54 +2,47 @@ import 'package:flutter/material.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
-import '../../../../core/utils/helpers.dart';
+import '../widgets/curriculum_body.dart';
 import '../widgets/domain_card.dart';
 
-/// DomainListScreen — the top-level curriculum browser: every technical
-/// domain in the curriculum, with a topic count and overall progress
-/// for each. Reached either from the dashboard's "Explore Curriculum"
-/// entry point or by tapping an unlocked step on [RoadmapScreen] (in
-/// which case [highlightDomain] is passed so that step's card can be
-/// called out).
+/// DomainListScreen: every curriculum domain from `/api/curriculum/domains`, with its real topic count and the
+/// learner's progress across its concepts. Reached from the dashboard or by tapping a [RoadmapScreen] step (in
+/// which case [highlightDomain] calls that card out).
 class DomainListScreen extends StatelessWidget {
   final String? highlightDomain;
 
   const DomainListScreen({super.key, this.highlightDomain});
 
-  // TODO: replace with data from CurriculumRepository once the
-  // `/api/curriculum/domains` endpoint exists — this is placeholder
-  // data matching the product's stated curriculum spec.
-  static const _domains = [
-    (icon: Icons.coffee_rounded, name: 'Java', topics: 9, progress: 0.62),
-    (icon: Icons.dns_rounded, name: 'Backend Development', topics: 8, progress: 0.35),
-    (
-      icon: Icons.account_tree_rounded,
-      name: 'Data Structures & Algorithms',
-      topics: 12,
-      progress: 0.48,
-    ),
-    (icon: Icons.storage_rounded, name: 'DBMS & SQL', topics: 7, progress: 0.20),
-    (icon: Icons.memory_rounded, name: 'Operating Systems', topics: 6, progress: 0.0),
-    (icon: Icons.lan_rounded, name: 'Computer Networks', topics: 6, progress: 0.0),
-    (icon: Icons.architecture_rounded, name: 'System Design', topics: 8, progress: 0.0),
-    (
-      icon: Icons.record_voice_over_rounded,
-      name: 'Technical Interview Preparation',
-      topics: 5,
-      progress: 0.0,
-    ),
-  ];
+  static IconData _iconFor(String slug) {
+    switch (slug) {
+      case 'java-programming':
+        return Icons.coffee_rounded;
+      case 'data-structures-algorithms':
+        return Icons.account_tree_rounded;
+      case 'dbms-sql':
+        return Icons.storage_rounded;
+      case 'operating-systems':
+        return Icons.memory_rounded;
+      case 'computer-networks':
+        return Icons.lan_rounded;
+      case 'system-design':
+        return Icons.architecture_rounded;
+      case 'technical-interview-prep':
+        return Icons.record_voice_over_rounded;
+      default:
+        return Icons.menu_book_rounded;
+    }
+  }
 
-  void _openTopics(BuildContext context, String domainName) {
+  void _openTopics(BuildContext context, String domainId, String domainName) {
     Navigator.of(context).pushNamed(
       RouteNames.topicList,
-      arguments: {'domainName': domainName},
+      arguments: {'domainId': domainId, 'domainName': domainName},
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Helpers.noApiYet('DomainListScreen');
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -60,19 +53,26 @@ class DomainListScreen extends StatelessWidget {
         ),
         title: const Text('Domains', style: AppTextStyles.heading2),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.all(AppDimensions.screenPadding),
-        itemCount: _domains.length,
-        separatorBuilder: (_, __) => const SizedBox(height: AppDimensions.spacingMd),
-        itemBuilder: (context, index) {
-          final domain = _domains[index];
-          return DomainCard(
-            icon: domain.icon,
-            name: domain.name,
-            topicCount: domain.topics,
-            progress: domain.progress,
-            highlighted: highlightDomain != null && highlightDomain == domain.name,
-            onTap: () => _openTopics(context, domain.name),
+      body: CurriculumBody(
+        emptyMessage: 'The curriculum has no domains yet.',
+        builder: (context, tree) {
+          if (tree.domains.isEmpty) return null;
+          return ListView.separated(
+            physics: const AlwaysScrollableScrollPhysics(),
+            padding: const EdgeInsets.all(AppDimensions.screenPadding),
+            itemCount: tree.domains.length,
+            separatorBuilder: (_, __) => const SizedBox(height: AppDimensions.spacingMd),
+            itemBuilder: (context, index) {
+              final node = tree.domains[index];
+              return DomainCard(
+                icon: _iconFor(node.domain.slug),
+                name: node.domain.name,
+                topicCount: node.topics.length,
+                progress: tree.domainProgress(node),
+                highlighted: highlightDomain != null && highlightDomain == node.domain.name,
+                onTap: () => _openTopics(context, node.domain.id, node.domain.name),
+              );
+            },
           );
         },
       ),

@@ -22,19 +22,19 @@ class ErrorView extends StatelessWidget {
           mainAxisSize: MainAxisSize.min,
           children: [
             const Icon(Icons.error_outline_rounded,
-                color: AppColors.btnGamificationPink, size: 32),
+                color: AppColors.error, size: 34),
             const SizedBox(height: AppDimensions.spacingMd),
             Text(
               message,
               textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
+              style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
             ),
             if (onRetry != null) ...[
               const SizedBox(height: AppDimensions.spacingLg),
               TextButton.icon(
                 onPressed: onRetry,
-                icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.accentCyan),
-                label: const Text('Retry', style: TextStyle(color: AppColors.accentCyan)),
+                icon: const Icon(Icons.refresh_rounded, size: 18, color: AppColors.primaryLight),
+                label: const Text('Retry'),
               ),
             ],
           ],

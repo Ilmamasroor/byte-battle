@@ -1,122 +1,132 @@
 import 'package:flutter/material.dart';
 
-/// Central color palette for the BYTL Battle app.
+/// Byte Battle colour system, "Ember on Ink".
 ///
-/// Every screen's real background is now the single image at
-/// `AppConstants.appBackground` (painted once behind the whole app — see
-/// `BytlBattleApp`'s `MaterialApp.builder` in app.dart), not a flat color.
-/// The colors below are derived from that image's deep-navy-blue tone and
-/// are only used for things that still need a solid color: cards/surfaces,
-/// input fields, borders, text, and the brand accent — everything is set
-/// to sit legibly on top of that background.
+/// The story in one line: a calm, near-black ink canvas (so code and diagrams stay readable) lit by one warm
+/// brand colour, Flame, which means "your next move". Aqua is the second voice for visualisation and insight;
+/// Gold is reserved for XP and streaks; Mint and Rose are the only success / error colours, and both are tuned to
+/// sit on the violet-tinted ink without the harsh clash that pure green and red had on blue.
+///
+/// Token names from earlier iterations are kept (so every screen picks up the new look) but their values now
+/// belong to this palette. New code should prefer the semantic names at the bottom.
 class AppColors {
   AppColors._();
 
-  // Solid fallbacks — small elements only (progress-bar tracks, chip
-  // backgrounds, image-loading placeholders). Sampled from the darkest
-  // part of the background image.
-  static const Color background = Color(0xFF071021);
-  static const Color backgroundSecondary = Color(0xFF0B1C38);
+  // ── Canvas ─────────────────────────────────────────────────────────
+  static const Color background = Color(0xFF0E0D13);
+  static const Color backgroundSecondary = Color(0xFF15131C);
+  static const Color surface = Color(0xFF1C1A26);
+  static const Color surfaceRaised = Color(0xFF242130);
+  static const Color inputFill = Color(0xFF1A1823);
 
-  // Cards / surfaces — a touch lighter than the background image so
-  // content still reads clearly on top of it.
-  static const Color surface = Color(0xFF122A4C);
-  static const Color inputFill = Color(0xFF0F2340);
+  // ── Brand: Flame ──────────────────────────────────────────────────
+  static const Color primary = Color(0xFFFF7A3D);
+  static const Color primaryDark = Color(0xFFE5541F);
+  static const Color primaryLight = Color(0xFFFFB07F);
 
-  // Brand / accent — bright blue lifted straight from the sword/shield
-  // glow in the Byte Battle logo, replacing the old purple theme.
-  // Bumped up in saturation/brightness so buttons read as bold, electric
-  // color pops (not muted/washed-out) against the dark navy background.
-  static const Color primary = Color(0xFF1966FF);
-  static const Color primaryDark = Color(0xFF0F3FA8);
-  static const Color primaryLight = Color(0xFF66A8FF);
-  static const Color accentCyan = Color(0xFF22D3FF);
+  /// Second voice: visualisation, insight, focus rings.
+  static const Color accentCyan = Color(0xFF5CCFEF);
 
   static const LinearGradient primaryGradient = LinearGradient(
-    colors: [primaryDark, primary],
-    begin: Alignment.centerLeft,
-    end: Alignment.centerRight,
+    colors: [Color(0xFFFF9A4D), primary, primaryDark],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
   );
 
-  // ── Button Styles palette (from the "Button Styles" design reference) ──
-  // Used by everything under core/widgets/buttons/. Kept separate from the
-  // brand colors above so existing screens are untouched.
-  static const Color btnPrimaryBlue = Color(0xFF00E5FF); // Primary Blue
-  static const Color btnAccentPurple = Color(0xFFA855F7); // Accent Purple
-  static const Color btnSuccessGreen = Color(0xFF22C55E); // Success Green
-  static const Color btnErrorRed = Color(0xFFEF4444); // Error Red
-  static const Color btnWarningOrange = Color(0xFFF59E0B); // Warning Orange
-  static const Color btnNeutralGrey = Color(0xFF94A3B8); // Neutral Grey
-  static const Color btnGamificationPink = Color(0xFFEC4899); // Pink accent
-  static const Color btnGamificationGold = Color(0xFFFBBF24); // Gold accent
+  // ── Legacy button palette (kept so existing widgets compile) ────────
+  static const Color btnPrimaryBlue = Color(0xFFFF9A4D); // hover Flame
+  static const Color btnAccentPurple = Color(0xFFB39DFF); // Orchid, soft violet accent
+  static const Color btnSuccessGreen = Color(0xFF3DDC97);
+  static const Color btnErrorRed = Color(0xFFFF5D73);
+  static const Color btnWarningOrange = Color(0xFFFFC145);
+  static const Color btnNeutralGrey = Color(0xFF8E88A0);
+  static const Color btnGamificationPink = accentCyan;
+  static const Color btnGamificationGold = Color(0xFFFFD166);
 
-  // Default-state gradient for Primary / Action / Navigation buttons
-  // (cyan → brand blue, diagonal-left-to-right pill fill).
   static const LinearGradient btnPrimaryGradient = LinearGradient(
-    colors: [Color(0xFF22E1E1), Color(0xFF7C6CF7), Color(0xFFEC4899)],
-    stops: [0.0, 0.55, 1.0],
+    colors: [Color(0xFFFF8A4A), Color(0xFFFF6A2E)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
   static const LinearGradient btnPrimaryGradientHover = LinearGradient(
-    colors: [Color(0xFF7DF3F3), Color(0xFFA79BFA), Color(0xFFF9A8D4)],
-    stops: [0.0, 0.55, 1.0],
+    colors: [Color(0xFFFFA05F), Color(0xFFFF7A3D)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
-  static const Color btnPrimaryPressed = Color(0xFF3B2FA0);
+  static const Color btnPrimaryPressed = Color(0xFFD9511C);
 
   static const LinearGradient btnPinkGradient = LinearGradient(
-    colors: [Color(0xFFF472B6), btnGamificationPink],
+    colors: [Color(0xFF5CCFEF), Color(0xFF3FA9E8)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
   static const LinearGradient btnPinkGradientHover = LinearGradient(
-    colors: [Color(0xFFF9A8D4), Color(0xFFDB2777)],
+    colors: [Color(0xFF7FDDF5), Color(0xFF5CBBF0)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
   static const LinearGradient btnGoldGradient = LinearGradient(
-    colors: [Color(0xFFFDE68A), btnGamificationGold],
+    colors: [Color(0xFFFFE29A), btnGamificationGold],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
   static const LinearGradient btnGoldGradientHover = LinearGradient(
-    colors: [Color(0xFFFEF08A), Color(0xFFF59E0B)],
+    colors: [Color(0xFFFFEBB8), Color(0xFFFFC145)],
     begin: Alignment.centerLeft,
     end: Alignment.centerRight,
   );
 
-  // Solid, no-glow border used on every button in place of drop-shadows
-  // (buttons must never carry a boxShadow, in any state).
-  static const Color btnDarkBorder = Color(0xFF0A1524);
+  static const Color btnDarkBorder = Color(0xFF0A0910);
 
-  // Text
-  static const Color textPrimary = Color(0xFFF3F7FF);
-  static const Color textSecondary = Color(0xFF9FB3D1);
-  static const Color textHint = Color(0xFF66799C);
+  // ── Text ───────────────────────────────────────────────────────────
+  static const Color textPrimary = Color(0xFFF7F3EE);
+  static const Color textSecondary = Color(0xFFBAB4C8);
+  static const Color textHint = Color(0xFF8D879E); // AA on the ink canvas
 
-  // Borders / dividers
-  static const Color border = Color(0xFF1E3A5F);
-  static const Color divider = Color(0xFF17304F);
+  /// Text that sits ON a Flame / Gold / Aqua fill. Dark ink gives far better contrast than white on orange.
+  static const Color onAccent = Color(0xFF1B1008);
 
-  // Lighter "shiny" border used on input fields now that the fields
-  // are no longer solid filled boxes — a brighter, glowing outline
-  // instead of a flat dark border.
-  static const Color borderLight = Color(0xFF5EA8FF);
+  // ── Lines ──────────────────────────────────────────────────────────
+  static const Color border = Color(0xFF2E2B3C);
+  static const Color divider = Color(0xFF242130);
+  static const Color borderLight = Color(0xFF433F57);
 
-  // Status
-  static const Color success = Color(0xFF22C55E);
-  static const Color error = Color(0xFFEF4444);
-  static const Color warning = Color(0xFFF59E0B);
+  // ── Status ─────────────────────────────────────────────────────────
+  static const Color success = Color(0xFF3DDC97); // Mint
+  static const Color error = Color(0xFFFF5D73); // Rose
+  static const Color warning = Color(0xFFFFC145); // Amber
 
-  // Misc
+  // ── Semantic (preferred in new code) ───────────────────────────────
+  static const Color xp = Color(0xFFFFD166);
+  static const Color streak = Color(0xFFFF8A4A);
+  static const Color insight = accentCyan;
+  static const Color orchid = btnAccentPurple;
+
+  // ── Misc ───────────────────────────────────────────────────────────
   static const Color white = Color(0xFFFFFFFF);
   static const Color black = Color(0xFF000000);
   static const Color overlay = Color(0x99000000);
+
+  /// One colour per difficulty everywhere: Easy = Mint, Medium = Amber, Hard = Orchid (red stays reserved for errors).
+  static Color difficulty(String? level) {
+    switch ((level ?? '').toLowerCase()) {
+      case 'beginner':
+      case 'easy':
+        return success;
+      case 'hard':
+      case 'advanced':
+        return orchid;
+      default:
+        return warning;
+    }
+  }
+
+  /// A soft tinted wash for a status/feature colour: reads as a "tag" on the surface instead of a flat block of
+  /// saturated colour. Use for answer feedback, badges and chips.
+  static Color wash(Color c, [double opacity = 0.14]) => c.withOpacity(opacity);
 }

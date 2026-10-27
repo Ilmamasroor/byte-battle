@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../app/theme/app_colors.dart';
 
 /// ConceptCard — auto-scaffolded to match the project's target file structure.
 class ConceptCard extends StatelessWidget {

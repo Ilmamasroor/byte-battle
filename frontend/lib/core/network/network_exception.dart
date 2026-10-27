@@ -19,6 +19,11 @@ class NetworkException implements Exception {
   /// caller should treat the user as logged out.
   bool get isUnauthorized => statusCode == 401 || statusCode == 403;
 
+  /// The backend answers 403 `ONBOARDING_REQUIRED: ...` on learning endpoints until the
+  /// learner has finished onboarding. That is NOT a logged-out token.
+  bool get isOnboardingRequired =>
+      statusCode == 403 && message.toUpperCase().startsWith('ONBOARDING_REQUIRED');
+
   @override
   String toString() => message;
 }

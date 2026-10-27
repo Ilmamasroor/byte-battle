@@ -45,7 +45,7 @@ class AppIconButton extends StatelessWidget {
 
         final iconColor = state == ButtonInteractionState.disabled
             ? AppColors.textPrimary.withOpacity(0.6)
-            : AppColors.white;
+            : AppColors.onAccent;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 120),

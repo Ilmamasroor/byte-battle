@@ -1,0 +1,258 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001017",
+ "title": "Queue: first in, first out",
+ "kind": "structure",
+ "intro": "A queue is a line at a shop. Who gets served first: the first to arrive, or the last?",
+ "predict": {
+  "question": "A, B, C join a queue in that order. Which does dequeue return first?",
+  "options": [
+   "A",
+   "B",
+   "C"
+  ],
+  "answer": 0,
+  "reveal": "A queue is FIFO: first in, first out. A joined first, so A is served first."
+ },
+ "takeaway": "A queue adds at the rear and removes at the front, so the first item in is the first out. A stack does the opposite.",
+ "code": [
+  "queue<char> q;",
+  "q.push('A');   // enqueue",
+  "q.push('B');",
+  "q.push('C');",
+  "q.pop();       // dequeue",
+  "q.push('D');",
+  "q.pop();"
+ ],
+ "steps": [
+  {
+   "say": "An empty queue. New items join at the rear, and items leave from the front.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [],
+     "caption": "front on the left, rear on the right"
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "enqueue(A): A joins. It is both the front and the rear.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "A",
+       "s": "cur"
+      }
+     ],
+     "caption": "front = A, rear = A"
+    }
+   ],
+   "at": 1,
+   "note": "enqueue(A)"
+  },
+  {
+   "say": "enqueue(B): B stands behind A at the rear. The front is still A.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "cur"
+      }
+     ],
+     "caption": "front = A, rear = B"
+    }
+   ],
+   "at": 2,
+   "note": "enqueue(B)"
+  },
+  {
+   "say": "enqueue(C): C joins the rear. Line is A, B, C.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "cur"
+      }
+     ],
+     "caption": "front = A, rear = C"
+    }
+   ],
+   "at": 3,
+   "note": "enqueue(C)"
+  },
+  {
+   "say": "dequeue(): the FRONT item A leaves first because it has waited longest. B is the new front.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "B",
+       "s": "cur"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ],
+     "caption": "front = B, rear = C"
+    }
+   ],
+   "at": 4,
+   "note": "dequeue() returned A"
+  },
+  {
+   "say": "A new item D joins at the rear. Joining never disturbs the people ahead.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "cur"
+      }
+     ],
+     "caption": "front = B, rear = D"
+    }
+   ],
+   "at": 5,
+   "note": "enqueue(D)"
+  },
+  {
+   "say": "dequeue() returns B. Order out matches order in: A, then B, and C is next.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "C",
+       "s": "cur"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      }
+     ],
+     "caption": "front = C, rear = D"
+    }
+   ],
+   "at": 6,
+   "note": "dequeue() returned B"
+  },
+  {
+   "say": "Contrast: A, B, C went into both. The stack's open end is the top, the queue serves the front.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack (LIFO)",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "cur"
+      }
+     ],
+     "caption": "next out: C"
+    },
+    {
+     "kind": "queue",
+     "name": "queue (FIFO)",
+     "items": [
+      {
+       "v": "A",
+       "s": "cur"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ],
+     "caption": "next out: A"
+    }
+   ],
+   "at": -1,
+   "note": "same input, different exit"
+  },
+  {
+   "say": "Remove one from each: the stack gives C, the queue gives A. Queue for waiting lines, stack for undo.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack (LIFO)",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      }
+     ],
+     "caption": "C came out"
+    },
+    {
+     "kind": "queue",
+     "name": "queue (FIFO)",
+     "items": [
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ],
+     "caption": "A came out"
+    }
+   ],
+   "at": -1,
+   "note": "stack -> C   queue -> A"
+  }
+ ]
+}

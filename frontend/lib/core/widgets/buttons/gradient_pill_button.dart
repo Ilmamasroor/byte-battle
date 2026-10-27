@@ -2,10 +2,11 @@ import 'package:flutter/material.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_dimensions.dart';
 import '../../../app/theme/app_text_styles.dart';
+import '../../utils/ui_text.dart';
 import 'app_button_size.dart';
 import 'button_interaction_state.dart';
 
-/// Cyan → blue gradient pill button. This is the single shared
+/// Flame gradient button (dark ink label for contrast). This is the single shared
 /// implementation behind [PrimaryButton], [ActionButton] and
 /// [NavigationButton] — same visual language, different icon/placement
 /// per the "Button Styles" guide ("Different actions. One visual
@@ -62,7 +63,7 @@ class GradientPillButton extends StatelessWidget {
 
         final textColor = state == ButtonInteractionState.disabled
             ? AppColors.textPrimary.withOpacity(0.6)
-            : AppColors.white;
+            : AppColors.onAccent;
 
         final content = isLoading
             ? SizedBox(
@@ -83,7 +84,7 @@ class GradientPillButton extends StatelessWidget {
                   ],
                   Flexible(
                     child: Text(
-                      label,
+                      UiText.sentence(label),
                       overflow: TextOverflow.ellipsis,
                       style: AppTextStyles.button.copyWith(
                         fontSize: size.fontSize,
@@ -106,8 +107,7 @@ class GradientPillButton extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: gradient,
             color: solidColor,
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-            border: Border.all(color: AppColors.btnDarkBorder, width: 2),
+            borderRadius: BorderRadius.circular(AppDimensions.buttonRadius),
           ),
           alignment: Alignment.center,
           child: content,

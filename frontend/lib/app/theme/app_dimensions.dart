@@ -13,9 +13,11 @@ class AppDimensions {
 
   // Radius
   static const double radiusSm = 8.0;
-  static const double radiusMd = 14.0;
-  static const double radiusLg = 20.0;
+  static const double radiusMd = 16.0;
+  static const double radiusLg = 24.0;
   static const double radiusPill = 100.0;
+  /// Buttons are rounded rectangles, not pills: calmer and more utilitarian for a learning tool.
+  static const double buttonRadius = 16.0;
 
   // Components
   static const double buttonHeight = 54.0;

@@ -1,0 +1,245 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001053",
+ "title": "Trade-offs: say what each choice costs",
+ "kind": "flow",
+ "intro": "You have two correct solutions. The skill being tested is how you talk about choosing between them.",
+ "predict": {
+  "question": "Which is the strongest way to finish a trade-off statement?",
+  "options": [
+   "Say the faster one is simply better",
+   "State each option's cost, then choose and explain why for these constraints",
+   "Say there is no real difference"
+  ],
+  "answer": 1,
+  "reveal": "Naming both costs and tying your pick to the constraints shows judgment. Interviewers rarely want 'always the fastest'."
+ },
+ "takeaway": "Name the cost of each option, tie your pick to the constraints, and say what would change your mind.",
+ "steps": [
+  {
+   "say": "Problem: find two numbers that add up to a target. You now have two working solutions. Interviewers want to hear you weigh them.",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Check every pair.",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Remember numbers seen.",
+     "s": "todo"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "Name both costs.",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Pick for the constraints.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Brute force checks every pair. It takes O(n^2) time but only O(1) extra memory, and it is simple and almost bug-proof.",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "active"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Remember numbers seen.",
+     "s": "todo"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "Name both costs.",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Pick for the constraints.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "The hash map stores each number it has seen and looks up target minus x. That is O(n) time, but it spends O(n) extra memory.",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Time O(n), extra memory O(n). Look up target minus x.",
+     "s": "active"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "Name both costs.",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Pick for the constraints.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Neither is free. The hash map buys speed by spending memory. Trading one resource for another is exactly what a trade-off is.",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "active"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Time O(n), extra memory O(n). Look up target minus x.",
+     "s": "active"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "Name both costs.",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Pick for the constraints.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Say it out loud, with both costs: 'Brute force is O(1) memory but O(n^2) time. The hash map is O(n) time for O(n) memory.'",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Time O(n), extra memory O(n). Look up target minus x.",
+     "s": "done"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "'Brute force uses O(1) memory but O(n^2) time. A hash map is O(n) time for O(n) memory.'",
+     "s": "active"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Pick for the constraints.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Now tie it to the constraints. With a million numbers, n squared is far too slow, and a million ints fit in memory easily.",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Time O(n), extra memory O(n). Look up target minus x.",
+     "s": "done"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "'Brute force uses O(1) memory but O(n^2) time. A hash map is O(n) time for O(n) memory.'",
+     "s": "done"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "n = 1 million: n^2 is too slow; the memory is fine.",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Justify the choice, and stay open: 'I will use the hash map. If memory were tight, I would sort and use two pointers instead.'",
+   "cards": [
+    {
+     "icon": "loop",
+     "title": "Brute force",
+     "text": "Time O(n^2), extra memory O(1). Simple, hard to get wrong.",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Hash map",
+     "text": "Time O(n), extra memory O(n). Look up target minus x.",
+     "s": "done"
+    },
+    {
+     "icon": "chat",
+     "title": "Say it aloud",
+     "text": "'Brute force uses O(1) memory but O(n^2) time. A hash map is O(n) time for O(n) memory.'",
+     "s": "done"
+    },
+    {
+     "icon": "check",
+     "title": "Decide",
+     "text": "Hash map. If memory were tight: sort and use two pointers.",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "That is the whole pattern: name both costs, tie them to the constraints, choose, and say what would change your mind.",
+   "cards": [
+    {
+     "icon": "compare",
+     "title": "Name both costs",
+     "text": "Time and memory for each option.",
+     "s": "done"
+    },
+    {
+     "icon": "lock",
+     "title": "Tie to constraints",
+     "text": "Input size, memory limit, simplicity.",
+     "s": "done"
+    },
+    {
+     "icon": "flag",
+     "title": "Choose, stay open",
+     "text": "Say what would change your mind.",
+     "s": "done"
+    }
+   ]
+  }
+ ]
+}

@@ -1,17 +1,20 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/models/diagnosis_model.dart';
-import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/models/backend_models.dart';
+import '../../../../core/network/backend_api.dart';
+import '../../../../core/network/network_exception.dart';
 import '../../../../core/widgets/buttons/buttons.dart';
-import '../../../concepts/data/models/concept_model.dart';
-import '../state/coding_feedback_controller.dart';
 import '../widgets/code_editor.dart';
 import '../widgets/execution_result.dart';
+import '../widgets/load_error_view.dart';
 
+/// Implement stage: loads the concept's real coding challenge, sends the learner's code to the backend (which
+/// runs it against the test cases in the Judge0 sandbox) and shows the verdict per test case plus the AI feedback.
 class CodingScreen extends StatefulWidget {
   const CodingScreen({super.key});
 
@@ -20,138 +23,183 @@ class CodingScreen extends StatefulWidget {
 }
 
 class _CodingScreenState extends State<CodingScreen> {
-  // TODO: replace with data from CodingController / coding_challenge_model.dart.
-  // Feeds the real `POST /api/ai/coding-feedback` call in
-  // [_getAiFeedback] — still hardcoded here because the challenge/test
-  // run itself is, but the AI call it drives is live.
-  static const _concept = ConceptModel(
-    id: '00000000-0000-0000-0000-000000001001',
-    name: 'Java Fundamentals',
-    difficulty: 'BEGINNER',
-  );
+  final _codeController = TextEditingController();
+  final _scroll = ScrollController();
+  final _resultKey = GlobalKey();
 
-  final _codeController = TextEditingController(text: '''
-function binarySearch(arr, target) {
-  let left = 0;
-  let right = arr.length - 1;
+  String _conceptId = AppConstants.defaultConceptId;
+  bool _started = false;
 
-  while (left <= right) {
-    const mid = Math.floor((left + right) / 2);
+  ConceptInfo? _concept;
+  CodingChallengeModel? _challenge;
+  bool _loading = true;
+  String? _loadError;
+  bool _noChallenge = false;
 
-    if (arr[mid] === target) {
-      return mid;
-    } else if (arr[mid] < target) {
-      left = mid + 1;
-    } else {
-      right = mid - 1;
-    }
-  }
-
-  return -1;
-}
-''');
-
-  bool _isRunning = false;
-  ExecutionResult? _result;
+  bool _submitting = false;
+  String? _submitError;
+  SubmissionResult? _result;
+  String? _aiFeedback;
+  bool _aiPending = false;
+  int _runToken = 0;
 
   @override
-  void initState() {
-    super.initState();
-    Helpers.noApiYet('CodingScreen', note: 'challenge + run/submit are hardcoded, no coding API wired yet');
-  }
-
-  Future<void> _run() async {
-    setState(() {
-      _isRunning = true;
-      _result = null;
-    });
-    // TODO: send _codeController.text to coding_repository.dart for execution.
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    setState(() {
-      _isRunning = false;
-      // TODO: replace with the real TestResultModel response.
-      _result = ExecutionResult(
-        title: 'Loop Boundaries',
-        difficulty: 'Easy',
-        runtimeMs: 48,
-        cases: const [
-          TestCaseResult(
-            label: 'Test 1',
-            input: '0, 5, 2',
-            output: '5',
-            passed: true,
-            runtimeMs: 12,
-          ),
-          TestCaseResult(
-            label: 'Test 2',
-            input: '1, 3, 1',
-            output: '3',
-            passed: true,
-            runtimeMs: 15,
-          ),
-          TestCaseResult(
-            label: 'Test 3',
-            input: '2, 10, 3',
-            expected: '7',
-            got: '9',
-            passed: false,
-            runtimeMs: 14,
-          ),
-        ],
-        failureSummary: "Looks like an off-by-one error.  Your loop may be running "
-            'one iteration too far.',
-        failureTechnicalDetail: 'Error\n'
-            '  at Solution.loopBoundaries(Main.java:14)\n'
-            '  at Main.main(Main.java:8)',
-        repeatedMistakeNote: 'You hit this same boundary error twice this week. '
-            'A quick review of loop conditions might help!',
-        onGetHint: () => Navigator.of(context).pushNamed(RouteNames.debugging),
-        onTryAgain: () => setState(() => _result = null),
-        onGetAiFeedback: _getAiFeedback,
-      );
-    });
-  }
-
-  /// `POST /api/ai/coding-feedback`. Builds the diagnosis from the
-  /// failed test case shown above — in a real run this diagnosis would
-  /// come from the backend's own analysis of the submission.
-  Future<void> _getAiFeedback() async {
-    final controller = CodingFeedbackController.instance;
-    await controller.loadFeedback(
-      concept: _concept,
-      diagnosis: const DiagnosisModel(
-        errorType: 'LOGIC_ERROR',
-        explanation: "Looks like an off-by-one error. Your loop may be "
-            'running one iteration too far.',
-        suggestion: 'Check the loop boundary condition.',
-      ),
-    );
-
-    if (!mounted) return;
-
-    final error = controller.errorMessage;
-    final feedback = controller.feedback?.feedback;
-    if (error != null) {
-      AppSnackBar.show(context, error);
-    } else if (feedback != null && feedback.isNotEmpty) {
-      AppSnackBar.show(context, feedback);
-    }
-  }
-
-  Future<void> _submit() async {
-    // TODO: submit via CodingController -> CodeSubmissionModel.
-    Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleIntro);
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['conceptId'] is String) _conceptId = args['conceptId'] as String;
+    _load();
   }
 
   @override
   void dispose() {
+    _runToken++;
     _codeController.dispose();
+    _scroll.dispose();
     super.dispose();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _loadError = null;
+      _noChallenge = false;
+    });
+    try {
+      final api = BackendApi.instance;
+      final results = await Future.wait<Object?>([
+        api.challengesForConcept(_conceptId),
+        api.concept(_conceptId).then<ConceptInfo?>((c) => c).catchError((_) => null),
+      ]);
+      final list = results[0] as List<CodingChallengeModel>;
+      if (!mounted) return;
+      if (list.isEmpty) {
+        setState(() {
+          _concept = results[1] as ConceptInfo?;
+          _noChallenge = true;
+          _loading = false;
+        });
+        return;
+      }
+      final detail = await api.challenge(list.first.id);
+      if (!mounted) return;
+      _codeController.text = detail.starterCode;
+      setState(() {
+        _concept = results[1] as ConceptInfo?;
+        _challenge = detail;
+        _loading = false;
+      });
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Could not load the coding challenge. Please try again.';
+        _loading = false;
+      });
+    }
+  }
+
+  Future<void> _submit() async {
+    final challenge = _challenge;
+    if (challenge == null || _submitting) return;
+    if (_codeController.text.trim().isEmpty) {
+      setState(() => _submitError = 'Write some code before submitting.');
+      return;
+    }
+    final token = ++_runToken;
+    setState(() {
+      _submitting = true;
+      _submitError = null;
+      _result = null;
+      _aiFeedback = null;
+      _aiPending = false;
+    });
+    try {
+      final r = await BackendApi.instance.submitCode(challenge.id, _codeController.text, challenge.language);
+      if (!mounted || token != _runToken) return;
+      if (r.status == 'EXECUTION_UNAVAILABLE') {
+        setState(() {
+          _submitting = false;
+          _submitError = _sandboxDown;
+        });
+        return;
+      }
+      setState(() {
+        _submitting = false;
+        _result = r;
+        _aiFeedback = r.aiFeedback;
+        _aiPending = r.aiFeedback.isEmpty;
+      });
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        final ctx = _resultKey.currentContext;
+        if (ctx != null) Scrollable.ensureVisible(ctx, duration: const Duration(milliseconds: 300));
+      });
+      if (r.aiFeedback.isEmpty) unawaited(_pollFeedback(r.submissionId, token));
+    } on NetworkException catch (e) {
+      if (!mounted || token != _runToken) return;
+      setState(() {
+        _submitting = false;
+        _submitError = e.statusCode == 503 ? _sandboxDown : e.message;
+      });
+    } catch (_) {
+      if (!mounted || token != _runToken) return;
+      setState(() {
+        _submitting = false;
+        _submitError = 'Something went wrong while running your code. Please try again.';
+      });
+    }
+  }
+
+  static const _sandboxDown = 'The code sandbox is temporarily unavailable, so your code was not judged. '
+      'This is not a failed attempt. Please try again in a moment.';
+
+  /// The backend attaches the AI feedback a few seconds after the verdict; look for it a handful of times.
+  Future<void> _pollFeedback(String submissionId, int token) async {
+    for (var i = 0; i < 5; i++) {
+      await Future<void>.delayed(const Duration(seconds: 3));
+      if (!mounted || token != _runToken) return;
+      try {
+        final s = await BackendApi.instance.submission(submissionId);
+        if (!mounted || token != _runToken) return;
+        if (s.aiFeedback.isNotEmpty) {
+          setState(() {
+            _aiFeedback = s.aiFeedback;
+            _aiPending = false;
+          });
+          return;
+        }
+      } catch (_) {
+        // best effort: keep waiting, give up after the last round
+      }
+    }
+    if (mounted && token == _runToken) setState(() => _aiPending = false);
+  }
+
+  void _toDebugging() => Navigator.of(context).pushReplacementNamed(RouteNames.debugging, arguments: {'conceptId': _conceptId});
+
+  Color _difficultyColor(String d) {
+    switch (d.toLowerCase()) {
+      case 'beginner':
+      case 'easy':
+        return AppColors.success;
+      case 'hard':
+      case 'advanced':
+        return AppColors.error;
+      default:
+        return AppColors.warning;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
+    final challenge = _challenge;
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -161,69 +209,123 @@ function binarySearch(arr, target) {
           icon: const Icon(Icons.arrow_back_ios_new_rounded, size: 18),
           onPressed: () => Navigator.of(context).maybePop(),
         ),
-        title: const Text('Implement Binary Search', style: AppTextStyles.heading2),
+        title: Text(challenge?.title ?? 'Implement', style: AppTextStyles.heading2),
         actions: [
-          Padding(
-            padding: const EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(
-              child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-                decoration: BoxDecoration(
-                  color: AppColors.success.withOpacity(0.15),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+          if (challenge != null)
+            Padding(
+              padding: const EdgeInsets.only(right: AppDimensions.spacingMd),
+              child: Center(
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: _difficultyColor(challenge.difficulty).withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                  ),
+                  child: Text(_cap(challenge.difficulty),
+                      style: TextStyle(color: _difficultyColor(challenge.difficulty), fontSize: 12)),
                 ),
-                child: const Text('Easy',
-                    style: TextStyle(color: AppColors.success, fontSize: 12)),
               ),
             ),
-          ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: const EdgeInsets.all(AppDimensions.screenPadding),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Write a function that returns the index of `target` in a sorted '
-              'array, or -1 if it is not present.',
-              style: AppTextStyles.body,
-            ),
-            const SizedBox(height: AppDimensions.spacingMd),
-            CodeEditor(controller: _codeController),
-            const SizedBox(height: AppDimensions.spacingMd),
-            Row(
-              children: [
-                Expanded(
-                  child: ActionButton(
-                    label: _isRunning ? 'Running...' : 'Run Code',
-                    icon: Icons.play_arrow_rounded,
-                    isLoading: _isRunning,
-                    onPressed: _run,
-                    size: AppButtonSize.xl,
-                  ),
-                ),
-                const SizedBox(width: AppDimensions.spacingMd),
-                Expanded(
-                  child: NavigationButton(
-                    label: 'Submit',
-                    icon: Icons.check_rounded,
-                    onPressed: _submit,
-                    size: AppButtonSize.xl,
-                  ),
-                ),
-              ],
-            ),
-            if (_result != null) ...[
-              const SizedBox(height: AppDimensions.spacingLg),
-              const Divider(color: AppColors.divider),
-              const SizedBox(height: AppDimensions.spacingLg),
-              _result!,
-            ],
+      body: _buildBody(challenge),
+    );
+  }
+
+  static String _cap(String s) => s.isEmpty ? s : s[0].toUpperCase() + s.substring(1).toLowerCase();
+
+  Widget _buildBody(CodingChallengeModel? challenge) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loadError != null) return LoadErrorView(message: _loadError!, onRetry: _load);
+    if (challenge == null || _noChallenge) {
+      return LoadErrorView(
+        message: 'There is no coding challenge for ${_concept?.name ?? 'this concept'} yet.',
+        icon: Icons.code_off_rounded,
+      );
+    }
+    return SingleChildScrollView(
+      controller: _scroll,
+      padding: const EdgeInsets.all(AppDimensions.screenPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          if (_concept != null) ...[
+            Text('${_concept!.name} • Implement',
+                style: AppTextStyles.caption.copyWith(color: AppColors.primaryLight)),
+            const SizedBox(height: AppDimensions.spacingSm),
           ],
-        ),
+          Text(challenge.description, style: AppTextStyles.body),
+          if (challenge.constraints.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingSm),
+            Text('Constraints: ${challenge.constraints}', style: AppTextStyles.caption),
+          ],
+          if (challenge.samples.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingMd),
+            for (final s in challenge.samples)
+              Padding(
+                padding: const EdgeInsets.only(bottom: 4),
+                child: Text(
+                  'Example ${s.number}: input ${s.input.isEmpty ? '(none)' : s.input}  ->  expected ${s.expectedOutput}',
+                  style: AppTextStyles.caption.copyWith(fontFamily: AppTextStyles.monoFamily),
+                ),
+              ),
+          ],
+          const SizedBox(height: AppDimensions.spacingMd),
+          CodeEditor(controller: _codeController),
+          const SizedBox(height: AppDimensions.spacingMd),
+          ActionButton(
+            label: _submitting ? 'Running your code...' : 'Run & Submit',
+            icon: Icons.play_arrow_rounded,
+            isLoading: _submitting,
+            onPressed: _submitting ? null : _submit,
+            size: AppButtonSize.xl,
+          ),
+          if (_submitting) ...[
+            const SizedBox(height: AppDimensions.spacingSm),
+            Text('Compiling and testing in the sandbox. This can take up to 30 seconds.',
+                style: AppTextStyles.caption),
+          ],
+          if (_submitError != null) ...[
+            const SizedBox(height: AppDimensions.spacingMd),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.spacingMd),
+              decoration: BoxDecoration(
+                color: AppColors.warning.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                border: Border.all(color: AppColors.warning.withOpacity(0.6)),
+              ),
+              child: Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Icon(Icons.warning_amber_rounded, color: AppColors.warning, size: 18),
+                  const SizedBox(width: AppDimensions.spacingSm),
+                  Expanded(child: Text(_submitError!, style: AppTextStyles.body)),
+                ],
+              ),
+            ),
+          ],
+          if (_result != null) ...[
+            const SizedBox(height: AppDimensions.spacingLg),
+            const Divider(color: AppColors.divider),
+            const SizedBox(height: AppDimensions.spacingLg),
+            KeyedSubtree(
+              key: _resultKey,
+              child: ExecutionResult(
+                title: challenge.title,
+                difficulty: _cap(challenge.difficulty),
+                result: _result!,
+                aiFeedback: _aiFeedback,
+                aiFeedbackPending: _aiPending,
+                onContinue: _toDebugging,
+                onPracticeDebugging: _toDebugging,
+                onTryAgain: () => setState(() => _result = null),
+              ),
+            ),
+          ],
+          const SizedBox(height: AppDimensions.spacingXl),
+        ],
       ),
     );
   }
 }
-

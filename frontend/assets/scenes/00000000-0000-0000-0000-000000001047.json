@@ -1,0 +1,379 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001047",
+ "title": "Scale up or scale out?",
+ "kind": "structure",
+ "intro": "Traffic keeps growing. You can buy one bigger server, or add more small ones. Watch each path hit its limits.",
+ "predict": {
+  "question": "Traffic is 600 req/s and you run 7 small servers (100 req/s each). One dies. What happens to capacity?",
+  "options": [
+   "Everything goes down",
+   "It drops to 600 req/s and still copes",
+   "It stays at 700 req/s"
+  ],
+  "answer": 1,
+  "reveal": "Six small servers still give 600 req/s, exactly enough. Many small servers survive a failure; one big server cannot."
+ },
+ "takeaway": "Scaling up is simple but hits a ceiling and is one point of failure. Scaling out adds servers behind a balancer with no hard ceiling.",
+ "steps": [
+  {
+   "say": "Your app gets 300 req/s but one small server handles only 100 req/s (example numbers). It is swamped.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.43,
+       "text": "300 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 0.14,
+       "text": "100 req/s",
+       "s": "bad"
+      },
+      {
+       "label": "Cost",
+       "value": 0.1,
+       "text": "$50/mo",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "cells": [
+      {
+       "v": "Small",
+       "s": "bad"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Option 1, scale up (vertical): buy one bigger machine. Now 300 req/s fits, but the price jumps to $400 a month.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.43,
+       "text": "300 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 0.43,
+       "text": "300 req/s",
+       "s": "done"
+      },
+      {
+       "label": "Cost",
+       "value": 0.8,
+       "text": "$400/mo",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "cells": [
+      {
+       "v": "Big",
+       "s": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Traffic doubles to 600 req/s. The biggest machine you can buy tops out at 400 req/s, so you hit a hardware ceiling.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 0.57,
+       "text": "400 req/s max",
+       "s": "bad"
+      },
+      {
+       "label": "Cost",
+       "value": 0.8,
+       "text": "$400/mo",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "cells": [
+      {
+       "v": "Big",
+       "s": "bad"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Worse: it is a single point of failure. If this one machine crashes, capacity is zero and the whole app is down.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 0.0,
+       "text": "0 req/s",
+       "s": "bad"
+      },
+      {
+       "label": "Cost",
+       "value": 0.8,
+       "text": "$400/mo",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "caption": "crashed",
+     "cells": [
+      {
+       "v": "Big",
+       "s": "bad"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Option 2, scale out (horizontal): put a balancer in front of 7 small servers. Capacity is 700 req/s for about $350.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 1.0,
+       "text": "700 req/s",
+       "s": "done"
+      },
+      {
+       "label": "Cost",
+       "value": 0.7,
+       "text": "$350/mo",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "cells": [
+      {
+       "v": "LB",
+       "s": "done"
+      },
+      {
+       "v": "S1",
+       "s": "done"
+      },
+      {
+       "v": "S2",
+       "s": "done"
+      },
+      {
+       "v": "S3",
+       "s": "done"
+      },
+      {
+       "v": "S4",
+       "s": "done"
+      },
+      {
+       "v": "S5",
+       "s": "done"
+      },
+      {
+       "v": "S6",
+       "s": "done"
+      },
+      {
+       "v": "S7",
+       "s": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "One small server dies. The balancer routes around it: capacity drops to 600 req/s, still enough. No outage.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "done"
+      },
+      {
+       "label": "Cost",
+       "value": 0.7,
+       "text": "$350/mo",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "caption": "S3 down",
+     "cells": [
+      {
+       "v": "LB",
+       "s": "done"
+      },
+      {
+       "v": "S1",
+       "s": "done"
+      },
+      {
+       "v": "S2",
+       "s": "done"
+      },
+      {
+       "v": "S3",
+       "s": "bad"
+      },
+      {
+       "v": "S4",
+       "s": "done"
+      },
+      {
+       "v": "S5",
+       "s": "done"
+      },
+      {
+       "v": "S6",
+       "s": "done"
+      },
+      {
+       "v": "S7",
+       "s": "done"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Need more? Add another small server. Scaling out has no hard ceiling, but your app must run happily on many machines at once.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "load",
+     "bars": [
+      {
+       "label": "Demand",
+       "value": 0.86,
+       "text": "600 req/s",
+       "s": "compare"
+      },
+      {
+       "label": "Capacity",
+       "value": 1.0,
+       "text": "700+ req/s",
+       "s": "found"
+      },
+      {
+       "label": "Cost",
+       "value": 0.7,
+       "text": "grows evenly",
+       "s": "compare"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "servers",
+     "caption": "S3 replaced",
+     "cells": [
+      {
+       "v": "LB",
+       "s": "done"
+      },
+      {
+       "v": "S1",
+       "s": "done"
+      },
+      {
+       "v": "S2",
+       "s": "done"
+      },
+      {
+       "v": "S3",
+       "s": "found"
+      },
+      {
+       "v": "S4",
+       "s": "done"
+      },
+      {
+       "v": "S5",
+       "s": "done"
+      },
+      {
+       "v": "S6",
+       "s": "done"
+      },
+      {
+       "v": "S7",
+       "s": "done"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

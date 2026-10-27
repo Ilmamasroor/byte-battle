@@ -9,13 +9,14 @@ class MnemonicRemoteDatasource {
   final ApiClient _apiClient;
 
   /// `POST /api/ai/mnemonic?conceptId={conceptId}` — no JSON body. Uses
-  /// [ApiClient.postRaw] since the response isn't wrapped in
+  /// [ApiClient.postJson] since the response isn't wrapped in
   /// `{success, data}`.
-  Future<MnemonicModel> getMnemonic(String conceptId) async {
-    final json = await _apiClient.postRaw(
+  Future<MnemonicModel> getMnemonic(String conceptId, {String? lens}) async {
+    final json = await _apiClient.postJson(
       ApiEndpoints.aiMnemonic,
-      query: {'conceptId': conceptId},
+      query: {'conceptId': conceptId, if (lens != null) 'lens': lens},
+      timeout: ApiClient.slowTimeout,
     );
-    return MnemonicModel.fromJson(json);
+    return MnemonicModel.fromJson(Map<String, dynamic>.from(json as Map));
   }
 }

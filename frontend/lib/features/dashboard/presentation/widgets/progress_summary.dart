@@ -4,8 +4,7 @@ import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/glow_card.dart';
 
-/// Side-by-side "XP & Level" and "Day Streak" stat cards on the dashboard,
-/// matching the reference dashboard screenshot.
+/// Two stat cards side by side: XP & level (gold), and the day streak with this week's strip (flame).
 class ProgressSummary extends StatelessWidget {
   final int xp;
   final int xpTarget;
@@ -26,108 +25,104 @@ class ProgressSummary extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return GlowCard(
-      glowColor: AppColors.accentCyan,
-      child: IntrinsicHeight(
-        child: Row(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Expanded(
+    final inLevel = xp % xpTarget;
+    return IntrinsicHeight(
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Expanded(
+            child: GlowCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 30,
-                        height: 30,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary.withOpacity(0.15),
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusSm),
-                          border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(Icons.hexagon_outlined,
-                            size: 15, color: AppColors.accentCyan),
-                      ),
-                      const SizedBox(width: 8),
-                      Text('XP & LEVEL',
-                          style: AppTextStyles.caption.copyWith(
-                              color: AppColors.textHint, letterSpacing: 0.4)),
-                    ],
-                  ),
+                  Row(children: [
+                    const Icon(Icons.hexagon_rounded,
+                        size: 18, color: AppColors.xp),
+                    const SizedBox(width: 6),
+                    Text('XP',
+                        style: AppTextStyles.eyebrow
+                            .copyWith(color: AppColors.xp)),
+                  ]),
                   const SizedBox(height: 10),
-                  Text('$xp XP', style: AppTextStyles.heading2),
+                  Text('$xp',
+                      style: AppTextStyles.display
+                          .copyWith(fontSize: 34, height: 1)),
                   const SizedBox(height: 2),
                   Text('Level $level', style: AppTextStyles.caption),
-                  const SizedBox(height: 8),
+                  const SizedBox(height: 12),
                   ClipRRect(
-                    borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                    borderRadius:
+                        BorderRadius.circular(AppDimensions.radiusPill),
                     child: LinearProgressIndicator(
-                      value: (xp % xpTarget) / xpTarget,
-                      minHeight: 6,
+                      value: inLevel / xpTarget,
+                      minHeight: 7,
                       backgroundColor: AppColors.background,
-                      valueColor: const AlwaysStoppedAnimation(AppColors.accentCyan),
+                      valueColor: const AlwaysStoppedAnimation(AppColors.xp),
                     ),
                   ),
-                  const SizedBox(height: 4),
-                  Text('${xp % xpTarget} / $xpTarget XP', style: AppTextStyles.caption),
+                  const SizedBox(height: 6),
+                  Text('${xpTarget - inLevel} XP to level ${level + 1}',
+                      style: AppTextStyles.caption.copyWith(fontSize: 11)),
                 ],
               ),
             ),
-            const SizedBox(width: AppDimensions.spacingMd),
-            const VerticalDivider(color: AppColors.divider, width: 1),
-            const SizedBox(width: AppDimensions.spacingMd),
-            Expanded(
+          ),
+          const SizedBox(width: AppDimensions.spacingMd),
+          Expanded(
+            child: GlowCard(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    children: [
-                      const Text('🔥', style: TextStyle(fontSize: 18)),
-                      const SizedBox(width: 6),
-                      Expanded(
-                        child: Text('$streakDays DAY STREAK',
-                            style: AppTextStyles.caption.copyWith(
-                                color: AppColors.warning,
-                                fontWeight: FontWeight.w700,
-                                letterSpacing: 0.3)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 2),
-                  Text('Keep it going!', style: AppTextStyles.caption),
+                  Row(children: [
+                    Icon(Icons.local_fire_department_rounded,
+                        size: 19,
+                        color: streakDays > 0
+                            ? AppColors.streak
+                            : AppColors.textHint),
+                    const SizedBox(width: 6),
+                    Text('STREAK',
+                        style: AppTextStyles.eyebrow.copyWith(
+                            color: streakDays > 0
+                                ? AppColors.streak
+                                : AppColors.textHint)),
+                  ]),
                   const SizedBox(height: 10),
+                  Text('$streakDays',
+                      style: AppTextStyles.display
+                          .copyWith(fontSize: 34, height: 1)),
+                  const SizedBox(height: 2),
+                  Text(streakDays == 1 ? 'day' : 'days',
+                      style: AppTextStyles.caption),
+                  const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: List.generate(7, (i) {
                       final done = i < weekCompleted.length && weekCompleted[i];
-                      return Column(
-                        children: [
-                          Container(
-                            width: 18,
-                            height: 18,
-                            decoration: BoxDecoration(
-                              shape: BoxShape.circle,
-                              color: done
-                                  ? AppColors.accentCyan
-                                  : AppColors.background.withOpacity(0.6),
-                              border: Border.all(
-                                color: done ? AppColors.accentCyan : AppColors.border,
-                              ),
-                            ),
+                      return Column(children: [
+                        Container(
+                          width: 15,
+                          height: 15,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: done ? AppColors.streak : Colors.transparent,
+                            border: Border.all(
+                                color: done
+                                    ? AppColors.streak
+                                    : AppColors.borderLight),
                           ),
-                          const SizedBox(height: 4),
-                          Text(_dayLabels[i], style: AppTextStyles.caption),
-                        ],
-                      );
+                        ),
+                        const SizedBox(height: 4),
+                        Text(_dayLabels[i],
+                            style:
+                                AppTextStyles.caption.copyWith(fontSize: 10)),
+                      ]);
                     }),
                   ),
                 ],
               ),
             ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }

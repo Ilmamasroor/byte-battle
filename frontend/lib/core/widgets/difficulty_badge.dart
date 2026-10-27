@@ -11,17 +11,7 @@ class DifficultyBadge extends StatelessWidget {
 
   const DifficultyBadge({super.key, required this.level});
 
-  Color get _color {
-    switch (level.toLowerCase()) {
-      case 'intermediate':
-        return AppColors.warning;
-      case 'advanced':
-        return AppColors.btnGamificationPink;
-      case 'beginner':
-      default:
-        return AppColors.success;
-    }
-  }
+  Color get _color => AppColors.difficulty(level);
 
   @override
   Widget build(BuildContext context) {

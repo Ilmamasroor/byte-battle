@@ -1,14 +1,15 @@
 import 'package:flutter/material.dart';
+import '../../../onboarding/data/onboarding_gate.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/brand/bit_mascot.dart';
 import '../../../../core/widgets/app_snackbar.dart';
 import '../state/auth_controller.dart';
 import '../widgets/auth_text_field.dart';
-import '../widgets/social_login_button.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -50,7 +51,9 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _isLoading = false);
 
     if (success) {
-      Navigator.of(context).pushReplacementNamed(RouteNames.dashboard);
+      final next = await OnboardingGate.nextRoute();
+      if (!mounted) return;
+      Navigator.of(context).pushReplacementNamed(next);
     } else {
       _showError(AuthController.instance.errorMessage ?? 'Login failed. Please try again.');
     }
@@ -81,22 +84,28 @@ class _LoginScreenState extends State<LoginScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const SizedBox(height: AppDimensions.spacingXl),
-                const AppLogo(logoSize: 34, fontSize: 21),
-                const SizedBox(height: AppDimensions.spacingXl),
-
+                const SizedBox(height: AppDimensions.spacingLg),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  crossAxisAlignment: CrossAxisAlignment.end,
+                  children: [
+                    const AppLogo(logoSize: 24, fontSize: 19),
+                    BitMascot(size: 56, mood: BitMood.happy),
+                  ],
+                ),
+                const SizedBox(height: AppDimensions.spacingLg),
                 RichText(
-                  text: const TextSpan(
-                    style: AppTextStyles.heading1,
-                    children: [
-                      TextSpan(text: 'Welcome '),
-                      TextSpan(text: 'Back!', style: TextStyle(color: AppColors.accentCyan)),
+                  text: TextSpan(
+                    style: AppTextStyles.display.copyWith(fontSize: 36),
+                    children: const [
+                      TextSpan(text: 'Welcome back,\n'),
+                      TextSpan(text: 'ready to battle?', style: TextStyle(color: AppColors.primary)),
                     ],
                   ),
                 ),
-                const SizedBox(height: AppDimensions.spacingSm),
+                const SizedBox(height: AppDimensions.spacingSm + 4),
                 Text(
-                  'Log in to continue your coding journey',
+                  'Pick up right where you left off. Your streak and Byte DNA are waiting.',
                   style: AppTextStyles.body,
                 ),
                 const SizedBox(height: AppDimensions.spacingXl),
@@ -152,12 +161,12 @@ class _LoginScreenState extends State<LoginScreen> {
                       onTap: () => Navigator.of(context)
                           .pushNamed(RouteNames.forgotPassword),
                       child: const Text(
-                        'Forgot Password?',
+                        'Forgot password?',
                         style: TextStyle(
                           fontFamily: AppTextStyles.fontFamily,
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: AppColors.accentCyan,
+                          color: AppColors.primaryLight,
                           decoration: TextDecoration.underline,
                         ),
                       ),
@@ -172,27 +181,6 @@ class _LoginScreenState extends State<LoginScreen> {
                   onPressed: _handleLogin,
                 ),
                 const SizedBox(height: AppDimensions.spacingXl),
-                Row(
-                  children: [
-                    const Expanded(child: Divider(color: AppColors.divider)),
-                    Padding(
-                      padding: const EdgeInsets.symmetric(horizontal: 12),
-                      child: Text('OR', style: AppTextStyles.caption),
-                    ),
-                    const Expanded(child: Divider(color: AppColors.divider)),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.spacingLg),
-                Row(
-                  children: [
-                    SocialLoginButton(
-                      label: 'Continue with Email',
-                      icon: Icons.mail_outline_rounded,
-                      onPressed: _handleLogin,
-                    ),
-                  ],
-                ),
-                const SizedBox(height: AppDimensions.spacingLg),
                 Center(
                   child: Wrap(
                     alignment: WrapAlignment.center,
@@ -202,12 +190,12 @@ class _LoginScreenState extends State<LoginScreen> {
                         onTap: () => Navigator.of(context)
                             .pushNamed(RouteNames.register),
                         child: const Text(
-                          'Sign Up',
+                          'Sign up',
                           style: TextStyle(
                             fontFamily: AppTextStyles.fontFamily,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.accentCyan,
+                            color: AppColors.primaryLight,
                             decoration: TextDecoration.underline,
                           ),
                         ),

@@ -1,0 +1,482 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001056",
+ "title": "Two pointers: close in from both ends",
+ "kind": "structure",
+ "intro": "In a sorted array, a small number sits on the left and a big one on the right. Let us use that to find a pair.",
+ "predict": {
+  "question": "For 8 sorted numbers, what is the most sums two pointers will ever check?",
+  "options": [
+   "28",
+   "7",
+   "3"
+  ],
+  "answer": 1,
+  "reveal": "7. Each check discards one number, and the pointers meet after at most n - 1 moves. Brute force may need 28 pairs."
+ },
+ "takeaway": "On sorted data, two pointers moving inward give O(n): too small moves the left pointer, too big moves the right.",
+ "code": [
+  "int l = 0, r = n - 1;",
+  "while (l < r) {",
+  "  int s = a[l] + a[r];",
+  "  if (s == target) return true;",
+  "  if (s < target) l++;",
+  "  else r--;",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Sorted array, target 20. Brute force tries all 28 pairs. Two pointers do it smarter: one at each end, moving inward.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "idle"
+      },
+      {
+       "v": "18",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "l": 0,
+      "r": 7
+     }
+    }
+   ]
+  },
+  {
+   "say": "1 + 18 = 19, too small. The 1 cannot reach 20 even with the biggest number, so l moves right.",
+   "at": 4,
+   "note": "1 + 18 = 19 < 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "idle"
+      },
+      {
+       "v": "18",
+       "s": "compare"
+      }
+     ],
+     "pointers": {
+      "l": 0,
+      "r": 7
+     }
+    }
+   ]
+  },
+  {
+   "say": "3 + 18 = 21, too big. Even the smallest remaining partner overshoots, so 18 is out. r moves left.",
+   "at": 5,
+   "note": "3 + 18 = 21 > 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "compare"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "idle"
+      },
+      {
+       "v": "18",
+       "s": "compare"
+      }
+     ],
+     "pointers": {
+      "l": 1,
+      "r": 7
+     }
+    }
+   ]
+  },
+  {
+   "say": "3 + 15 = 18, too small. 3 is finished, so l moves right.",
+   "at": 4,
+   "note": "3 + 15 = 18 < 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "compare"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "compare"
+      },
+      {
+       "v": "18",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "l": 1,
+      "r": 6
+     }
+    }
+   ]
+  },
+  {
+   "say": "4 + 15 = 19, still too small. Move l right again.",
+   "at": 4,
+   "note": "4 + 15 = 19 < 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "dim"
+      },
+      {
+       "v": "4",
+       "s": "compare"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "compare"
+      },
+      {
+       "v": "18",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "l": 2,
+      "r": 6
+     }
+    }
+   ]
+  },
+  {
+   "say": "7 + 15 = 22, too big. 15 is out, so r moves left.",
+   "at": 5,
+   "note": "7 + 15 = 22 > 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "dim"
+      },
+      {
+       "v": "4",
+       "s": "dim"
+      },
+      {
+       "v": "7",
+       "s": "compare"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "idle"
+      },
+      {
+       "v": "15",
+       "s": "compare"
+      },
+      {
+       "v": "18",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "l": 3,
+      "r": 6
+     }
+    }
+   ]
+  },
+  {
+   "say": "7 + 11 = 18, too small. Move l right.",
+   "at": 4,
+   "note": "7 + 11 = 18 < 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "dim"
+      },
+      {
+       "v": "4",
+       "s": "dim"
+      },
+      {
+       "v": "7",
+       "s": "compare"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "11",
+       "s": "compare"
+      },
+      {
+       "v": "15",
+       "s": "dim"
+      },
+      {
+       "v": "18",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "l": 3,
+      "r": 5
+     }
+    }
+   ]
+  },
+  {
+   "say": "9 + 11 = 20. Found the pair: 9 and 11. Seven checks, and every check threw away one number.",
+   "at": 3,
+   "note": "9 + 11 = 20",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "3",
+       "s": "dim"
+      },
+      {
+       "v": "4",
+       "s": "dim"
+      },
+      {
+       "v": "7",
+       "s": "dim"
+      },
+      {
+       "v": "9",
+       "s": "found"
+      },
+      {
+       "v": "11",
+       "s": "found"
+      },
+      {
+       "v": "15",
+       "s": "dim"
+      },
+      {
+       "v": "18",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "l": 4,
+      "r": 5
+     }
+    }
+   ]
+  },
+  {
+   "say": "Brute force would check up to 28 pairs. Two pointers checked 7, because sorting lets one comparison rule out a whole number.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted, target = 20",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "found"
+      },
+      {
+       "v": "11",
+       "s": "found"
+      },
+      {
+       "v": "15",
+       "s": "idle"
+      },
+      {
+       "v": "18",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "sums checked",
+     "bars": [
+      {
+       "label": "brute force",
+       "value": 1.0,
+       "text": "28 pairs",
+       "s": "bad"
+      },
+      {
+       "label": "two pointers",
+       "value": 0.25,
+       "text": "7 checks",
+       "s": "found"
+      }
+     ]
+    }
+   ]
+  }
+ ]
+}

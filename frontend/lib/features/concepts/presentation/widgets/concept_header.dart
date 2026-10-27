@@ -21,18 +21,7 @@ class ConceptHeader extends StatelessWidget {
     this.icon = Icons.code_rounded,
   });
 
-  Color get _difficultyColor {
-    switch (difficulty.toLowerCase()) {
-      case 'beginner':
-      case 'easy':
-        return AppColors.success;
-      case 'hard':
-      case 'advanced':
-        return AppColors.error;
-      default:
-        return AppColors.warning;
-    }
-  }
+  Color get _difficultyColor => AppColors.difficulty(difficulty);
 
   @override
   Widget build(BuildContext context) {

@@ -22,7 +22,7 @@ class LoadingView extends StatelessWidget {
             height: 32,
             child: CircularProgressIndicator(
               strokeWidth: 3,
-              valueColor: AlwaysStoppedAnimation(AppColors.accentCyan),
+              valueColor: AlwaysStoppedAnimation(AppColors.primary),
             ),
           ),
           if (message != null) ...[
@@ -30,7 +30,7 @@ class LoadingView extends StatelessWidget {
             Text(
               message!,
               textAlign: TextAlign.center,
-              style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
+              style: AppTextStyles.body.copyWith(color: AppColors.textSecondary),
             ),
           ],
         ],

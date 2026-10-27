@@ -3,8 +3,13 @@ import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/widgets/ai/companion_says.dart';
+import '../../../../core/widgets/ai/key_term_text.dart';
 import '../../../../core/widgets/app_snackbar.dart';
+import '../../../../core/widgets/brand/bit_mascot.dart';
+import '../../../../core/widgets/brand/score_ring.dart';
 import '../../../../core/widgets/dual_icon_button.dart';
+import '../../../performance/presentation/widgets/xp_chip.dart';
 import '../state/interview_controller.dart';
 import '../widgets/answer_input.dart';
 
@@ -26,21 +31,35 @@ class InterviewScreen extends StatefulWidget {
 
 class _InterviewScreenState extends State<InterviewScreen> {
   final _answerController = TextEditingController();
-  bool _isSubmitting = false;
+  final _controller = InterviewController.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onChange);
+  }
+
+  void _onChange() {
+    if (mounted) setState(() {});
+  }
 
   Future<void> _submit() async {
     final answer = _answerController.text.trim();
-    if (answer.isEmpty) return;
-
-    setState(() => _isSubmitting = true);
-    final controller = InterviewController.instance;
-    final success = await controller.submitAnswer(answer);
+    if (answer.isEmpty || _controller.isSending) return;
+    final ok = await _controller.submit(answer);
     if (!mounted) return;
-    setState(() => _isSubmitting = false);
+    if (!ok) {
+      AppSnackBar.error(context, _controller.errorMessage ?? 'Could not send your answer.');
+      return;
+    }
+    _answerController.clear();
+  }
 
-    final error = controller.errorMessage;
-    if (!success && error != null) {
-      AppSnackBar.error(context, error);
+  Future<void> _finish() async {
+    final ok = await _controller.complete();
+    if (!mounted) return;
+    if (!ok) {
+      AppSnackBar.error(context, _controller.errorMessage ?? 'Could not finish the interview.');
       return;
     }
     Navigator.of(context).pushReplacementNamed(RouteNames.interviewResult);
@@ -48,6 +67,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
 
   @override
   void dispose() {
+    _controller.removeListener(_onChange);
     _answerController.dispose();
     super.dispose();
   }
@@ -67,7 +87,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(child: _XpChip(xp: 840)),
+            child: Center(child: LiveXpChip()),
           ),
         ],
       ),
@@ -87,7 +107,7 @@ class _InterviewScreenState extends State<InterviewScreen> {
                       gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                     ),
-                    child: const Icon(Icons.forum_rounded, color: AppColors.white),
+                    child: const Icon(Icons.forum_rounded, color: AppColors.onAccent),
                   ),
                   const SizedBox(width: AppDimensions.spacingMd),
                   Expanded(
@@ -110,78 +130,47 @@ class _InterviewScreenState extends State<InterviewScreen> {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.stretch,
                     children: [
-                      Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(AppDimensions.spacingLg),
-                        decoration: BoxDecoration(
-                          color: AppColors.surface.withOpacity(0.4),
-                          borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
-                          border: Border.all(color: AppColors.borderLight.withOpacity(0.5)),
+                      if (_controller.lastAnswer != null) ...[
+                        _FeedbackCard(
+                          answer: _controller.lastAnswer!,
+                          number: _controller.answers.length,
                         ),
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.stretch,
-                          children: [
-                            Row(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Container(
-                                  width: 44,
-                                  height: 44,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    shape: BoxShape.circle,
-                                    gradient: AppColors.primaryGradient,
-                                  ),
-                                  child: const Icon(Icons.smart_toy_rounded,
-                                      color: AppColors.white, size: 22),
-                                ),
-                                const SizedBox(width: AppDimensions.spacingMd),
-                                Expanded(
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Container(
-                                        padding: const EdgeInsets.symmetric(
-                                            horizontal: 10, vertical: 4),
-                                        decoration: BoxDecoration(
-                                          color: AppColors.btnAccentPurple.withOpacity(0.15),
-                                          borderRadius:
-                                              BorderRadius.circular(AppDimensions.radiusPill),
-                                          border: Border.all(
-                                              color: AppColors.btnAccentPurple.withOpacity(0.5)),
-                                        ),
-                                        child: Text('Interviewer',
-                                            style: AppTextStyles.caption
-                                                .copyWith(color: AppColors.btnAccentPurple)),
-                                      ),
-                                      const SizedBox(height: AppDimensions.spacingSm),
-                                      Text(
-                                        InterviewController.instance.currentQuestion
-                                                ?.question ??
-                                            'Loading your question…',
-                                        style: AppTextStyles.bodyBold.copyWith(fontSize: 17),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              ],
-                            ),
-                          ],
-                        ),
+                        const SizedBox(height: AppDimensions.spacingMd),
+                      ],
+                      Text('QUESTION ${(_controller.answers.length + 1).clamp(1, 5)} OF 5', style: AppTextStyles.eyebrow.copyWith(color: AppColors.primary)),
+                      const SizedBox(height: 10),
+                      CompanionSays(
+                        mood: BitMood.curious,
+                        mascotSize: 64,
+                        showName: false,
+                        text: _controller.currentQuestion ?? 'No interview in progress.',
                       ),
                       const SizedBox(height: AppDimensions.spacingLg),
-                      AnswerInput(
-                        controller: _answerController,
-                        hintText: 'Your answer...',
-                      ),
-                      const SizedBox(height: AppDimensions.spacingLg),
-                      DualIconButton(
-                        label: 'Answer',
-                        leadingIcon: Icons.auto_awesome_rounded,
-                        trailingIcon: Icons.arrow_forward_rounded,
-                        isLoading: _isSubmitting,
-                        onPressed: _submit,
-                      ),
+                      if (!_controller.noMoreQuestions) ...[
+                        AnswerInput(
+                          controller: _answerController,
+                          hintText: 'Your answer...',
+                        ),
+                        const SizedBox(height: AppDimensions.spacingLg),
+                        DualIconButton(
+                          label: 'Answer',
+                          leadingIcon: Icons.auto_awesome_rounded,
+                          trailingIcon: Icons.arrow_forward_rounded,
+                          isLoading: _controller.isSending,
+                          onPressed: _submit,
+                        ),
+                      ],
+                      if (_controller.answers.isNotEmpty) ...[
+                        const SizedBox(height: AppDimensions.spacingMd),
+                        DualIconButton(
+                          label: 'Finish interview',
+                          leadingIcon: Icons.flag_rounded,
+                          trailingIcon: Icons.arrow_forward_rounded,
+                          outlined: !_controller.noMoreQuestions,
+                          isLoading: _controller.isCompleting,
+                          onPressed: _controller.isSending ? null : _finish,
+                        ),
+                      ],
                       const SizedBox(height: AppDimensions.spacingLg),
                       Container(
                         width: double.infinity,
@@ -198,8 +187,10 @@ class _InterviewScreenState extends State<InterviewScreen> {
                             const SizedBox(width: AppDimensions.spacingSm),
                             Expanded(
                               child: Text(
-                                'After your answer, the AI will ask a follow-up '
-                                'question to go deeper.',
+                                _controller.noMoreQuestions
+                                    ? 'That was the last question. Finish to see your result.'
+                                    : 'After your answer, the AI grades it and asks a follow-up '
+                                        'question (up to 5 questions).',
                                 style: AppTextStyles.caption
                                     .copyWith(color: AppColors.primaryLight),
                               ),
@@ -221,25 +212,48 @@ class _InterviewScreenState extends State<InterviewScreen> {
   }
 }
 
-class _XpChip extends StatelessWidget {
-  final int xp;
-  const _XpChip({required this.xp});
+class _FeedbackCard extends StatelessWidget {
+  final InterviewAnswer answer;
+  final int number;
+  const _FeedbackCard({required this.answer, required this.number});
+
+  static String _reaction(int? score) {
+    if (score == null) return 'I could not grade that one, but I saved it. On to the next!';
+    if (score >= 70) return 'Strong answer. That is how an engineer explains it.';
+    if (score >= 40) return 'Good start. A bit more depth and it is there.';
+    return 'Not there yet, and that is fine. Read my note, then try the next one.';
+  }
 
   @override
   Widget build(BuildContext context) {
+    final score = answer.score;
+    final color = score == null ? AppColors.textHint : ScoreRing.colorFor(score);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-        border: Border.all(color: AppColors.borderLight.withOpacity(0.5)),
+        color: color.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
+        border: Border.all(color: color.withOpacity(0.55)),
       ),
       child: Row(
-        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const Icon(Icons.bolt_rounded, size: 14, color: AppColors.accentCyan),
-          const SizedBox(width: 4),
-          Text('$xp XP', style: AppTextStyles.caption),
+          if (score != null) ScoreRing(score: score, size: 76) else const Icon(Icons.hourglass_empty_rounded, size: 40, color: AppColors.textHint),
+          const SizedBox(width: AppDimensions.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('ANSWER $number', style: AppTextStyles.eyebrow.copyWith(color: color)),
+                const SizedBox(height: 4),
+                Text(_reaction(score), style: AppTextStyles.bodyBold.copyWith(fontSize: 14, height: 1.4)),
+                if (answer.feedback.isNotEmpty) ...[
+                  const SizedBox(height: 8),
+                  KeyTermText(text: answer.feedback, style: AppTextStyles.body.copyWith(fontSize: 13)),
+                ],
+              ],
+            ),
+          ),
         ],
       ),
     );

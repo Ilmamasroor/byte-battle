@@ -1,0 +1,414 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001014",
+ "title": "Locks: lock(), unlock() and tryLock()",
+ "kind": "computer",
+ "intro": "A ReentrantLock is a lock you control yourself. You must unlock it, and tryLock lets a thread give up. Let's watch both.",
+ "predict": {
+  "question": "A thread calls lock.lock(), then an exception is thrown before unlock() and there is no finally. What happens to the other threads?",
+  "options": [
+   "Java frees the lock automatically",
+   "They wait forever for a lock nobody releases",
+   "Java kills all waiting threads"
+  ],
+  "answer": 1,
+  "reveal": "A ReentrantLock is never released for you. Without unlock() in a finally block, the lock stays owned and everyone else waits forever."
+ },
+ "takeaway": "Always unlock() in a finally block. Use tryLock with a timeout when you would rather give up than wait forever.",
+ "code": [
+  "lock.lock();",
+  "try {",
+  "  counter.value++;",
+  "} finally {",
+  "  lock.unlock();   // always runs",
+  "}",
+  "// Thread-2 refuses to wait forever:",
+  "if (lock.tryLock(1, SECONDS)) {",
+  "  try { counter.value++; }",
+  "  finally { lock.unlock(); }",
+  "} else { log(\"busy, skipping\"); }"
+ ],
+ "steps": [
+  {
+   "say": "A ReentrantLock is a normal heap object you lock and unlock yourself. Both threads share the Counter and this one lock. Nobody owns it yet.",
+   "cpu": {
+    "doing": "two threads about to start",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {}
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {}
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "nobody",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [],
+   "highlight": [
+    "heap"
+   ],
+   "at": -1
+  },
+  {
+   "say": "Thread-1 calls lock.lock(). The lock was free, so Thread-1 now owns it.",
+   "cpu": {
+    "doing": "Thread-1: lock.lock()",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "Thread-1",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 0,
+   "note": "owner = Thread-1"
+  },
+  {
+   "say": "Inside try, Thread-1 does counter.value++ and the counter becomes 1. The try/finally means unlock() will run even if this line fails.",
+   "cpu": {
+    "doing": "Thread-1: counter.value++",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "Thread-1",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 2
+  },
+  {
+   "say": "Thread-2 calls tryLock(1, SECONDS). The lock is owned, so it waits, but only up to one second. Waiting costs no CPU.",
+   "cpu": {
+    "doing": "Thread-2 waits up to 1 s",
+    "regs": {
+     "PC": "line 8"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {}
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "patience": "1 s"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "Thread-1",
+      "waiting": "1"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "heap"
+   ],
+   "at": 7
+  },
+  {
+   "say": "The second passes and Thread-1 is still busy. tryLock gives up and returns false. Thread-2 is not stuck forever.",
+   "cpu": {
+    "doing": "Thread-2: tryLock returned false",
+    "regs": {
+     "PC": "line 11"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {}
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "got_lock": "false"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "Thread-1",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "stack"
+   ],
+   "at": 7,
+   "note": "timed out"
+  },
+  {
+   "say": "Thread-2 takes the else branch, logs that the lock was busy and goes on with other work. A plain lock() would have waited indefinitely.",
+   "cpu": {
+    "doing": "Thread-2: log busy, skipping",
+    "regs": {
+     "PC": "line 11"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "console": [
+    "busy, skipping"
+   ],
+   "highlight": [
+    "console"
+   ],
+   "at": 10
+  },
+  {
+   "say": "Thread-1 finishes try and reaches finally. unlock() releases the lock, so the owner is nobody again.",
+   "cpu": {
+    "doing": "Thread-1: lock.unlock()",
+    "regs": {
+     "PC": "line 5"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "nobody",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 4,
+   "note": "always runs"
+  },
+  {
+   "say": "Later, Thread-2 tries again. The lock is free, so tryLock returns true at once and Thread-2 becomes the owner.",
+   "cpu": {
+    "doing": "Thread-2: tryLock() is true",
+    "regs": {
+     "PC": "line 8"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "got_lock": "true"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "Thread-2",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "stack"
+   ],
+   "at": 7
+  },
+  {
+   "say": "Thread-2 does counter.value++ to reach 2, then its finally unlocks. Always pair every lock with an unlock in finally.",
+   "cpu": {
+    "doing": "Thread-2: counter++, unlock()",
+    "regs": {
+     "PC": "line 10"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "2"
+     },
+     "state": "live"
+    },
+    {
+     "id": "l1",
+     "type": "ReentrantLock",
+     "fields": {
+      "owner": "nobody",
+      "waiting": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "busy, skipping",
+    "counter = 2"
+   ],
+   "highlight": [
+    "heap",
+    "console"
+   ],
+   "at": [
+    8,
+    9
+   ]
+  }
+ ]
+}

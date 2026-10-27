@@ -32,7 +32,7 @@ class AppButton extends StatelessWidget {
       return SecondaryButton(
         label: label,
         icon: icon,
-        iconLeading: icon != null,
+        iconLeading: icon != null && icon != Icons.arrow_forward_rounded,
         onPressed: isLoading ? null : onPressed,
         size: AppButtonSize.xl,
         fullWidth: true,
@@ -42,7 +42,7 @@ class AppButton extends StatelessWidget {
     return GradientPillButton(
       label: label,
       icon: icon,
-      iconLeading: icon != null,
+      iconLeading: icon != null && icon != Icons.arrow_forward_rounded,
       onPressed: onPressed,
       isLoading: isLoading,
       size: AppButtonSize.xl,

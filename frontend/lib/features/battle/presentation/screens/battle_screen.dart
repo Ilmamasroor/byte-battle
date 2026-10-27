@@ -1,287 +1,490 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../core/utils/helpers.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/models/backend_models.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/brand/bit_mascot.dart';
 import '../../../../core/widgets/difficulty_badge.dart';
-import '../../data/battle_question_bank.dart';
+import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/loading_view.dart';
+import '../../../concepts/data/models/concept_model.dart';
 import '../state/battle_ai_controller.dart';
-import '../widgets/battle_option.dart';
+import '../state/battle_controller.dart';
+import '../widgets/battle_answer_option.dart';
 import '../widgets/battle_timer.dart';
 import '../widgets/life_indicator.dart';
 
-/// Boss Battle round screen — matches the "Round 3/5" screenshot: round
-/// + lives header, a countdown timer chip, the question prompt (pulled
-/// from [BattleAiController.loadQuestions], see note below) and the
-/// SOLVED IT / I'M STUCK choice buttons.
-///
-/// There's no backend endpoint yet that hands back a fixed list of
-/// battle questions, so the round pool always resolves to the local
-/// [kBattleQuestionBank] fallback (see [BattleRepository.getQuestions]
-/// for the seam that will call a real endpoint once one exists).
+/// Battle round screen: loads the concept's battle from the backend, starts a session and plays it question by
+/// question. Answers are graded by the server (it never reveals the right option), lives and score come back
+/// with every answer, and the per-question countdown comes from the battle's `timeLimitSeconds`.
+/// Used for the regular Challenge stage and, with [boss] true, for the Boss Battle.
 class BattleScreen extends StatefulWidget {
-  const BattleScreen({super.key});
+  final String conceptId;
+  final bool boss;
+
+  const BattleScreen({super.key, required this.conceptId, this.boss = false});
 
   @override
   State<BattleScreen> createState() => _BattleScreenState();
 }
 
 class _BattleScreenState extends State<BattleScreen> {
-  final _controller = BattleAiController.instance;
+  late final BattleController _battle = BattleController(conceptId: widget.conceptId, boss: widget.boss);
+  final _ai = BattleAiController.instance;
+
+  String? _selected;
+  Timer? _ticker;
+  final Stopwatch _clock = Stopwatch();
+  int _secondsLeft = 0;
+  String? _timedQuestionId;
+
+  // hints for the question on screen (POST /api/ai/battle-hint, levels 1..3)
+  final List<String> _hints = [];
+  bool _hintLoading = false;
+  String? _hintError;
 
   @override
   void initState() {
     super.initState();
-    Helpers.noApiYet('BattleScreen', note: 'question bank is hardcoded fallback (no list-battle-questions endpoint yet)');
-    _controller.loadQuestions();
+    _battle.addListener(_onBattleChanged);
+    _battle.loadAndStart();
   }
 
-  static const _totalRounds = 5;
-
-  int _currentRound = 3;
-  int _lives = 3;
-
-  String? _selected;
-  bool _answered = false;
-
-  // ---- Hint reveal state (per round) ----
-  int _revealedHints = 0;
-  bool _hintLoading = false;
-
-  bool get _isCorrect => _selected == 'SOLVED';
-
-  BattleQuestionData _questionFor(List<BattleQuestionData> bank) {
-    return bank[(_currentRound - 1) % bank.length];
+  @override
+  void dispose() {
+    _ticker?.cancel();
+    _battle.removeListener(_onBattleChanged);
+    _battle.dispose();
+    super.dispose();
   }
 
-  void _select(String option) {
-    if (_answered) return;
-    setState(() => _selected = option);
+  /// Starts (or resets) the countdown whenever a new question appears.
+  void _onBattleChanged() {
+    final q = _battle.question;
+    if (q == null || _battle.answeredCurrent || _timedQuestionId == q.id) return;
+    _timedQuestionId = q.id;
+    _selected = null;
+    _hints.clear();
+    _hintError = null;
+    _clock
+      ..reset()
+      ..start();
+    _secondsLeft = _battle.timeLimitSeconds;
+    _ticker?.cancel();
+    if (_battle.timeLimitSeconds > 0) {
+      _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+    }
   }
 
-  Future<void> _revealNextHint(BattleQuestionData question) async {
-    if (_hintLoading || _revealedHints >= question.hints.length) return;
-    setState(() => _hintLoading = true);
-    // Hardcoded 2-second "thinking" delay before the hint appears.
-    await Future.delayed(const Duration(seconds: 2));
+  void _tick() {
     if (!mounted) return;
-    setState(() {
-      _revealedHints += 1;
-      _hintLoading = false;
-    });
+    if (_battle.answeredCurrent || _battle.isSubmitting) return;
+    final left = (_battle.timeLimitSeconds - _clock.elapsed.inSeconds).clamp(0, _battle.timeLimitSeconds);
+    setState(() => _secondsLeft = left);
+    if (left == 0) _submit(timedOut: true);
   }
 
-  void _continue(BattleQuestionData question) {
-    if (_selected == null) return;
-    setState(() => _answered = true);
-    if (!_isCorrect) {
-      setState(() => _lives = (_lives - 1).clamp(0, 3));
-      // Wrong answer -> show the full-screen feedback with hints. This is
-      // only ever reached from here (an "I'm stuck" pick), so it can't
-      // show up in the wrong place in the flow. Coming back ("Try Again")
-      // resets the round so the person can retry the same question.
-      Navigator.of(context)
-          .pushNamed(
-        RouteNames.battleFeedback,
-        arguments: {
-          'topicLabel': question.topicLabel,
-          'message':
-              "No worries — this one's tricky. Here's some help getting unstuck.",
-          'hints': question.hints,
-          'quote': 'Every bug is a lesson in disguise.',
-          'question': question.question,
-        },
-      )
-          .then((_) {
-        if (!mounted) return;
-        setState(() {
-          _selected = null;
-          _answered = false;
-          _revealedHints = 0;
-        });
+  Future<void> _submit({bool timedOut = false}) async {
+    final answer = timedOut ? 'TIME_UP' : _selected;
+    if (answer == null) return;
+    _ticker?.cancel();
+    final seconds = _clock.elapsed.inSeconds;
+    _clock.stop();
+    final result = await _battle.submit(answer, seconds);
+    if (!mounted) return;
+    if (_battle.sessionEnded) {
+      await _finish();
+      return;
+    }
+    if (result == null) {
+      // could not send it: let the learner retry (and keep the clock honest)
+      _clock.start();
+      if (_battle.timeLimitSeconds > 0 && !timedOut) {
+        _ticker = Timer.periodic(const Duration(seconds: 1), (_) => _tick());
+      }
+      return;
+    }
+    if (!result.correct) {
+      await Navigator.of(context).pushNamed(RouteNames.battleFeedback, arguments: {
+        'conceptId': widget.conceptId,
+        'topicLabel': _battle.conceptName,
+        'message': timedOut
+            ? "Time ran out on this one. You lost a life (${result.lives} left)."
+            : result.lives > 0
+                ? 'That was not the right answer. You lost a life (${result.lives} left).'
+                : 'That was not the right answer, and you are out of lives.',
+        'question': _battle.question?.text,
+        'continueLabel': 'Continue',
       });
     }
   }
 
-  void _next() {
-    if (_lives == 0) {
-      Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleIntro);
-      return;
+  Future<void> _next() async {
+    if (_battle.finishedAfterAnswer) {
+      await _finish();
+    } else {
+      _battle.advance();
     }
-    if (_currentRound >= _totalRounds) {
-      Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleResult);
-      return;
-    }
+  }
+
+  Future<void> _finish() async {
+    final outcome = await _battle.finish();
+    if (!mounted || outcome == null) return;
+    Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleResult, arguments: outcome);
+  }
+
+  Future<void> _getHint() async {
+    final q = _battle.question;
+    final info = _battle.concept;
+    if (q == null || info == null || _hintLoading || _hints.length >= 3) return;
     setState(() {
-      _currentRound += 1;
-      _selected = null;
-      _answered = false;
-      _revealedHints = 0;
+      _hintLoading = true;
+      _hintError = null;
+    });
+    final knowledge = await _ai.canonicalFor(widget.conceptId);
+    await _ai.loadBattleHint(
+      concept: ConceptModel(id: info.id, name: info.name, description: info.description, difficulty: info.difficulty),
+      question: q.text,
+      canonicalKnowledge: knowledge,
+      hintLevel: _hints.length + 1,
+    );
+    if (!mounted) return;
+    setState(() {
+      _hintLoading = false;
+      final text = _ai.battleHint?.hint.hint ?? '';
+      if (_ai.hintErrorMessage != null) {
+        _hintError = _ai.hintErrorMessage;
+      } else if (text.isNotEmpty) {
+        _hints.add(text);
+      } else {
+        _hintError = 'No hint available right now. Try again in a moment.';
+      }
     });
   }
 
   @override
   Widget build(BuildContext context) {
-    // Intentionally no back button — confirm with product whether learners
-    // should be able to exit an active battle early (e.g. via a confirm-exit
-    // dialog) or this is by design.
+    // Intentionally no back button during a live battle (leaving would abandon the session).
     return ListenableBuilder(
-      listenable: _controller,
+      listenable: _battle,
       builder: (context, _) {
-        final bank = _controller.questions;
-        if (bank == null || bank.isEmpty) {
+        if (_battle.isLoading) {
           return const Scaffold(
             backgroundColor: Colors.transparent,
-            body: Center(child: CircularProgressIndicator()),
+            body: LoadingView(message: 'Preparing your battle...'),
           );
         }
-        final question = _questionFor(bank);
-
-        return Scaffold(
-          backgroundColor: Colors.transparent,
-          body: SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(AppDimensions.screenPadding),
+        final q = _battle.question;
+        if (_battle.errorMessage != null || q == null) {
+          return Scaffold(
+            backgroundColor: Colors.transparent,
+            body: SafeArea(
               child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Round $_currentRound/$_totalRounds', style: AppTextStyles.heading2),
-                            const SizedBox(height: AppDimensions.spacingXs),
-                            Text('Boss battle', style: AppTextStyles.caption),
-                          ],
-                        ),
-                      ),
-                      const BattleTimer(secondsRemaining: 102),
-                      const SizedBox(width: AppDimensions.spacingSm),
-                      LifeIndicator(lives: _lives),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.spacingLg),
-                  Row(
-                    children: [
-                      DifficultyBadge(level: _displayDifficulty(question.difficulty)),
-                      const SizedBox(width: AppDimensions.spacingSm),
-                      Expanded(
-                        child: Text(
-                          question.topicLabel,
-                          style: AppTextStyles.caption,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.spacingMd),
                   Expanded(
-                    child: SingleChildScrollView(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(AppDimensions.spacingMd),
-                            decoration: BoxDecoration(
-                              color: AppColors.surface,
-                              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                            ),
-                            child: Text(question.question, style: AppTextStyles.bodyBold),
-                          ),
-                          const SizedBox(height: AppDimensions.spacingLg),
-                          for (var i = 0; i < _revealedHints; i++)
-                            Padding(
-                              padding: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
-                              child: Container(
-                                width: double.infinity,
-                                padding: const EdgeInsets.all(AppDimensions.spacingMd),
-                                decoration: BoxDecoration(
-                                  color: AppColors.surface.withOpacity(0.4),
-                                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                                  border: Border.all(color: AppColors.borderLight.withOpacity(0.4)),
-                                ),
-                                child: Row(
-                                  crossAxisAlignment: CrossAxisAlignment.start,
-                                  children: [
-                                    const Icon(Icons.lightbulb_outline_rounded,
-                                        color: AppColors.warning, size: 18),
-                                    const SizedBox(width: AppDimensions.spacingSm),
-                                    Expanded(
-                                      child: Text('Hint ${i + 1}: ${question.hints[i]}',
-                                          style: AppTextStyles.body),
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          if (_revealedHints < question.hints.length)
-                            TextButton.icon(
-                              onPressed: _hintLoading ? null : () => _revealNextHint(question),
-                              icon: _hintLoading
-                                  ? const SizedBox(
-                                      width: 14,
-                                      height: 14,
-                                      child: CircularProgressIndicator(strokeWidth: 2),
-                                    )
-                                  : const Icon(Icons.lightbulb_outline_rounded, size: 18),
-                              label: Text(_hintLoading
-                                  ? 'Thinking...'
-                                  : (_revealedHints == 0 ? 'Get a Hint' : 'Get Next Hint')),
-                            ),
-                        ],
-                      ),
+                    child: ErrorView(
+                      message: _battle.errorMessage ?? 'Could not load the battle.',
+                      onRetry: _battle.noBattle ? null : _battle.loadAndStart,
                     ),
                   ),
-                  const SizedBox(height: AppDimensions.spacingLg),
-                  Row(
-                    children: [
-                      BattleOption(
-                        label: "I'M STUCK",
-                        color: AppColors.warning,
-                        selected: _selected == 'STUCK',
-                        onTap: () => _select('STUCK'),
-                      ),
-                      const SizedBox(width: AppDimensions.spacingMd),
-                      BattleOption(
-                        label: 'SOLVED IT',
-                        color: AppColors.success,
-                        selected: _selected == 'SOLVED',
-                        onTap: () => _select('SOLVED'),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: AppDimensions.spacingLg),
-                  AppButton(
-                    label: _answered ? 'NEXT' : 'CONTINUE',
-                    onPressed: _answered ? _next : (_selected == null ? null : () => _continue(question)),
+                  Padding(
+                    padding: const EdgeInsets.all(AppDimensions.screenPadding),
+                    child: AppButton(
+                      label: 'BACK',
+                      outlined: true,
+                      onPressed: () => Navigator.of(context).maybePop(),
+                    ),
                   ),
                 ],
               ),
             ),
-          ),
-        );
+          );
+        }
+        return _buildRound(context, q);
       },
     );
   }
 
-  /// [DifficultyBadge] only special-cases 'intermediate'/'advanced'
-  /// (defaulting everything else to the beginner/green look), so map this
-  /// question bank's EASY/MEDIUM/HARD labels onto that vocabulary.
-  String _displayDifficulty(String difficulty) {
+  Widget _buildRound(BuildContext context, BattleQuestionModel q) {
+    final answer = _battle.lastAnswer;
+    final graded = answer != null;
+    final locked = graded || _battle.isSubmitting;
+    return Scaffold(
+      backgroundColor: Colors.transparent,
+      body: SafeArea(
+        child: Padding(
+          padding: const EdgeInsets.all(AppDimensions.screenPadding),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('Round ${_battle.round}/${_battle.totalQuestions}', style: AppTextStyles.heading2),
+                        const SizedBox(height: AppDimensions.spacingXs),
+                        Text(
+                          widget.boss ? 'Boss battle' : (_battle.battle?.title ?? 'Battle'),
+                          style: AppTextStyles.caption,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (_battle.timeLimitSeconds > 0) BattleTimer(secondsRemaining: _secondsLeft),
+                  const SizedBox(width: AppDimensions.spacingSm),
+                  LifeIndicator(lives: _battle.lives, maxLives: _battle.maxLives),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.spacingMd),
+              _RoundProgress(round: _battle.round, total: _battle.totalQuestions, graded: graded),
+              const SizedBox(height: AppDimensions.spacingMd),
+              Row(
+                children: [
+                  DifficultyBadge(level: _displayDifficulty(_battle.battle?.difficulty ?? '')),
+                  const SizedBox(width: AppDimensions.spacingSm),
+                  Expanded(
+                    child: Text(
+                      '${_battle.conceptName}  •  ${_label(q.type)}',
+                      style: AppTextStyles.caption,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  Text('Score ${_battle.score}',
+                      style: AppTextStyles.caption.copyWith(color: AppColors.primaryLight)),
+                ],
+              ),
+              const SizedBox(height: AppDimensions.spacingMd),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(AppDimensions.spacingMd),
+                        decoration: BoxDecoration(
+                          color: AppColors.surface,
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                          border: Border.all(color: AppColors.border),
+                        ),
+                        child: Text(q.text, style: AppTextStyles.bodyBold.copyWith(fontSize: 16, height: 1.45)),
+                      ),
+                      const SizedBox(height: AppDimensions.spacingMd),
+                      if (q.options.isEmpty)
+                        Text('This question has no answer options.',
+                            style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                      for (final option in q.options)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
+                          child: BattleAnswerOption(
+                            label: option,
+                            index: q.options.indexOf(option),
+                            selected: _selected == option,
+                            state: !graded || _selected != option
+                                ? BattleOptionState.idle
+                                : (answer.correct ? BattleOptionState.correct : BattleOptionState.wrong),
+                            onTap: locked ? null : () => setState(() => _selected = option),
+                          ),
+                        ),
+                      if (graded) _AnswerBanner(answer: answer),
+                      if (_battle.actionError != null)
+                        Padding(
+                          padding: const EdgeInsets.only(top: AppDimensions.spacingSm),
+                          child: Text(_battle.actionError!,
+                              style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                        ),
+                      const SizedBox(height: AppDimensions.spacingSm),
+                      for (var i = 0; i < _hints.length; i++)
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
+                          child: _HintCard(index: i + 1, text: _hints[i]),
+                        ),
+                      if (_hintError != null)
+                        Text(_hintError!, style: AppTextStyles.caption.copyWith(color: AppColors.error)),
+                      if (!graded && _hints.length < 3)
+                        TextButton.icon(
+                          onPressed: _hintLoading ? null : _getHint,
+                          icon: _hintLoading
+                              ? const SizedBox(
+                                  width: 14,
+                                  height: 14,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                )
+                              : const Icon(Icons.lightbulb_outline_rounded, size: 18),
+                          label: Text(_hintLoading
+                              ? 'Thinking...'
+                              : (_hints.isEmpty ? 'Get a Hint' : 'Get a Stronger Hint')),
+                        ),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: AppDimensions.spacingMd),
+              AppButton(
+                label: graded
+                    ? (_battle.finishedAfterAnswer ? 'SEE RESULT' : 'NEXT')
+                    : 'CONTINUE',
+                isLoading: _battle.isSubmitting || _battle.isFinishing,
+                onPressed: graded
+                    ? _next
+                    : (_selected == null || _battle.isSubmitting ? null : () => _submit()),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  /// `MCQ` / `PREDICT_OUTPUT` -> "Predict output".
+  static String _label(String type) {
+    if (type.isEmpty) return 'Question';
+    if (type == 'MCQ') return 'Multiple choice';
+    final words = type.toLowerCase().split('_');
+    return '${words.first[0].toUpperCase()}${words.first.substring(1)}${words.length > 1 ? ' ${words.sublist(1).join(' ')}' : ''}';
+  }
+
+  /// [DifficultyBadge] only special-cases 'intermediate'/'advanced', so map the backend's EASY/MEDIUM/HARD.
+  static String _displayDifficulty(String difficulty) {
     switch (difficulty.toUpperCase()) {
       case 'MEDIUM':
         return 'Intermediate';
       case 'HARD':
         return 'Advanced';
-      case 'EASY':
       default:
         return 'Beginner';
     }
+  }
+}
+
+/// The companion reacting to the graded answer: cheering a correct one (with an XP pop) and encouraging after a
+/// miss, so a wrong answer feels like part of the game instead of a penalty.
+class _AnswerBanner extends StatelessWidget {
+  final BattleAnswerResult answer;
+  const _AnswerBanner({required this.answer});
+
+  static const _cheers = ['Boom! That is exactly it.', 'Clean. You are getting the hang of this.', 'Yes! Nailed it.', 'Sharp thinking. Keep that streak.'];
+  static const _oops = ['So close. Every miss teaches you something.', 'Tricky one! Now you know the trap.', 'That is a classic mix-up. It sticks better now.'];
+
+  @override
+  Widget build(BuildContext context) {
+    final color = answer.correct ? AppColors.success : AppColors.error;
+    final pool = answer.correct ? _cheers : _oops;
+    final line = pool[(answer.pointsEarned + answer.lives) % pool.length];
+    final tail = answer.correct
+        ? ''
+        : (answer.lives > 0 ? ' You lost a life, ${answer.lives} left.' : ' You are out of lives.');
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(top: AppDimensions.spacingSm),
+      padding: const EdgeInsets.fromLTRB(AppDimensions.spacingSm, AppDimensions.spacingSm, AppDimensions.spacingMd, AppDimensions.spacingSm),
+      decoration: BoxDecoration(
+        color: color.withOpacity(0.1),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: color.withOpacity(0.5)),
+      ),
+      child: Row(
+        children: [
+          BitMascot(size: 48, mood: answer.correct ? BitMood.cheer : BitMood.curious),
+          const SizedBox(width: AppDimensions.spacingSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('$line$tail', style: AppTextStyles.bodyBold.copyWith(fontSize: 13.5, height: 1.4)),
+                if (answer.correct && answer.pointsEarned > 0) ...[
+                  const SizedBox(height: 6),
+                  TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0.4, end: 1),
+                    duration: const Duration(milliseconds: 500),
+                    curve: Curves.elasticOut,
+                    builder: (context, t, child) => Transform.scale(scale: t, alignment: Alignment.centerLeft, child: child),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+                      decoration: BoxDecoration(color: AppColors.xp, borderRadius: BorderRadius.circular(100)),
+                      child: Text('+${answer.pointsEarned} XP', style: AppTextStyles.caption.copyWith(color: AppColors.onAccent, fontWeight: FontWeight.w800)),
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HintCard extends StatelessWidget {
+  final int index;
+  final String text;
+  const _HintCard({required this.index, required this.text});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(AppDimensions.spacingSm, AppDimensions.spacingSm, AppDimensions.spacingMd, AppDimensions.spacingSm),
+      decoration: BoxDecoration(
+        color: AppColors.xp.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: AppColors.xp.withOpacity(0.4)),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const BitMascot(size: 40, mood: BitMood.curious),
+          const SizedBox(width: AppDimensions.spacingSm),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('HINT $index', style: AppTextStyles.eyebrow.copyWith(color: AppColors.xp, fontSize: 10)),
+                const SizedBox(height: 3),
+                Text(text, style: AppTextStyles.body.copyWith(color: AppColors.textPrimary)),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+
+/// Segmented progress through the battle's rounds: done = Flame, current = outlined, upcoming = quiet.
+class _RoundProgress extends StatelessWidget {
+  final int round;
+  final int total;
+  final bool graded;
+  const _RoundProgress({required this.round, required this.total, required this.graded});
+
+  @override
+  Widget build(BuildContext context) {
+    if (total <= 0) return const SizedBox.shrink();
+    return Row(
+      children: [
+        for (var i = 1; i <= total; i++) ...[
+          if (i > 1) const SizedBox(width: 5),
+          Expanded(
+            child: AnimatedContainer(
+              duration: const Duration(milliseconds: 250),
+              height: 6,
+              decoration: BoxDecoration(
+                color: i < round || (i == round && graded) ? AppColors.primary : (i == round ? AppColors.primary.withOpacity(0.4) : AppColors.surfaceRaised),
+                borderRadius: BorderRadius.circular(100),
+              ),
+            ),
+          ),
+        ],
+      ],
+    );
   }
 }

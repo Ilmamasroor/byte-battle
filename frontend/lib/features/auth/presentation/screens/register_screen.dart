@@ -81,16 +81,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         (route) => false,
       );
     } else {
-      // Registration failed — server error (500), timeout, or anything
-      // else unexpected. Rather than leaving the person stuck on a
-      // broken/crashed-looking form, show a quick message and drop them
-      // safely on the dashboard instead of a dead end.
+      // Registration failed (validation, duplicate e-mail, server error, timeout). No account/session exists,
+      // so staying on the form is the only honest option: sending the person to the dashboard would show a
+      // logged-in app that cannot load anything.
       _showMessage(
         AuthController.instance.errorMessage ?? 'Registration failed. Please try again.',
-      );
-      Navigator.of(context).pushNamedAndRemoveUntil(
-        RouteNames.dashboard,
-        (route) => false,
       );
     }
   }
@@ -140,17 +135,17 @@ class _RegisterScreenState extends State<RegisterScreen> {
                 const SizedBox(height: AppDimensions.spacingXl),
 
                 RichText(
-                  text: const TextSpan(
-                    style: AppTextStyles.heading1,
-                    children: [
-                      TextSpan(text: 'Create '),
-                      TextSpan(text: 'Account', style: TextStyle(color: AppColors.accentCyan)),
+                  text: TextSpan(
+                    style: AppTextStyles.display.copyWith(fontSize: 34),
+                    children: const [
+                      TextSpan(text: 'Create your\n'),
+                      TextSpan(text: 'player profile', style: TextStyle(color: AppColors.primary)),
                     ],
                   ),
                 ),
                 const SizedBox(height: AppDimensions.spacingSm),
                 Text(
-                  'Start your Byte Battle journey today',
+                  'Two minutes to sign up. Then we shape every lesson around how you learn.',
                   style: AppTextStyles.body,
                 ),
                 const SizedBox(height: AppDimensions.spacingXl),
@@ -227,7 +222,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: TextStyle(
                                 fontFamily: AppTextStyles.fontFamily,
                                 fontSize: 14,
-                                color: AppColors.accentCyan,
+                                color: AppColors.primaryLight,
                                 decoration: TextDecoration.underline,
                               ),
                             ),
@@ -237,7 +232,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                               style: TextStyle(
                                 fontFamily: AppTextStyles.fontFamily,
                                 fontSize: 14,
-                                color: AppColors.accentCyan,
+                                color: AppColors.primaryLight,
                                 decoration: TextDecoration.underline,
                               ),
                             ),
@@ -268,7 +263,7 @@ class _RegisterScreenState extends State<RegisterScreen> {
                             fontFamily: AppTextStyles.fontFamily,
                             fontSize: 13,
                             fontWeight: FontWeight.w700,
-                            color: AppColors.accentCyan,
+                            color: AppColors.primaryLight,
                             decoration: TextDecoration.underline,
                           ),
                         ),
@@ -313,11 +308,11 @@ class _PasswordRequirements extends StatelessWidget {
           padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
           decoration: BoxDecoration(
             color: met
-                ? AppColors.accentCyan.withOpacity(0.12)
+                ? AppColors.success.withOpacity(0.12)
                 : AppColors.surface.withOpacity(0.5),
             borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
             border: Border.all(
-              color: met ? AppColors.accentCyan : AppColors.border,
+              color: met ? AppColors.success : AppColors.border,
             ),
           ),
           child: Row(
@@ -326,13 +321,13 @@ class _PasswordRequirements extends StatelessWidget {
               Icon(
                 met ? Icons.check_circle_rounded : Icons.circle_outlined,
                 size: 13,
-                color: met ? AppColors.accentCyan : AppColors.textHint,
+                color: met ? AppColors.success : AppColors.textHint,
               ),
               const SizedBox(width: 4),
               Text(
                 entry.key,
                 style: AppTextStyles.caption.copyWith(
-                  color: met ? AppColors.accentCyan : AppColors.textHint,
+                  color: met ? AppColors.success : AppColors.textHint,
                   fontWeight: met ? FontWeight.w600 : FontWeight.w400,
                 ),
               ),

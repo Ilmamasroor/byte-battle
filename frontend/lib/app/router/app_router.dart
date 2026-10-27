@@ -1,3 +1,4 @@
+import '../../features/readiness/presentation/screens/readiness_screen.dart';
 import 'package:flutter/material.dart';
 import 'route_names.dart';
 import '../constants/app_constants.dart';
@@ -22,6 +23,7 @@ import '../../features/learning/mnemonic/screens/mnemonic_screen.dart';
 import '../../features/battle/presentation/screens/battle_screen.dart';
 import '../../features/battle/presentation/screens/battle_intro_screen.dart';
 import '../../features/battle/presentation/screens/battle_result_screen.dart';
+import '../../features/battle/presentation/state/battle_controller.dart' show BattleOutcome;
 import '../../features/battle/presentation/widgets/battle_feedback.dart';
 import '../../features/coding/presentation/screens/coding_screen.dart';
 import '../../features/coding/presentation/screens/coding_result_screen.dart';
@@ -51,6 +53,11 @@ class AppRouter {
         '${settings.arguments != null ? '  args: ${settings.arguments}' : ''}');
 
     switch (settings.name) {
+      // '/' is what Flutter web opens first (the browser path). It must NOT build an authenticated screen (the session
+      // hasn't been checked yet) and the splash that follows replaces the whole stack, so this is just a blank page.
+      case '/':
+        return _fade(const Scaffold(body: SizedBox.shrink()));
+
       case RouteNames.splash:
         return _fade(const SplashScreen());
 
@@ -74,19 +81,34 @@ class AppRouter {
         return _fade(const DashboardScreen());
 
       case RouteNames.conceptList:
-        return _fade(const ConceptListScreen());
+        final listArgs = settings.arguments;
+        return _fade(ConceptListScreen(
+          topicId: listArgs is Map ? listArgs['topicId'] as String? : null,
+          topicName: listArgs is Map ? listArgs['topicName'] as String? : null,
+        ));
 
       case RouteNames.conceptDetail:
-        return _fade(const ConceptDetailScreen());
+        return _fade(ConceptDetailScreen(conceptId: _conceptId(settings)));
+
+      case RouteNames.readiness:
+        final rArgs = settings.arguments;
+        return _fade(ReadinessScreen(
+          conceptId: _conceptId(settings),
+          nextRoute: rArgs is Map && rArgs['next'] is String ? rArgs['next'] as String : RouteNames.learningJourney,
+        ));
 
       case RouteNames.learningJourney:
-        return _fade(const LearningJourneyScreen());
+        return _fade(LearningJourneyScreen(conceptId: _conceptId(settings)));
 
       case RouteNames.domainList:
         return _fade(DomainListScreen(highlightDomain: _domainArg(settings)));
 
       case RouteNames.topicList:
-        return _fade(TopicListScreen(domainName: _domainArg(settings)));
+        final topicArgs = settings.arguments;
+        return _fade(TopicListScreen(
+          domainId: topicArgs is Map ? topicArgs['domainId'] as String? : null,
+          domainName: _domainArg(settings),
+        ));
 
       case RouteNames.roadmap:
         return _fade(const RoadmapScreen());
@@ -104,24 +126,25 @@ class AppRouter {
         return _fade(MnemonicScreen(conceptId: _conceptId(settings)));
 
       case RouteNames.battle:
-        return _fade(const BattleScreen());
+        return _fade(BattleScreen(conceptId: _conceptId(settings), boss: _flag(settings, 'boss')));
 
       case RouteNames.battleFeedback:
         final args = settings.arguments as Map?;
         return _fade(BattleFeedback(
+          conceptId: _conceptId(settings),
           topicLabel: args?['topicLabel'] as String? ?? 'Practice',
-          message: args?['message'] as String? ??
-              'You got the core idea, but missed one detail.',
+          message: args?['message'] as String? ?? 'That was not the right answer.',
           hints: (args?['hints'] as List?)?.cast<String>() ?? const [],
           quote: args?['quote'] as String? ?? 'Every bug is a lesson in disguise.',
           question: args?['question'] as String?,
+          continueLabel: args?['continueLabel'] as String? ?? 'Try Again',
         ));
 
       case RouteNames.bossBattleIntro:
-        return _fade(const BattleIntroScreen());
+        return _fade(BattleIntroScreen(conceptId: _conceptId(settings)));
 
       case RouteNames.bossBattleResult:
-        return _fade(const BattleResultScreen());
+        return _fade(BattleResultScreen(outcome: settings.arguments is BattleOutcome ? settings.arguments as BattleOutcome : null));
 
       case RouteNames.coding:
         return _fade(const CodingScreen());
@@ -148,7 +171,7 @@ class AppRouter {
         return _fade(const InterviewResultScreen());
 
       case RouteNames.score:
-        return _fade(const ScoreScreen());
+        return _fade(ScoreScreen(outcome: settings.arguments is BattleOutcome ? settings.arguments as BattleOutcome : null));
 
       case RouteNames.performance:
         return _fade(const PerformanceScreen());
@@ -197,6 +220,11 @@ class AppRouter {
       return args['domainName'] as String;
     }
     return null;
+  }
+
+  static bool _flag(RouteSettings settings, String key) {
+    final args = settings.arguments;
+    return args is Map && args[key] == true;
   }
 
   static String _conceptId(RouteSettings settings) {

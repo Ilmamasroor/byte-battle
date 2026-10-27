@@ -1,0 +1,151 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001046",
+ "title": "Caching: remember the answer, beware stale",
+ "kind": "sequence",
+ "intro": "Asking the database is slow. A cache keeps answers close by, but what if the answer changes?",
+ "predict": {
+  "question": "Ann is renamed to Anna in the database, but the cache still holds her. What does the next cache read return?",
+  "options": [
+   "Anna, caches always update themselves",
+   "Ann, the old stale value",
+   "An error, because the data changed"
+  ],
+  "answer": 1,
+  "reveal": "The cache has no idea the database changed. It returns Ann until the entry expires or the app deletes it."
+ },
+ "takeaway": "A cache trades freshness for speed: reads get much faster, so you must expire or invalidate entries when data changes.",
+ "steps": [
+  {
+   "say": "The app needs user 42's profile. The cache, a fast memory store, is empty. The database is slow but has the truth.",
+   "actors": [
+    "App",
+    "Cache",
+    "Database"
+   ],
+   "actorState": {
+    "0": "ready",
+    "1": "empty",
+    "2": "user42=Ann"
+   }
+  },
+  {
+   "say": "The app asks the cache first for user 42.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "get user:42",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Nothing there yet. That is a cache miss.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "miss (empty)",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "On a miss the app falls back to the database.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "SELECT user 42",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The database finds Ann, but it took about 80 ms.",
+   "msg": {
+    "from": 2,
+    "to": 0,
+    "label": "Ann (80 ms)",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "The app saves the answer in the cache with a TTL (time to live) of 60 seconds, so it expires on its own.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "set user:42=Ann TTL 60",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "user42=Ann",
+    "2": "user42=Ann"
+   }
+  },
+  {
+   "say": "Next request: ask the cache again.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "get user:42",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "A cache hit! The answer comes back in about 1 ms and the database is never bothered.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "hit: Ann (1 ms)",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "Now Ann changes her name. The database says Anna, but the cache still holds Ann.",
+   "msg": {
+    "from": 2,
+    "to": 2,
+    "label": "name = Anna",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "user42=Ann",
+    "2": "user42=Anna"
+   }
+  },
+  {
+   "say": "The next read is a hit, but it is stale: the cache serves the old name. Fast and wrong.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "hit: Ann (STALE)",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "Fix: when the app updates the user, it also deletes the cache key. This is invalidation.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "delete user:42",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "empty",
+    "2": "user42=Anna"
+   }
+  },
+  {
+   "say": "The next read misses, reloads Anna from the database, and caches it. TTL expiry would heal it too, just later.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "reload: Anna, fresh",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "user42=Anna",
+    "2": "user42=Anna"
+   }
+  }
+ ]
+}

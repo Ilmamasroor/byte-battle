@@ -7,6 +7,7 @@
 /// from "returned empty".
 class ConceptModel {
   final String id;
+  final String? topicId;
   final String? name;
   final String? description;
   final String? slug;
@@ -15,6 +16,7 @@ class ConceptModel {
 
   const ConceptModel({
     required this.id,
+    this.topicId,
     this.name,
     this.description,
     this.slug,
@@ -25,17 +27,19 @@ class ConceptModel {
   factory ConceptModel.fromJson(Map<String, dynamic> json) {
     return ConceptModel(
       id: json['id']?.toString() ?? '',
+      topicId: json['topicId']?.toString(),
       name: json['name'] as String?,
       description: json['description'] as String?,
       slug: json['slug'] as String?,
       difficulty: json['difficulty'] as String?,
-      displayOrder: json['displayOrder'] as int?,
+      displayOrder: (json['displayOrder'] as num?)?.toInt(),
     );
   }
 
   Map<String, dynamic> toJson() {
     return {
       'id': id,
+      if (topicId != null) 'topicId': topicId,
       if (name != null) 'name': name,
       if (description != null) 'description': description,
       if (slug != null) 'slug': slug,
@@ -43,4 +47,11 @@ class ConceptModel {
       if (displayOrder != null) 'displayOrder': displayOrder,
     };
   }
+}
+
+/// Backend difficulty enums (`EASY`/`MEDIUM`/`HARD`, or `BEGINNER`...) as a display label ("Hard"); `null` -> "Medium".
+String difficultyLabel(String? raw) {
+  if (raw == null || raw.trim().isEmpty) return 'Medium';
+  final s = raw.trim().toLowerCase();
+  return s[0].toUpperCase() + s.substring(1);
 }

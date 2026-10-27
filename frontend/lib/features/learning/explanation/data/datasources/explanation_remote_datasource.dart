@@ -9,13 +9,14 @@ class ExplanationRemoteDatasource {
   final ApiClient _apiClient;
 
   /// `POST /api/ai/canonical-knowledge?conceptId={conceptId}` — no JSON
-  /// body. Uses [ApiClient.postRaw] because this endpoint's response is
+  /// body. Uses [ApiClient.postJson] because this endpoint's response is
   /// the payload directly, not wrapped in `{success, data}`.
   Future<CanonicalKnowledgeModel> getCanonicalKnowledge(String conceptId) async {
-    final json = await _apiClient.postRaw(
+    final json = await _apiClient.postJson(
       ApiEndpoints.aiCanonicalKnowledge,
       query: {'conceptId': conceptId},
+      timeout: ApiClient.slowTimeout,
     );
-    return CanonicalKnowledgeModel.fromJson(json);
+    return CanonicalKnowledgeModel.fromJson(Map<String, dynamic>.from(json as Map));
   }
 }

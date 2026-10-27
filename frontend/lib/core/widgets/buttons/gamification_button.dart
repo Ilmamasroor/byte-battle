@@ -1,3 +1,4 @@
+import '../../utils/ui_text.dart';
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_dimensions.dart';
@@ -51,8 +52,8 @@ class GamificationButton extends StatelessWidget {
           case ButtonInteractionState.pressed:
             gradient = null;
             solidColor = isPink
-                ? const Color(0xFFBE185D)
-                : const Color(0xFFB45309);
+                ? const Color(0xFF2E9CC4)
+                : const Color(0xFFE0A93B);
             break;
           case ButtonInteractionState.hover:
             gradient = isPink
@@ -67,7 +68,7 @@ class GamificationButton extends StatelessWidget {
 
         final textColor = state == ButtonInteractionState.disabled
             ? AppColors.textPrimary.withOpacity(0.6)
-            : AppColors.white;
+            : AppColors.onAccent;
 
         return AnimatedContainer(
           duration: const Duration(milliseconds: 120),
@@ -89,7 +90,7 @@ class GamificationButton extends StatelessWidget {
               SizedBox(width: size.iconGap),
               Flexible(
                 child: Text(
-                  label,
+                  UiText.sentence(label),
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.button.copyWith(
                     fontSize: size.fontSize,

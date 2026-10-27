@@ -1,0 +1,310 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001008",
+ "title": "Binary search: halve the problem each time",
+ "kind": "structure",
+ "intro": "We are hunting for 23 in a sorted list. How many peeks will it take?",
+ "predict": {
+  "question": "Searching a sorted list of 1,000,000 numbers, about how many items does binary search need to look at?",
+  "options": [
+   "About 500,000",
+   "About 1,000",
+   "About 20"
+  ],
+  "answer": 2,
+  "reveal": "Each peek halves what is left: 1,000,000 shrinks to 1 in about 20 halvings. That is O(log n)."
+ },
+ "takeaway": "On sorted data, one comparison removes half the remaining items, so the work grows like log n.",
+ "code": [
+  "int lo = 0, hi = n - 1;",
+  "while (lo <= hi) {",
+  "  int mid = (lo + hi) / 2;",
+  "  if (a[mid] == t) return mid;",
+  "  if (a[mid] < t) lo = mid + 1;",
+  "  else hi = mid - 1;",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Binary search needs a SORTED list. We want 23. Instead of checking every item, we will keep cutting the list in half.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted array",
+     "cells": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "8",
+       "s": "idle"
+      },
+      {
+       "v": "12",
+       "s": "idle"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      },
+      {
+       "v": "23",
+       "s": "idle"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "Start with lo at the left end and hi at the right end. The middle is index 3, and it holds 12.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted array",
+     "cells": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "8",
+       "s": "idle"
+      },
+      {
+       "v": "12",
+       "s": "compare"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      },
+      {
+       "v": "23",
+       "s": "idle"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "lo": 0,
+      "mid": 3,
+      "hi": 6
+     }
+    }
+   ],
+   "at": 2,
+   "note": "mid = (0 + 6) / 2 = 3"
+  },
+  {
+   "say": "12 is smaller than 23 and the list is sorted, so 23 cannot be at indexes 0 to 3. Throw that whole half away.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted array",
+     "cells": [
+      {
+       "v": "2",
+       "s": "dim"
+      },
+      {
+       "v": "5",
+       "s": "dim"
+      },
+      {
+       "v": "8",
+       "s": "dim"
+      },
+      {
+       "v": "12",
+       "s": "dim"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      },
+      {
+       "v": "23",
+       "s": "idle"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "lo": 4,
+      "hi": 6
+     }
+    }
+   ],
+   "at": 4,
+   "note": "a[3] = 12 < 23  ->  lo = mid + 1 = 4"
+  },
+  {
+   "say": "Now lo is 4 and hi is 6. The new middle is index 5.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted array",
+     "cells": [
+      {
+       "v": "2",
+       "s": "dim"
+      },
+      {
+       "v": "5",
+       "s": "dim"
+      },
+      {
+       "v": "8",
+       "s": "dim"
+      },
+      {
+       "v": "12",
+       "s": "dim"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      },
+      {
+       "v": "23",
+       "s": "compare"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "lo": 4,
+      "mid": 5,
+      "hi": 6
+     }
+    }
+   ],
+   "at": 2,
+   "note": "mid = (4 + 6) / 2 = 5"
+  },
+  {
+   "say": "a[5] is 23. Found it, after only two peeks instead of six.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "sorted array",
+     "cells": [
+      {
+       "v": "2",
+       "s": "dim"
+      },
+      {
+       "v": "5",
+       "s": "dim"
+      },
+      {
+       "v": "8",
+       "s": "dim"
+      },
+      {
+       "v": "12",
+       "s": "dim"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      },
+      {
+       "v": "23",
+       "s": "found"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "mid": 5
+     }
+    }
+   ],
+   "at": 3,
+   "note": "a[5] == 23  ->  return 5"
+  },
+  {
+   "say": "That is why it is fast. Linear search might check a million items; binary search needs about twenty.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "checks for 1,000,000 items",
+     "bars": [
+      {
+       "label": "linear",
+       "value": 1.0,
+       "text": "1,000,000",
+       "s": "swap"
+      },
+      {
+       "label": "binary",
+       "value": 0.04,
+       "text": "~20",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "One rule: the data must be sorted. On an unsorted list, 'throw half away' would discard the answer by accident.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "unsorted: binary search breaks",
+     "cells": [
+      {
+       "v": "23",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "38",
+       "s": "idle"
+      },
+      {
+       "v": "16",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "mid": 2
+     },
+     "caption": "mid = 2 < 23 would wrongly discard the 23 on the left"
+    }
+   ],
+   "at": -1
+  }
+ ]
+}

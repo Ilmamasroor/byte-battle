@@ -1,11 +1,11 @@
 {
-    "name": "my_app",
-    "short_name": "my_app",
+    "name": "Byte Battle",
+    "short_name": "Byte Battle",
     "start_url": ".",
     "display": "standalone",
-    "background_color": "#0175C2",
-    "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "background_color": "#0E0D13",
+    "theme_color": "#0E0D13",
+    "description": "Learn it. See it. Battle it. Code it.",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

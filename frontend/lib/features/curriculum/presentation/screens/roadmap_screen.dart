@@ -3,28 +3,20 @@ import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../data/models/curriculum_tree.dart';
+import '../widgets/curriculum_body.dart';
 import '../widgets/roadmap_step.dart';
 
-/// RoadmapScreen — the learner's overall curriculum roadmap as a
-/// vertical step sequence, in the product's stated learning order:
-/// Java -> DSA -> DBMS -> Operating Systems -> Computer Networks ->
-/// System Design -> Technical Interviews.
+/// RoadmapScreen: the learner's curriculum roadmap, one step per backend domain in curriculum order, with a
+/// status derived from the learner's real progress (`/api/learning`).
 class RoadmapScreen extends StatelessWidget {
   const RoadmapScreen({super.key});
 
-  // TODO: replace with data from CurriculumRepository once a
-  // `/api/curriculum/roadmap` (or similar progress-aware) endpoint
-  // exists — status is hardcoded here to demonstrate the three states.
-  static const _steps = [
-    (domain: 'Java', status: RoadmapStepStatus.completed),
-    (domain: 'Data Structures & Algorithms', status: RoadmapStepStatus.current),
-    (domain: 'DBMS & SQL', status: RoadmapStepStatus.locked),
-    (domain: 'Operating Systems', status: RoadmapStepStatus.locked),
-    (domain: 'Computer Networks', status: RoadmapStepStatus.locked),
-    (domain: 'System Design', status: RoadmapStepStatus.locked),
-    (domain: 'Technical Interview Preparation', status: RoadmapStepStatus.locked),
-  ];
+  static RoadmapStepStatus _status(DomainStatus s) => switch (s) {
+        DomainStatus.completed => RoadmapStepStatus.completed,
+        DomainStatus.current => RoadmapStepStatus.current,
+        DomainStatus.notStarted => RoadmapStepStatus.notStarted,
+      };
 
   void _openDomain(BuildContext context, String domain) {
     Navigator.of(context).pushNamed(
@@ -35,7 +27,6 @@ class RoadmapScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    Helpers.noApiYet('RoadmapScreen');
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -47,32 +38,39 @@ class RoadmapScreen extends StatelessWidget {
         title: const Text('Roadmap', style: AppTextStyles.heading2),
       ),
       body: SafeArea(
-        child: ListView(
-          padding: const EdgeInsets.all(AppDimensions.screenPadding),
-          children: [
-            for (int i = 0; i < _steps.length; i++) ...[
-              RoadmapStep(
-                domainName: _steps[i].domain,
-                status: _steps[i].status,
-                onTap: () => _openDomain(context, _steps[i].domain),
-              ),
-              if (i != _steps.length - 1)
-                Padding(
-                  padding: const EdgeInsets.symmetric(vertical: 2),
-                  child: Align(
-                    alignment: Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.only(left: 29),
-                      width: 2,
-                      height: 20,
-                      color: _steps[i].status == RoadmapStepStatus.completed
-                          ? AppColors.success.withOpacity(0.5)
-                          : AppColors.border,
-                    ),
+        child: CurriculumBody(
+          emptyMessage: 'The curriculum has no domains yet.',
+          builder: (context, tree) {
+            if (tree.domains.isEmpty) return null;
+            return ListView(
+              physics: const AlwaysScrollableScrollPhysics(),
+              padding: const EdgeInsets.all(AppDimensions.screenPadding),
+              children: [
+                for (int i = 0; i < tree.domains.length; i++) ...[
+                  RoadmapStep(
+                    domainName: tree.domains[i].domain.name,
+                    status: _status(tree.statusOf(tree.domains[i])),
+                    onTap: () => _openDomain(context, tree.domains[i].domain.name),
                   ),
-                ),
-            ],
-          ],
+                  if (i != tree.domains.length - 1)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 2),
+                      child: Align(
+                        alignment: Alignment.centerLeft,
+                        child: Container(
+                          margin: const EdgeInsets.only(left: 29),
+                          width: 2,
+                          height: 20,
+                          color: tree.statusOf(tree.domains[i]) == DomainStatus.completed
+                              ? AppColors.success.withOpacity(0.5)
+                              : AppColors.border,
+                        ),
+                      ),
+                    ),
+                ],
+              ],
+            );
+          },
         ),
       ),
     );

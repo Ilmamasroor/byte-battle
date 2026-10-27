@@ -1,0 +1,422 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001013",
+ "title": "Synchronization: one thread at a time",
+ "kind": "computer",
+ "intro": "Same two threads, same counter, but now the update sits inside synchronized. What happens to the thread that arrives second?",
+ "predict": {
+  "question": "Thread-1 is inside a synchronized block. Thread-2 reaches the same block. What does Thread-2 do?",
+  "options": [
+   "Runs it too, interleaved",
+   "Waits (BLOCKED) until Thread-1 leaves",
+   "Throws an exception"
+  ],
+  "answer": 1,
+  "reveal": "Thread-2 is BLOCKED: it uses no CPU and just waits until Thread-1 releases the lock. Then it enters, so the two updates never overlap."
+ },
+ "takeaway": "synchronized lets one thread at a time into the block. Others wait, so read-add-write finishes whole, and no update is lost.",
+ "code": [
+  "synchronized (lock) {",
+  "  int tmp = c.value;",
+  "  tmp = tmp + 1;",
+  "  c.value = tmp;",
+  "}   // lock released here"
+ ],
+ "steps": [
+  {
+   "say": "Every Java object has a built-in lock called a monitor. We will use the object named lock. Counter starts at 0 and nobody owns the lock.",
+   "cpu": {
+    "doing": "two threads about to start",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "tmp": "?"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "tmp": "?"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [],
+   "highlight": [
+    "heap"
+   ],
+   "at": -1
+  },
+  {
+   "say": "Thread-1 reaches synchronized (lock) first and takes the lock. The heap now shows Thread-1 as the owner.",
+   "cpu": {
+    "doing": "Thread-1 enters the block",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "cpu"
+   ],
+   "at": 0,
+   "note": "owner = Thread-1"
+  },
+  {
+   "say": "Thread-2 arrives at the same line a moment later. The lock is taken, so Thread-2 is BLOCKED. It gives up its core and waits.",
+   "cpu": {
+    "doing": "Thread-2 BLOCKED, waiting for lock",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "tmp": "?"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "BLOCKED"
+     }
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "at": 0,
+   "note": "Thread-2 waits"
+  },
+  {
+   "say": "Inside the block Thread-1 is alone. It reads c.value into tmp and gets 0.",
+   "cpu": {
+    "doing": "Thread-1: tmp = c.value",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "tmp": "0"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "BLOCKED"
+     }
+    }
+   ],
+   "highlight": [
+    "stack"
+   ],
+   "at": 1
+  },
+  {
+   "say": "Thread-1 adds 1 to tmp. Thread-2 cannot peek at the counter meanwhile, so nothing can slip in between the steps.",
+   "cpu": {
+    "doing": "Thread-1: tmp = tmp + 1",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "tmp": "1"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "BLOCKED"
+     }
+    }
+   ],
+   "highlight": [
+    "stack"
+   ],
+   "at": 2
+  },
+  {
+   "say": "Thread-1 writes tmp back. The counter becomes 1, and Thread-2 is still waiting.",
+   "cpu": {
+    "doing": "Thread-1: c.value = tmp",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 3
+  },
+  {
+   "say": "Thread-1 leaves the block and releases the lock. Its work is done. The owner is nobody, and the JVM wakes up Thread-2.",
+   "cpu": {
+    "doing": "lock released, Thread-2 wakes",
+    "regs": {
+     "PC": "line 5"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "RUNNABLE"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "cpu"
+   ],
+   "at": 4,
+   "note": "lock released"
+  },
+  {
+   "say": "Thread-2 takes the lock and reads c.value. It sees 1, the up-to-date value, because Thread-1 finished completely first.",
+   "cpu": {
+    "doing": "Thread-2: tmp = c.value",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "tmp": "1"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "Thread-2"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "stack"
+   ],
+   "at": 1,
+   "note": "owner = Thread-2"
+  },
+  {
+   "say": "Thread-2 adds 1 and writes 2 back to the counter. Then it leaves the block and the lock is free again.",
+   "cpu": {
+    "doing": "Thread-2: tmp = 2, c.value = tmp",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "tmp": "2"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "2"
+     },
+     "state": "live"
+    },
+    {
+     "id": "m1",
+     "type": "Object (lock)",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "counter = 2  (correct)"
+   ],
+   "highlight": [
+    "heap",
+    "console"
+   ],
+   "at": [
+    2,
+    3,
+    4
+   ]
+  },
+  {
+   "say": "Same two threads, but the answer is now always 2. We traded a little waiting for correctness. Only the shared update needs the lock.",
+   "cpu": {
+    "doing": "both threads finished",
+    "regs": {
+     "PC": "done"
+    },
+    "cores": [
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [],
+   "highlight": [
+    "console"
+   ],
+   "at": -1
+  }
+ ]
+}

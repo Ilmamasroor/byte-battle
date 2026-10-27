@@ -31,7 +31,10 @@ class MnemonicModel {
   final ConceptModel concept;
   final MnemonicDetail mnemonic;
 
-  const MnemonicModel({required this.concept, required this.mnemonic});
+  /// True when the AI service was unavailable and the backend returned a local template.
+  final bool fallback;
+
+  const MnemonicModel({required this.concept, required this.mnemonic, this.fallback = false});
 
   factory MnemonicModel.fromJson(Map<String, dynamic> json) {
     return MnemonicModel(
@@ -41,6 +44,7 @@ class MnemonicModel {
       mnemonic: MnemonicDetail.fromJson(
         (json['mnemonic'] as Map?)?.cast<String, dynamic>() ?? const {},
       ),
+      fallback: json['fallback'] == true,
     );
   }
 

@@ -1,0 +1,477 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001038",
+ "title": "Mutex and semaphore: taking turns safely",
+ "kind": "computer",
+ "intro": "Two threads want to change the same counter. Watch a lock make the second one wait.",
+ "predict": {
+  "question": "T1 holds the mutex. T2 calls lock(m). What happens to T2?",
+  "options": [
+   "It runs anyway and shares the section",
+   "It sleeps until T1 calls unlock",
+   "It crashes with an error"
+  ],
+  "answer": 1,
+  "reveal": "lock blocks: T2 is put to sleep until T1 unlocks, so only one thread is ever inside the critical section."
+ },
+ "takeaway": "A mutex lets one thread at a time into a critical section; a counting semaphore lets up to N in at once.",
+ "code": [
+  "lock(m);",
+  "count = count + 1;",
+  "unlock(m);",
+  "wait(sem);    // take a slot",
+  "use the database",
+  "signal(sem);  // free the slot"
+ ],
+ "steps": [
+  {
+   "say": "Two threads will both run count = count + 1. That line is a critical section: only one thread should be inside at a time. A mutex is the lock.",
+   "cpu": {
+    "doing": "T1 and T2 ready",
+    "regs": {
+     "count": "0"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "heap": [
+    {
+     "id": "c",
+     "type": "int count",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "panels": [
+    {
+     "title": "Mutex m",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "state",
+       "unlocked"
+      ],
+      [
+       "owner",
+       "-"
+      ],
+      [
+       "waiting",
+       "none"
+      ]
+     ]
+    }
+   ],
+   "at": -1,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "T1 calls lock(m). The mutex was free, so T1 gets it and becomes the owner.",
+   "cpu": {
+    "doing": "T1: lock(m) succeeds",
+    "regs": {
+     "count": "0"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "panels": [
+    {
+     "title": "Mutex m",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "state",
+       "LOCKED"
+      ],
+      [
+       "owner",
+       "T1"
+      ],
+      [
+       "waiting",
+       "none"
+      ]
+     ],
+     "hl": [
+      1
+     ]
+    }
+   ],
+   "at": 0
+  },
+  {
+   "say": "T2 calls lock(m) too, but the mutex is taken. T2 is put to sleep and its core goes idle. No spinning, no wasted work.",
+   "cpu": {
+    "doing": "T2: lock(m) blocks, T2 sleeps",
+    "regs": {
+     "count": "0"
+    },
+    "cores": [
+     "T1",
+     null
+    ]
+   },
+   "panels": [
+    {
+     "title": "Mutex m",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "state",
+       "LOCKED"
+      ],
+      [
+       "owner",
+       "T1"
+      ],
+      [
+       "waiting",
+       "T2"
+      ]
+     ],
+     "hl": [
+      3
+     ]
+    }
+   ],
+   "at": 0,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "Inside the critical section T1 reads 0, adds 1 and writes 1. Nobody can interfere in the middle of that read-modify-write.",
+   "cpu": {
+    "doing": "T1: count = 0 + 1",
+    "regs": {
+     "count": "1"
+    },
+    "cores": [
+     "T1",
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c",
+     "type": "int count",
+     "fields": {
+      "value": "1"
+     },
+     "state": "new"
+    }
+   ],
+   "at": 1,
+   "highlight": [
+    "cpu",
+    "heap"
+   ]
+  },
+  {
+   "say": "T1 calls unlock(m). The mutex is released and the OS wakes up T2, the sleeper.",
+   "cpu": {
+    "doing": "T1: unlock(m), wake T2",
+    "regs": {
+     "count": "1"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "heap": [
+    {
+     "id": "c",
+     "type": "int count",
+     "fields": {
+      "value": "1"
+     },
+     "state": "live"
+    }
+   ],
+   "panels": [
+    {
+     "title": "Mutex m",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "state",
+       "unlocked"
+      ],
+      [
+       "owner",
+       "-"
+      ],
+      [
+       "waiting",
+       "T2 waking"
+      ]
+     ]
+    }
+   ],
+   "at": 2,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "T2 now gets the lock and runs count = 1 + 1 = 2. Both increments counted. Without the mutex one of them could have been lost.",
+   "cpu": {
+    "doing": "T2: lock ok, count = 1 + 1",
+    "regs": {
+     "count": "2"
+    },
+    "cores": [
+     null,
+     "T2"
+    ]
+   },
+   "heap": [
+    {
+     "id": "c",
+     "type": "int count",
+     "fields": {
+      "value": "2"
+     },
+     "state": "new"
+    }
+   ],
+   "panels": [
+    {
+     "title": "Mutex m",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "state",
+       "LOCKED"
+      ],
+      [
+       "owner",
+       "T2"
+      ],
+      [
+       "waiting",
+       "none"
+      ]
+     ],
+     "hl": [
+      1
+     ]
+    }
+   ],
+   "at": 1,
+   "highlight": [
+    "cpu",
+    "heap"
+   ]
+  },
+  {
+   "say": "A semaphore is a counter of free slots. Our database allows 2 users at once, so sem starts at 2. wait takes a slot, signal gives it back.",
+   "cpu": {
+    "doing": "T1, T2, T3 want the database",
+    "regs": {
+     "sem": "2"
+    },
+    "cores": [
+     "T1",
+     "T2",
+     "T3"
+    ]
+   },
+   "heap": [
+    {
+     "id": "db",
+     "type": "Database",
+     "fields": {
+      "max users": "2"
+     },
+     "state": "live"
+    }
+   ],
+   "panels": [
+    {
+     "title": "Semaphore sem (2 slots)",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "value",
+       "2"
+      ],
+      [
+       "sleeping",
+       "none"
+      ]
+     ]
+    }
+   ],
+   "at": 3,
+   "highlight": [
+    "panel:0",
+    "heap"
+   ]
+  },
+  {
+   "say": "T1 calls wait(sem): 2 becomes 1 and T1 goes in. T2 calls wait(sem): 1 becomes 0 and T2 goes in too. Two threads inside at once is fine here.",
+   "cpu": {
+    "doing": "T1, T2 inside; sem = 0",
+    "regs": {
+     "sem": "0"
+    },
+    "cores": [
+     "T1",
+     "T2",
+     "T3"
+    ]
+   },
+   "panels": [
+    {
+     "title": "Semaphore sem (2 slots)",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "value",
+       "0"
+      ],
+      [
+       "sleeping",
+       "none"
+      ]
+     ],
+     "hl": [
+      1
+     ]
+    }
+   ],
+   "at": 4,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "T3 calls wait(sem) but the value is 0, so T3 sleeps. A semaphore at 0 means: full, please wait.",
+   "cpu": {
+    "doing": "T3: wait(sem) blocks",
+    "regs": {
+     "sem": "0"
+    },
+    "cores": [
+     "T1",
+     "T2",
+     null
+    ]
+   },
+   "panels": [
+    {
+     "title": "Semaphore sem (2 slots)",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "value",
+       "0"
+      ],
+      [
+       "sleeping",
+       "T3"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "at": 3
+  },
+  {
+   "say": "T1 finishes and calls signal(sem). The freed slot wakes T3 right away, which takes it, so the value stays 0 with T2 and T3 inside.",
+   "cpu": {
+    "doing": "T1: signal(sem), T3 takes slot",
+    "regs": {
+     "sem": "0"
+    },
+    "cores": [
+     null,
+     "T2",
+     "T3"
+    ]
+   },
+   "panels": [
+    {
+     "title": "Semaphore sem (2 slots)",
+     "rows": [
+      [
+       "field",
+       "value"
+      ],
+      [
+       "value",
+       "0"
+      ],
+      [
+       "sleeping",
+       "none"
+      ]
+     ]
+    }
+   ],
+   "at": 5,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "A mutex is really a semaphore with one slot: one at a time. A counting semaphore allows N at a time. Both make waiting threads sleep.",
+   "cpu": {
+    "doing": "mutex = 1 slot, semaphore = N slots",
+    "regs": {
+     "sem": "N"
+    },
+    "cores": [
+     null,
+     "T2",
+     "T3"
+    ]
+   },
+   "at": -1,
+   "highlight": [
+    "panel:0"
+   ]
+  }
+ ]
+}

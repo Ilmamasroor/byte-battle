@@ -1,0 +1,823 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001018",
+ "title": "Monotonic stack: next greater element",
+ "kind": "structure",
+ "intro": "For each number, which is the first bigger number to its right? A stack finds all of them in one pass.",
+ "predict": {
+  "question": "In [2, 1, 5, 3, 4], what is the next greater element of 3?",
+  "options": [
+   "5",
+   "4",
+   "-1 (none)"
+  ],
+  "answer": 1,
+  "reveal": "Right of 3 is only 4, and 4 > 3, so the answer is 4. The stack finds it when 4 arrives and pops 3."
+ },
+ "takeaway": "Keep a stack of values still waiting for a bigger one. A bigger arrival pops and answers them, so every item is pushed and popped once.",
+ "code": [
+  "for i in 0..n-1:",
+  "  while st and a[st.top] < a[i]:",
+  "    ans[st.pop()] = a[i]",
+  "  st.push(i)",
+  "leftover in st -> ans = -1"
+ ],
+ "steps": [
+  {
+   "say": "Goal: for each number, find the first LARGER number to its right. The stack holds numbers still waiting for an answer.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": []
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "i = 0, value 2. The stack is empty, so nothing waits on 2 yet. Push it.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 0
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "2",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "push 2"
+  },
+  {
+   "say": "i = 1, value 1. Top is 2, and 2 < 1 is false, so 1 is not bigger. Push 1: the stack stays decreasing.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 1
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "2 < 1? no  -> push 1"
+  },
+  {
+   "say": "i = 2, value 5. Top 1 < 5, so 5 is the next greater of 1. Pop 1 and record 5.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "found"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "2",
+       "s": "compare"
+      }
+     ]
+    }
+   ],
+   "at": [
+    1,
+    2
+   ],
+   "note": "1 < 5 -> pop, ans[1] = 5"
+  },
+  {
+   "say": "5 is still bigger than the new top 2, so pop 2 as well. Its answer is 5.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "found"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": []
+    }
+   ],
+   "at": [
+    1,
+    2
+   ],
+   "note": "2 < 5 -> pop, ans[0] = 5"
+  },
+  {
+   "say": "Stack is empty, so push 5. It now waits for something larger.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "5",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "push 5"
+  },
+  {
+   "say": "i = 3, value 3. Top 5 < 3 is false. Push 3 on top of 5.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 3
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "5 < 3? no  -> push 3"
+  },
+  {
+   "say": "i = 4, value 4. Top 3 < 4, so pop 3 and record 4.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      }
+     ],
+     "pointers": {
+      "i": 4
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "found"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "5",
+       "s": "compare"
+      }
+     ]
+    }
+   ],
+   "at": [
+    1,
+    2
+   ],
+   "note": "3 < 4 -> pop, ans[3] = 4"
+  },
+  {
+   "say": "5 < 4 is false, so stop popping and push 4. The stack is 5, 4.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      }
+     ],
+     "pointers": {
+      "i": 4
+     }
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "push 4"
+  },
+  {
+   "say": "Array ends. Whoever is still waiting has no bigger number to the right, so they get -1.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "-1",
+       "s": "bad"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "-1",
+       "s": "bad"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": []
+    }
+   ],
+   "at": 4,
+   "note": "ans = [5, 5, -1, 4, -1]"
+  },
+  {
+   "say": "Each number is pushed once and popped at most once, so the whole job is O(n), not O(n squared).",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "5",
+       "s": "found"
+      },
+      {
+       "v": "3",
+       "s": "found"
+      },
+      {
+       "v": "4",
+       "s": "found"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "ans (next greater)",
+     "cells": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "-1",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "-1",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "waiting",
+     "items": []
+    }
+   ],
+   "at": -1,
+   "note": "5 pushes + 5 pops max"
+  }
+ ]
+}

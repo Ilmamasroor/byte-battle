@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../app/theme/app_colors.dart';
 
 /// AnalogyCard — auto-scaffolded to match the project's target file structure.
 class AnalogyCard extends StatelessWidget {

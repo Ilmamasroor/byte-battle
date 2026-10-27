@@ -4,10 +4,10 @@ import '../../../../core/network/network_exception.dart';
 import '../../../../core/storage/secure_storage_service.dart';
 import '../../../concepts/data/models/concept_model.dart';
 import '../../../learning/explanation/data/models/canonical_knowledge_model.dart';
-import '../../data/battle_question_bank.dart';
 import '../../data/datasources/battle_ai_remote_datasource.dart';
 import '../../data/models/battle_hint_model.dart';
 import '../../data/models/boss_battle_model.dart';
+import '../../../learning/explanation/presentation/state/explanation_controller.dart';
 import '../../data/repositories/battle_repository.dart';
 
 /// Single source of truth for the two AI calls that belong to the battle
@@ -41,27 +41,14 @@ class BattleAiController extends ChangeNotifier {
   String? bossBattleErrorMessage;
   BossBattleModel? bossBattle;
 
-  // ---- Battle round questions ----
-  List<BattleQuestionData>? questions;
-  bool isQuestionsLoading = false;
-
-  /// Loads the pool of questions a Boss Battle round is drawn from. Tries
-  /// the repository seam first (currently always resolves to the local
-  /// [kBattleQuestionBank] — see [BattleRepository.getQuestions]) and
-  /// falls back to that same bank directly if anything goes wrong, so
-  /// [BattleScreen] never gets stuck with an empty round.
-  Future<void> loadQuestions() async {
-    isQuestionsLoading = true;
-    notifyListeners();
+  /// The AI endpoints want the concept's canonical knowledge as context. It is fetched once per concept; if it
+  /// cannot be loaded the hint/briefing is still requested with an empty one rather than failing.
+  Future<CanonicalKnowledgeModel> canonicalFor(String conceptId) async {
+    final explanation = ExplanationController.instance;
     try {
-      questions = await _repository.getQuestions();
-    } catch (e) {
-      debugPrint('⚔️ [BattleAiController] getQuestions FAILED -> falling back to local bank: $e');
-      questions = kBattleQuestionBank;
-    } finally {
-      isQuestionsLoading = false;
-      notifyListeners();
-    }
+      await explanation.loadCanonicalKnowledge(conceptId);
+    } catch (_) {}
+    return explanation.knowledge ?? const CanonicalKnowledgeModel(keyPoints: [], rules: [], examples: []);
   }
 
   /// `POST /api/ai/battle-hint`. `hintLevel`: 1 -> gentle, 2 -> stronger,

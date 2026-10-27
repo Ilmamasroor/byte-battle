@@ -1,0 +1,690 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001052",
+ "title": "Complexity: count the steps as n grows",
+ "kind": "structure",
+ "intro": "Big-O is just step counting. We will count a plain loop, a nested loop and a halving loop for n = 8.",
+ "predict": {
+  "question": "If n doubles from 8 to 16, how many steps does the nested loop run?",
+  "options": [
+   "128",
+   "256",
+   "32"
+  ],
+  "answer": 1,
+  "reveal": "256. The nested loop does n x n steps, so doubling n makes it 4 times bigger: 8 x 8 = 64 becomes 16 x 16 = 256."
+ },
+ "takeaway": "Count how the steps grow when n doubles: constant, one more, double, or four times.",
+ "code": [
+  "int first = arr[0];",
+  "for (int i = 0; i < n; i++) sum += arr[i];",
+  "for (int i = 0; i < n; i++)",
+  "  for (int j = 0; j < n; j++) pairs++;",
+  "for (int k = n; k > 1; k = k / 2) steps++;"
+ ],
+ "steps": [
+  {
+   "say": "Complexity means counting how many basic steps code runs as n grows. Here n = 8 items. Let us count three small pieces of code.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "6",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": []
+    }
+   ]
+  },
+  {
+   "say": "Line 0 reads one cell. Whether n is 8 or 8 million, it is one step. That is O(1), constant time.",
+   "at": 0,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "6",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "count = 1"
+  },
+  {
+   "say": "A single loop touches each item once. Four passes so far, and the counted line sum += arr[i] has run 4 times.",
+   "at": 1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "6",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 3
+     }
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "count = 4"
+  },
+  {
+   "say": "The loop ends after 8 passes: 8 steps for n = 8. Double n and you double the work. That is O(n).",
+   "at": 1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "count = 8"
+  },
+  {
+   "say": "Nested loops: for each i, j runs all 8 positions. The first i alone costs 8 steps on the counted line.",
+   "at": 3,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "4",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "5",
+       "s": "compare"
+      },
+      {
+       "v": "9",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "compare"
+      },
+      {
+       "v": "6",
+       "s": "compare"
+      }
+     ],
+     "pointers": {
+      "i": 0
+     }
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "i = 0: 8 steps"
+  },
+  {
+   "say": "There are 8 values of i, each costing 8 steps: 8 x 8 = 64. The work is n times n, so O(n^2).",
+   "at": 3,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n^2)",
+       "value": 1.0,
+       "text": "64 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "count = 64"
+  },
+  {
+   "say": "Halving loop: k starts at 8, and the counted line runs. The loop keeps halving k, like binary search halves its range.",
+   "at": 4,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "9",
+       "s": "cur"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "6",
+       "s": "cur"
+      }
+     ],
+     "pointers": {
+      "k": 7
+     }
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n^2)",
+       "value": 1.0,
+       "text": "64 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "k = 8, steps = 1"
+  },
+  {
+   "say": "k = 4: only half the items are still in play. steps = 2. Then k = 2 gives steps = 3, and k = 1 stops the loop.",
+   "at": 4,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "dim"
+      },
+      {
+       "v": "9",
+       "s": "dim"
+      },
+      {
+       "v": "2",
+       "s": "dim"
+      },
+      {
+       "v": "6",
+       "s": "dim"
+      }
+     ],
+     "pointers": {
+      "k": 3
+     }
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n^2)",
+       "value": 1.0,
+       "text": "64 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "k = 4, steps = 2"
+  },
+  {
+   "say": "Three steps for n = 8, because 8 halves to 1 in 3 halvings. That is O(log n). Now compare all four side by side.",
+   "at": 4,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 8",
+     "cells": [
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "4",
+       "s": "dim"
+      },
+      {
+       "v": "1",
+       "s": "dim"
+      },
+      {
+       "v": "5",
+       "s": "dim"
+      },
+      {
+       "v": "9",
+       "s": "dim"
+      },
+      {
+       "v": "2",
+       "s": "dim"
+      },
+      {
+       "v": "6",
+       "s": "dim"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations counted",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.015625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(log n)",
+       "value": 0.046875,
+       "text": "3 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.125,
+       "text": "8 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n^2)",
+       "value": 1.0,
+       "text": "64 ops",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "steps = 3"
+  },
+  {
+   "say": "Double n to 16: O(1) stays 1, O(log n) adds one step (4), O(n) doubles to 16, and O(n^2) quadruples to 256.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "arr, n = 16 (not drawn)",
+     "cells": [
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "bars",
+     "name": "operations at n = 16",
+     "bars": [
+      {
+       "label": "O(1)",
+       "value": 0.00390625,
+       "text": "1 op",
+       "s": "found"
+      },
+      {
+       "label": "O(log n)",
+       "value": 0.015625,
+       "text": "4 ops",
+       "s": "found"
+      },
+      {
+       "label": "O(n)",
+       "value": 0.0625,
+       "text": "16 ops",
+       "s": "compare"
+      },
+      {
+       "label": "O(n^2)",
+       "value": 1.0,
+       "text": "256 ops",
+       "s": "bad"
+      }
+     ]
+    }
+   ],
+   "note": "growth, not exact time"
+  }
+ ]
+}

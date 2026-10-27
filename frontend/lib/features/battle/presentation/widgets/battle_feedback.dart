@@ -2,31 +2,31 @@ import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../../../core/network/backend_api.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/glow_card.dart';
 import '../../../concepts/data/models/concept_model.dart';
-import '../../../learning/explanation/data/models/canonical_knowledge_model.dart';
 import '../state/battle_ai_controller.dart';
 import 'hint_button.dart';
 
 /// Full-screen "wrong answer" feedback shown after an incorrect Battle
 /// pick — matches the "Not quite." reference screen: a topic chip, a
 /// sad mascot mark, the headline + explanation of what was missed, a
-/// numbered list of expandable hints, and a "Try Again" CTA that pops
-/// back to the battle round so the person can retry the same question.
+/// numbered list of expandable hints, and a CTA that pops back to the
+/// battle (the answer is already graded, so it moves on to the next one).
 ///
 /// Pushed only from [BattleScreen] when the selected answer is wrong —
 /// it is never a tab/nav destination, so it can't end up shown out of
-/// context. The static [hints] are fallback copy baked into the push
-/// call; "Get AI Hint" below them calls the real
-/// `POST /api/ai/battle-hint` for a fresh, progressive hint instead.
+/// context. "Get AI Hint" calls the real `POST /api/ai/battle-hint`
+/// for a progressive hint about the question that was just missed.
 class BattleFeedback extends StatefulWidget {
   final String topicLabel;
   final String message;
   final List<String> hints;
   final String quote;
   final String? question;
+  final String conceptId;
+  final String continueLabel;
 
   const BattleFeedback({
     super.key,
@@ -35,6 +35,8 @@ class BattleFeedback extends StatefulWidget {
     this.hints = const [],
     this.quote = 'Every bug is a lesson in disguise.',
     this.question,
+    required this.conceptId,
+    this.continueLabel = 'Try Again',
   });
 
   @override
@@ -42,35 +44,33 @@ class BattleFeedback extends StatefulWidget {
 }
 
 class _BattleFeedbackState extends State<BattleFeedback> {
-  // TODO: replace with the concept/canonical knowledge actually being
-  // battled once that context flows through from BattleScreen.
-  static const _concept = ConceptModel(
-    id: '00000000-0000-0000-0000-000000001001',
-    name: 'Java Fundamentals',
-    difficulty: 'BEGINNER',
-  );
-  static const _canonicalKnowledge = CanonicalKnowledgeModel(
-    keyPoints: [],
-    rules: [],
-    examples: [],
-  );
-
   final _controller = BattleAiController.instance;
   int _hintLevel = 0;
+  bool _preparing = false;
 
   Future<void> _getAiHint() async {
     _hintLevel = _hintLevel >= 3 ? 3 : _hintLevel + 1;
+    setState(() => _preparing = true);
+    ConceptModel concept = ConceptModel(id: widget.conceptId, name: widget.topicLabel);
+    try {
+      final info = await BackendApi.instance.concept(widget.conceptId);
+      concept = ConceptModel(id: info.id, name: info.name, description: info.description, difficulty: info.difficulty);
+    } catch (_) {
+      // the hint can still be generated from the concept id and name
+    }
+    final knowledge = await _controller.canonicalFor(widget.conceptId);
+    if (!mounted) return;
+    setState(() => _preparing = false);
     await _controller.loadBattleHint(
-      concept: _concept,
+      concept: concept,
       question: widget.question ?? widget.message,
-      canonicalKnowledge: _canonicalKnowledge,
+      canonicalKnowledge: knowledge,
       hintLevel: _hintLevel,
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    Helpers.noApiYet('BattleFeedback', note: 'hint list is hardcoded fallback; Get AI Hint calls POST /api/ai/battle-hint');
     return Scaffold(
       backgroundColor: Colors.transparent,
       body: SafeArea(
@@ -129,7 +129,7 @@ class _BattleFeedbackState extends State<BattleFeedback> {
                               ],
                             ),
                             child: const Icon(Icons.sentiment_dissatisfied_rounded,
-                                color: AppColors.white, size: 46),
+                                color: AppColors.onAccent, size: 46),
                           ),
                           Positioned(
                             right: -6,
@@ -143,7 +143,7 @@ class _BattleFeedbackState extends State<BattleFeedback> {
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(Icons.close_rounded,
-                                  size: 16, color: AppColors.white),
+                                  size: 16, color: AppColors.onAccent),
                             ),
                           ),
                         ],
@@ -217,7 +217,7 @@ class _BattleFeedbackState extends State<BattleFeedback> {
                                       label: aiHint == null ? 'Get AI Hint' : 'Get a Stronger Hint',
                                       icon: Icons.smart_toy_outlined,
                                       outlined: true,
-                                      isLoading: isLoading,
+                                      isLoading: isLoading || _preparing,
                                       onPressed: _hintLevel >= 3 ? null : _getAiHint,
                                     ),
                                   ],
@@ -229,7 +229,7 @@ class _BattleFeedbackState extends State<BattleFeedback> {
                       ),
                       const SizedBox(height: AppDimensions.spacingLg),
                       AppButton(
-                        label: 'Try Again',
+                        label: widget.continueLabel,
                         icon: Icons.refresh_rounded,
                         onPressed: () => Navigator.of(context).maybePop(),
                       ),

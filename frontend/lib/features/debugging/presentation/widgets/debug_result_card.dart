@@ -10,12 +10,14 @@ class DebugResultCard extends StatelessWidget {
   final String label;
   final bool passed;
   final bool showDivider;
+  final String? detail;
 
   const DebugResultCard({
     super.key,
     required this.label,
     this.passed = true,
     this.showDivider = true,
+    this.detail,
   });
 
   @override
@@ -33,7 +35,16 @@ class DebugResultCard extends StatelessWidget {
                 size: 18,
               ),
               const SizedBox(width: AppDimensions.spacingSm),
-              Expanded(child: Text(label, style: AppTextStyles.bodyBold)),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(label, style: AppTextStyles.bodyBold),
+                    if (detail != null && detail!.isNotEmpty)
+                      Text(detail!, style: AppTextStyles.caption.copyWith(fontFamily: AppTextStyles.monoFamily)),
+                  ],
+                ),
+              ),
               Text(
                 passed ? 'Passed' : 'Failed',
                 style: AppTextStyles.bodyBold.copyWith(color: color),

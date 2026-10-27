@@ -1,0 +1,482 @@
+{
+ "code": "public class Counter {\n    static int count = 0;\n\n    static void increment() {\n        int tmp = count;\n        tmp = tmp + 1;\n        count = tmp;\n    }\n\n    public static void main(String[] args) throws Exception {\n        Thread a = new Thread(Counter::increment);\n        Thread b = new Thread(Counter::increment);\n        a.start();\n        b.start();\n        a.join();\n        b.join();\n        System.out.println(count);\n    }\n}\n",
+ "provenance": "teaching-simulation",
+ "support": {
+  "status": "supported",
+  "reasons": []
+ },
+ "schedules": [
+  {
+   "kind": "SAFE",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "a",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": false,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 1,
+     "thread": "a",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 2,
+     "thread": "a",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 3,
+     "thread": "b",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": false,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 4,
+     "thread": "b",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "local": 2
+    },
+    {
+     "index": 5,
+     "thread": "b",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "wrote": 2,
+     "stale": false
+    }
+   ],
+   "finalValues": {
+    "count": 2
+   }
+  },
+  {
+   "kind": "RACE",
+   "label": "Both read first, then both write",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "a",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 1,
+     "thread": "b",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "a",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 3,
+     "thread": "b",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 4,
+     "thread": "a",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": true,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 5,
+     "thread": "b",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": true,
+     "before": 1,
+     "value": 1,
+     "wrote": 1,
+     "stale": true
+    }
+   ],
+   "finalValues": {
+    "count": 1
+   },
+   "expected": {
+    "count": 2
+   },
+   "var": "count",
+   "threads": [
+    "a",
+    "b"
+   ],
+   "actual": {
+    "count": 1
+   }
+  },
+  {
+   "kind": "RACE_ALT",
+   "label": "One thread finishes inside the other's gap",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "a",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 1,
+     "thread": "b",
+     "opIndex": 0,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "b",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 3,
+     "thread": "b",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": true,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 4,
+     "thread": "a",
+     "opIndex": 1,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 5,
+     "thread": "a",
+     "opIndex": 2,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": true,
+     "before": 1,
+     "value": 1,
+     "wrote": 1,
+     "stale": true
+    }
+   ],
+   "finalValues": {
+    "count": 1
+   },
+   "expected": {
+    "count": 2
+   },
+   "var": "count",
+   "threads": [
+    "a",
+    "b"
+   ],
+   "actual": {
+    "count": 1
+   }
+  },
+  {
+   "kind": "SYNC",
+   "label": "Same threads, read-calculate-write inside synchronized",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "a",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 5,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "holds": [
+      "lock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 1,
+     "thread": "a",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": false,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "b",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 5,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "blocked": true,
+     "waitingFor": "a",
+     "synthetic": true
+    },
+    {
+     "index": 3,
+     "thread": "a",
+     "opIndex": 2,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 4,
+     "thread": "a",
+     "opIndex": 3,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 5,
+     "thread": "a",
+     "opIndex": 4,
+     "kind": "UNLOCK",
+     "target": "lock",
+     "line": 7,
+     "text": "}  // release the lock",
+     "hazard": false,
+     "holds": [],
+     "synthetic": true
+    },
+    {
+     "index": 6,
+     "thread": "b",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 5,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "holds": [
+      "lock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 7,
+     "thread": "b",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "count",
+     "line": 5,
+     "text": "read count",
+     "hazard": false,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 8,
+     "thread": "b",
+     "opIndex": 2,
+     "kind": "COMPUTE",
+     "target": "count",
+     "line": 6,
+     "text": "tmp = tmp + 1",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "local": 2
+    },
+    {
+     "index": 9,
+     "thread": "b",
+     "opIndex": 3,
+     "kind": "WRITE",
+     "target": "count",
+     "line": 7,
+     "text": "count = tmp",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "wrote": 2,
+     "stale": false
+    },
+    {
+     "index": 10,
+     "thread": "b",
+     "opIndex": 4,
+     "kind": "UNLOCK",
+     "target": "lock",
+     "line": 7,
+     "text": "}  // release the lock",
+     "hazard": false,
+     "holds": [],
+     "synthetic": true
+    }
+   ],
+   "finalValues": {
+    "count": 2
+   },
+   "expected": {
+    "count": 2
+   },
+   "actual": {
+    "count": 2
+   },
+   "var": "count",
+   "threads": [
+    "a",
+    "b"
+   ],
+   "locks": [
+    "lock"
+   ]
+  }
+ ],
+ "hazards": [
+  {
+   "type": "RACE_CONDITION",
+   "variables": [
+    "count"
+   ],
+   "threads": [
+    "a",
+    "b"
+   ],
+   "schedule": "RACE",
+   "steps": [
+    0,
+    1,
+    4,
+    5
+   ],
+   "expected": 2,
+   "actual": 1,
+   "explanation": "Both threads read 'count' before either writes it back, so one update overwrites the other (lost update): expected 2, got 1.",
+   "fixSuggestion": "Make the read-modify-write on 'count' atomic: wrap it in synchronized (same lock in every thread), use a ReentrantLock, or switch 'count' to AtomicInteger."
+  }
+ ],
+ "fixSuggestion": "Make the read-modify-write on 'count' atomic: wrap it in synchronized (same lock in every thread), use a ReentrantLock, or switch 'count' to AtomicInteger."
+}

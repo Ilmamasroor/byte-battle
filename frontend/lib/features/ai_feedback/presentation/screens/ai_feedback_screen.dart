@@ -1,43 +1,79 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/loading_view.dart';
+import '../../../performance/data/performance_analytics.dart';
+import '../../../performance/presentation/state/performance_controller.dart';
+import '../../../performance/presentation/widgets/xp_chip.dart';
 
 class _PerfRow {
   final String label;
   final String caption;
   final IconData icon;
   final Color color;
-  final int scoreOf10;
+  final int? scoreOf10; // null = no evidence for this skill yet
 
   const _PerfRow(this.label, this.caption, this.icon, this.color, this.scoreOf10);
 }
 
-/// "Performance Diagnosis" screen — matches the reference screenshot:
-/// back button + BYTE BATTLE header + XP chip, an icon/title/subtitle
-/// intro, four skill cards (Understanding / Application / Debugging /
-/// Communication) each with a percentage, a segmented 10-step progress
-/// bar and an "x / 10" fraction, then a "Detected Pattern" insight
-/// card with a recurring-issue callout.
-class AiFeedbackScreen extends StatelessWidget {
+/// "Performance Diagnosis": the four skills computed from the learner's stored evidence (`GET /api/performance`)
+/// and a "Detected pattern" built from the AI diagnosis (`POST /api/ai/diagnose/summary`) and the repeated
+/// mistakes in the learner's Byte DNA (`GET /api/byte-dna`).
+class AiFeedbackScreen extends StatefulWidget {
   const AiFeedbackScreen({super.key});
 
-  // TODO: replace with data from AiFeedbackController / ai_analysis_model.dart
-  static const _rows = [
-    _PerfRow('Understanding', 'Grasp concepts and logic',
-        Icons.lightbulb_outline_rounded, AppColors.accentCyan, 8),
-    _PerfRow('Application', 'Use knowledge in real scenarios',
-        Icons.code_rounded, AppColors.btnAccentPurple, 6),
-    _PerfRow('Debugging', 'Find and fix issues efficiently',
-        Icons.bug_report_rounded, AppColors.btnGamificationPink, 4),
-    _PerfRow('Communication', 'Explain and collaborate effectively',
-        Icons.chat_bubble_outline_rounded, AppColors.accentCyan, 7),
-  ];
+  @override
+  State<AiFeedbackScreen> createState() => _AiFeedbackScreenState();
+}
+
+class _AiFeedbackScreenState extends State<AiFeedbackScreen> {
+  final _controller = PerformanceController.instance;
+
+  static const _captions = {
+    'Understanding': ('Grasp concepts and logic', Icons.lightbulb_outline_rounded, AppColors.accentCyan),
+    'Application': ('Use knowledge in real scenarios', Icons.code_rounded, AppColors.btnAccentPurple),
+    'Debugging': ('Find and fix issues efficiently', Icons.bug_report_rounded, AppColors.btnGamificationPink),
+    'Communication': ('Explain and collaborate effectively', Icons.chat_bubble_outline_rounded, AppColors.accentCyan),
+  };
+
+  @override
+  void initState() {
+    super.initState();
+    _controller.addListener(_onChange);
+    _load();
+  }
+
+  @override
+  void dispose() {
+    _controller.removeListener(_onChange);
+    super.dispose();
+  }
+
+  void _onChange() {
+    if (mounted) setState(() {});
+  }
+
+  Future<void> _load() async {
+    await _controller.load(force: true);
+    if (!mounted || _controller.errorMessage != null) return;
+    // the pattern card has its own loading state; these run in the background
+    _controller.diagnose();
+    _controller.loadByteDna(force: true);
+  }
 
   @override
   Widget build(BuildContext context) {
-    Helpers.noApiYet('AiFeedbackScreen');
+    final c = _controller;
+    final skills = PerformanceAnalytics.skills(c.records);
+    final rows = [
+      for (final name in PerformanceAnalytics.skillNames)
+        _PerfRow(name, _captions[name]!.$1, _captions[name]!.$2, _captions[name]!.$3,
+            skills[name] == null ? null : (skills[name]! * 10).round()),
+    ];
+
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -51,70 +87,114 @@ class AiFeedbackScreen extends StatelessWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(child: _XpChip(xp: 840)),
+            child: Center(child: LiveXpChip()),
           ),
         ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.screenPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    width: 48,
-                    height: 48,
-                    alignment: Alignment.center,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                    ),
-                    child: const Icon(Icons.track_changes_rounded, color: AppColors.white),
-                  ),
-                  const SizedBox(width: AppDimensions.spacingMd),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text('Performance Diagnosis', style: AppTextStyles.heading1),
-                        Text(
-                          "See where you're strong, find what to improve. "
-                          "Let's build a better you.",
-                          style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
+        child: c.isLoading && !c.loaded
+            ? const LoadingView(message: 'Reading your results…')
+            : c.errorMessage != null && !c.loaded
+                ? ErrorView(message: c.errorMessage!, onRetry: _load)
+                : c.records.isEmpty
+                    ? EmptyEvidence(
+                        title: 'No activity yet',
+                        message: 'Finish a battle, coding challenge, debugging exercise or interview and '
+                            'your diagnosis will appear here.',
+                        actionLabel: 'Choose a concept',
+                        onAction: () => Navigator.of(context).pushNamed(RouteNames.conceptList),
+                      )
+                    : RefreshIndicator(
+                        onRefresh: _load,
+                        child: SingleChildScrollView(
+                          physics: const AlwaysScrollableScrollPhysics(),
+                          padding: const EdgeInsets.all(AppDimensions.screenPadding),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              _header(),
+                              const SizedBox(height: AppDimensions.spacingXl),
+                              Row(
+                                children: [
+                                  Container(
+                                    width: 22,
+                                    height: 3,
+                                    decoration: BoxDecoration(
+                                      gradient: AppColors.primaryGradient,
+                                      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+                                    ),
+                                  ),
+                                  const SizedBox(width: AppDimensions.spacingSm),
+                                  Text('Your performance', style: AppTextStyles.heading2),
+                                ],
+                              ),
+                              const SizedBox(height: AppDimensions.spacingMd),
+                              for (final row in rows)
+                                Padding(
+                                  padding: const EdgeInsets.only(bottom: AppDimensions.spacingMd),
+                                  child: _PerfCard(row: row),
+                                ),
+                              _pattern(),
+                            ],
+                          ),
                         ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              Row(
-                children: [
-                  Container(
-                    width: 22,
-                    height: 3,
-                    decoration: BoxDecoration(
-                      gradient: AppColors.primaryGradient,
-                      borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                    ),
-                  ),
-                  const SizedBox(width: AppDimensions.spacingSm),
-                  Text('Your performance', style: AppTextStyles.heading2),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
-              for (final row in _rows)
-                Padding(
-                  padding: const EdgeInsets.only(bottom: AppDimensions.spacingMd),
-                  child: _PerfCard(row: row),
-                ),
-              const _DetectedPatternCard(),
-            ],
-          ),
-        ),
+                      ),
       ),
+    );
+  }
+
+  Widget _header() => Row(
+        children: [
+          Container(
+            width: 48,
+            height: 48,
+            alignment: Alignment.center,
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            ),
+            child: const Icon(Icons.track_changes_rounded, color: AppColors.onAccent),
+          ),
+          const SizedBox(width: AppDimensions.spacingMd),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text('Performance Diagnosis', style: AppTextStyles.heading1),
+                Text(
+                  "See where you're strong, find what to improve. Let's build a better you.",
+                  style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+
+  Widget _pattern() {
+    final c = _controller;
+    if (c.isDiagnosing || (c.diagnosis == null && c.diagnosisError == null)) {
+      return const Padding(
+        padding: EdgeInsets.all(AppDimensions.spacingLg),
+        child: LoadingView(message: 'The AI is analysing your pattern…'),
+      );
+    }
+    final insight = c.diagnosis == null ? null : DiagnosisInsight.from(c.diagnosis!);
+    if (insight == null) {
+      return _DetectedPatternCard(
+        headline: c.diagnosisError != null
+            ? 'The AI diagnosis is unavailable right now. Pull down to try again.'
+            : 'There is not enough evidence yet for the AI to find a pattern.',
+        issueLabel: 'Next step:',
+        issue: 'Complete more activities.',
+      );
+    }
+    final mistakes = c.byteDna?.repeatedMistakes ?? const <String>[];
+    return _DetectedPatternCard(
+      headline: 'Your strongest area is ${insight.strongest.toLowerCase()}, '
+          'while ${insight.weakest.toLowerCase()} needs the most work.',
+      issueLabel: mistakes.isEmpty ? 'Focus on:' : 'Recurring issue:',
+      issue: mistakes.isEmpty ? insight.weakestAdvice : mistakes.take(3).join('\n'),
     );
   }
 }
@@ -159,16 +239,16 @@ class _PerfCard extends StatelessWidget {
                   ],
                 ),
               ),
-              Text('${row.scoreOf10 * 10}%',
+              Text(row.scoreOf10 == null ? 'No data' : '${row.scoreOf10! * 10}%',
                   style: AppTextStyles.heading2.copyWith(color: row.color)),
             ],
           ),
           const SizedBox(height: AppDimensions.spacingMd),
           Row(
             children: [
-              Expanded(child: _SegmentedBar(filled: row.scoreOf10, color: row.color)),
+              Expanded(child: _SegmentedBar(filled: row.scoreOf10 ?? 0, color: row.color)),
               const SizedBox(width: AppDimensions.spacingSm),
-              Text('${row.scoreOf10} / 10', style: AppTextStyles.caption),
+              Text(row.scoreOf10 == null ? 'Not practised yet' : '${row.scoreOf10} / 10', style: AppTextStyles.caption),
             ],
           ),
         ],
@@ -205,7 +285,10 @@ class _SegmentedBar extends StatelessWidget {
 }
 
 class _DetectedPatternCard extends StatelessWidget {
-  const _DetectedPatternCard();
+  final String headline;
+  final String issueLabel;
+  final String issue;
+  const _DetectedPatternCard({required this.headline, required this.issueLabel, required this.issue});
 
   @override
   Widget build(BuildContext context) {
@@ -258,11 +341,7 @@ class _DetectedPatternCard extends StatelessWidget {
             ],
           ),
           const SizedBox(height: AppDimensions.spacingMd),
-          Text(
-            'You understand race conditions, but debugging synchronization '
-            'issues is still difficult.',
-            style: AppTextStyles.body,
-          ),
+          Text(headline, style: AppTextStyles.body),
           const SizedBox(height: AppDimensions.spacingMd),
           Container(
             width: double.infinity,
@@ -280,7 +359,7 @@ class _DetectedPatternCard extends StatelessWidget {
                     const Icon(Icons.warning_amber_rounded,
                         color: AppColors.btnGamificationPink, size: 16),
                     const SizedBox(width: 6),
-                    Text('Recurring issue:',
+                    Text(issueLabel,
                         style: AppTextStyles.bodyBold
                             .copyWith(color: AppColors.btnGamificationPink, fontSize: 13)),
                   ],
@@ -291,37 +370,12 @@ class _DetectedPatternCard extends StatelessWidget {
                     const Icon(Icons.arrow_forward_rounded,
                         size: 14, color: AppColors.textHint),
                     const SizedBox(width: 6),
-                    Text('Incorrect thread coordination', style: AppTextStyles.body),
+                    Expanded(child: Text(issue, style: AppTextStyles.body)),
                   ],
                 ),
               ],
             ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _XpChip extends StatelessWidget {
-  final int xp;
-  const _XpChip({required this.xp});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-        border: Border.all(color: AppColors.borderLight.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.bolt_rounded, size: 14, color: AppColors.accentCyan),
-          const SizedBox(width: 4),
-          Text('$xp XP', style: AppTextStyles.caption),
         ],
       ),
     );

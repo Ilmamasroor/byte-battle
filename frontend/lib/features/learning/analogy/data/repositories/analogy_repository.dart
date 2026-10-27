@@ -7,7 +7,7 @@ class AnalogyRepository {
 
   final AnalogyRemoteDatasource _remote;
 
-  Future<AnalogyModel> getAnalogy(String conceptId) {
-    return _remote.getAnalogy(conceptId);
+  Future<AnalogyModel> getAnalogy(String conceptId, {String? lens}) {
+    return _remote.getAnalogy(conceptId, lens: lens);
   }
 }

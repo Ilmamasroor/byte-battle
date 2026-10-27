@@ -1,0 +1,912 @@
+{
+ "support": {
+  "status": "partial",
+  "reasons": [
+   "Loops are shown as a single pass (lines 31, 34, 40, 43, 49, 50), so each thread does its step once here."
+  ]
+ },
+ "provenance": "teaching-simulation",
+ "schedules": [
+  {
+   "kind": "SAFE",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "Thread-1-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "addLock",
+     "line": 9,
+     "text": "synchronized (addLock)",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ]
+    },
+    {
+     "index": 1,
+     "thread": "Thread-1-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 10,
+     "text": "read value",
+     "hazard": false,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "Thread-1-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 11,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 3,
+     "thread": "Thread-1-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 12,
+     "text": "current = current + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 4,
+     "thread": "Thread-1-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 12,
+     "text": "value = current",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 5,
+     "thread": "Thread-1-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "addLock",
+     "line": 13,
+     "text": "end synchronized (addLock)",
+     "hazard": false,
+     "holds": []
+    },
+    {
+     "index": 6,
+     "thread": "Thread-2-2",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "addLock",
+     "line": 9,
+     "text": "synchronized (addLock)",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ]
+    },
+    {
+     "index": 7,
+     "thread": "Thread-2-2",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 10,
+     "text": "read value",
+     "hazard": false,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 8,
+     "thread": "Thread-2-2",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 11,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 9,
+     "thread": "Thread-2-2",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 12,
+     "text": "current = current + 1",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "local": 2
+    },
+    {
+     "index": 10,
+     "thread": "Thread-2-2",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 12,
+     "text": "value = current",
+     "hazard": false,
+     "before": 1,
+     "value": 2,
+     "wrote": 2,
+     "stale": false
+    },
+    {
+     "index": 11,
+     "thread": "Thread-2-2",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "addLock",
+     "line": 13,
+     "text": "end synchronized (addLock)",
+     "hazard": false,
+     "holds": []
+    },
+    {
+     "index": 12,
+     "thread": "Thread-3-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "subLock",
+     "line": 17,
+     "text": "synchronized (subLock)",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ]
+    },
+    {
+     "index": 13,
+     "thread": "Thread-3-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 18,
+     "text": "read value",
+     "hazard": false,
+     "value": 2,
+     "local": 2
+    },
+    {
+     "index": 14,
+     "thread": "Thread-3-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 19,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 15,
+     "thread": "Thread-3-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 20,
+     "text": "current = current - 1",
+     "hazard": false,
+     "before": 2,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 16,
+     "thread": "Thread-3-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 20,
+     "text": "value = current",
+     "hazard": false,
+     "before": 2,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 17,
+     "thread": "Thread-3-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "subLock",
+     "line": 21,
+     "text": "end synchronized (subLock)",
+     "hazard": false,
+     "holds": []
+    },
+    {
+     "index": 18,
+     "thread": "Thread-4-2",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "subLock",
+     "line": 17,
+     "text": "synchronized (subLock)",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ]
+    },
+    {
+     "index": 19,
+     "thread": "Thread-4-2",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 18,
+     "text": "read value",
+     "hazard": false,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 20,
+     "thread": "Thread-4-2",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 19,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 21,
+     "thread": "Thread-4-2",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 20,
+     "text": "current = current - 1",
+     "hazard": false,
+     "before": 1,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 22,
+     "thread": "Thread-4-2",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 20,
+     "text": "value = current",
+     "hazard": false,
+     "before": 1,
+     "value": 0,
+     "wrote": 0,
+     "stale": false
+    },
+    {
+     "index": 23,
+     "thread": "Thread-4-2",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "subLock",
+     "line": 21,
+     "text": "end synchronized (subLock)",
+     "hazard": false,
+     "holds": []
+    }
+   ],
+   "finalValues": {
+    "value": 0
+   }
+  },
+  {
+   "kind": "RACE",
+   "label": "Both read first, then both write",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "Thread-1-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "addLock",
+     "line": 9,
+     "text": "synchronized (addLock)",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ]
+    },
+    {
+     "index": 1,
+     "thread": "Thread-1-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 10,
+     "text": "read value",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "Thread-3-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "subLock",
+     "line": 17,
+     "text": "synchronized (subLock)",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ]
+    },
+    {
+     "index": 3,
+     "thread": "Thread-3-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 18,
+     "text": "read value",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 4,
+     "thread": "Thread-1-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 11,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 5,
+     "thread": "Thread-1-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 12,
+     "text": "current = current + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 6,
+     "thread": "Thread-3-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 19,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 7,
+     "thread": "Thread-3-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 20,
+     "text": "current = current - 1",
+     "hazard": false,
+     "before": 0,
+     "value": -1,
+     "local": -1
+    },
+    {
+     "index": 8,
+     "thread": "Thread-1-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 12,
+     "text": "value = current",
+     "hazard": true,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 9,
+     "thread": "Thread-3-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 20,
+     "text": "value = current",
+     "hazard": true,
+     "before": 1,
+     "value": -1,
+     "wrote": -1,
+     "stale": true
+    },
+    {
+     "index": 10,
+     "thread": "Thread-1-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "addLock",
+     "line": 13,
+     "text": "end synchronized (addLock)",
+     "hazard": false,
+     "holds": []
+    },
+    {
+     "index": 11,
+     "thread": "Thread-3-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "subLock",
+     "line": 21,
+     "text": "end synchronized (subLock)",
+     "hazard": false,
+     "holds": []
+    }
+   ],
+   "finalValues": {
+    "value": -1
+   },
+   "expected": {
+    "value": 0
+   },
+   "var": "value",
+   "threads": [
+    "Thread-1-1",
+    "Thread-3-1"
+   ],
+   "actual": {
+    "value": -1
+   }
+  },
+  {
+   "kind": "RACE_ALT",
+   "label": "One thread finishes inside the other's gap",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "Thread-1-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "addLock",
+     "line": 9,
+     "text": "synchronized (addLock)",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ]
+    },
+    {
+     "index": 1,
+     "thread": "Thread-1-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 10,
+     "text": "read value",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 2,
+     "thread": "Thread-3-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "subLock",
+     "line": 17,
+     "text": "synchronized (subLock)",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ]
+    },
+    {
+     "index": 3,
+     "thread": "Thread-3-1",
+     "opIndex": 1,
+     "kind": "READ",
+     "target": "value",
+     "line": 18,
+     "text": "read value",
+     "hazard": true,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 4,
+     "thread": "Thread-3-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 19,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 5,
+     "thread": "Thread-3-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 20,
+     "text": "current = current - 1",
+     "hazard": false,
+     "before": 0,
+     "value": -1,
+     "local": -1
+    },
+    {
+     "index": 6,
+     "thread": "Thread-3-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 20,
+     "text": "value = current",
+     "hazard": true,
+     "before": 0,
+     "value": -1,
+     "wrote": -1,
+     "stale": false
+    },
+    {
+     "index": 7,
+     "thread": "Thread-1-1",
+     "opIndex": 2,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 11,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 8,
+     "thread": "Thread-1-1",
+     "opIndex": 3,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 12,
+     "text": "current = current + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 9,
+     "thread": "Thread-1-1",
+     "opIndex": 4,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 12,
+     "text": "value = current",
+     "hazard": true,
+     "before": -1,
+     "value": 1,
+     "wrote": 1,
+     "stale": true
+    },
+    {
+     "index": 10,
+     "thread": "Thread-1-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "addLock",
+     "line": 13,
+     "text": "end synchronized (addLock)",
+     "hazard": false,
+     "holds": []
+    },
+    {
+     "index": 11,
+     "thread": "Thread-3-1",
+     "opIndex": 5,
+     "kind": "UNLOCK",
+     "target": "subLock",
+     "line": 21,
+     "text": "end synchronized (subLock)",
+     "hazard": false,
+     "holds": []
+    }
+   ],
+   "finalValues": {
+    "value": 1
+   },
+   "expected": {
+    "value": 0
+   },
+   "var": "value",
+   "threads": [
+    "Thread-1-1",
+    "Thread-3-1"
+   ],
+   "actual": {
+    "value": 1
+   }
+  },
+  {
+   "kind": "SYNC",
+   "label": "Same threads, read-calculate-write inside synchronized",
+   "steps": [
+    {
+     "index": 0,
+     "thread": "Thread-1-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "addLock",
+     "line": 9,
+     "text": "synchronized (addLock)",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 1,
+     "thread": "Thread-1-1",
+     "opIndex": 1,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 10,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "holds": [
+      "addLock",
+      "lock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 2,
+     "thread": "Thread-1-1",
+     "opIndex": 2,
+     "kind": "READ",
+     "target": "value",
+     "line": 10,
+     "text": "read value",
+     "hazard": false,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 3,
+     "thread": "Thread-3-1",
+     "opIndex": 0,
+     "kind": "LOCK",
+     "target": "subLock",
+     "line": 17,
+     "text": "synchronized (subLock)",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 4,
+     "thread": "Thread-3-1",
+     "opIndex": 1,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 18,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "blocked": true,
+     "waitingFor": "Thread-1-1",
+     "synthetic": true
+    },
+    {
+     "index": 5,
+     "thread": "Thread-1-1",
+     "opIndex": 3,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 11,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 6,
+     "thread": "Thread-1-1",
+     "opIndex": 4,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 12,
+     "text": "current = current + 1",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 7,
+     "thread": "Thread-1-1",
+     "opIndex": 5,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 12,
+     "text": "value = current",
+     "hazard": false,
+     "before": 0,
+     "value": 1,
+     "wrote": 1,
+     "stale": false
+    },
+    {
+     "index": 8,
+     "thread": "Thread-1-1",
+     "opIndex": 6,
+     "kind": "UNLOCK",
+     "target": "lock",
+     "line": 12,
+     "text": "}  // release the lock",
+     "hazard": false,
+     "holds": [
+      "addLock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 9,
+     "thread": "Thread-1-1",
+     "opIndex": 7,
+     "kind": "UNLOCK",
+     "target": "addLock",
+     "line": 13,
+     "text": "end synchronized (addLock)",
+     "hazard": false,
+     "holds": [],
+     "synthetic": true
+    },
+    {
+     "index": 10,
+     "thread": "Thread-3-1",
+     "opIndex": 1,
+     "kind": "LOCK",
+     "target": "lock",
+     "line": 18,
+     "text": "synchronized (lock) {",
+     "hazard": false,
+     "holds": [
+      "lock",
+      "subLock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 11,
+     "thread": "Thread-3-1",
+     "opIndex": 2,
+     "kind": "READ",
+     "target": "value",
+     "line": 18,
+     "text": "read value",
+     "hazard": false,
+     "value": 1,
+     "local": 1
+    },
+    {
+     "index": 12,
+     "thread": "Thread-3-1",
+     "opIndex": 3,
+     "kind": "SLEEP",
+     "target": "1 ms",
+     "line": 19,
+     "text": "Thread.sleep(1)",
+     "hazard": false
+    },
+    {
+     "index": 13,
+     "thread": "Thread-3-1",
+     "opIndex": 4,
+     "kind": "COMPUTE",
+     "target": "value",
+     "line": 20,
+     "text": "current = current - 1",
+     "hazard": false,
+     "before": 1,
+     "value": 0,
+     "local": 0
+    },
+    {
+     "index": 14,
+     "thread": "Thread-3-1",
+     "opIndex": 5,
+     "kind": "WRITE",
+     "target": "value",
+     "line": 20,
+     "text": "value = current",
+     "hazard": false,
+     "before": 1,
+     "value": 0,
+     "wrote": 0,
+     "stale": false
+    },
+    {
+     "index": 15,
+     "thread": "Thread-3-1",
+     "opIndex": 6,
+     "kind": "UNLOCK",
+     "target": "lock",
+     "line": 20,
+     "text": "}  // release the lock",
+     "hazard": false,
+     "holds": [
+      "subLock"
+     ],
+     "synthetic": true
+    },
+    {
+     "index": 16,
+     "thread": "Thread-3-1",
+     "opIndex": 7,
+     "kind": "UNLOCK",
+     "target": "subLock",
+     "line": 21,
+     "text": "end synchronized (subLock)",
+     "hazard": false,
+     "holds": [],
+     "synthetic": true
+    }
+   ],
+   "finalValues": {
+    "value": 0
+   },
+   "expected": {
+    "value": 0
+   },
+   "actual": {
+    "value": 0
+   },
+   "var": "value",
+   "threads": [
+    "Thread-1-1",
+    "Thread-3-1"
+   ],
+   "locks": [
+    "lock"
+   ]
+  }
+ ],
+ "hazards": [
+  {
+   "type": "RACE_CONDITION",
+   "variables": [
+    "value"
+   ],
+   "threads": [
+    "Thread-1-1",
+    "Thread-3-1"
+   ],
+   "schedule": "RACE",
+   "steps": [
+    1,
+    3,
+    8,
+    9
+   ],
+   "expected": 0,
+   "actual": -1,
+   "explanation": "Both threads read 'value' before either writes it back, so one update overwrites the other (lost update): expected 0, got -1.",
+   "fixSuggestion": "Make the read-modify-write on 'value' atomic: wrap it in synchronized (same lock in every thread), use a ReentrantLock, or switch 'value' to AtomicInteger."
+  }
+ ],
+ "fixSuggestion": "Make the read-modify-write on 'value' atomic: wrap it in synchronized (same lock in every thread), use a ReentrantLock, or switch 'value' to AtomicInteger.",
+ "code": "import java.util.*;\n\npublic class Main {\n    private static int value = 0;\n    private static final Object addLock = new Object();\n    private static final Object subLock = new Object();\n\n    private static void add() throws InterruptedException {\n        synchronized (addLock) {\n            int current = value;\n            Thread.sleep(1);\n            value = current + 1;\n        }\n    }\n\n    private static void subtract() throws InterruptedException {\n        synchronized (subLock) {\n            int current = value;\n            Thread.sleep(1);\n            value = current - 1;\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        Scanner in = new Scanner(System.in);\n        int adders = in.nextInt();\n        int subtractors = in.nextInt();\n        int n = in.nextInt();\n\n        List<Thread> workers = new ArrayList<>();\n        for (int i = 0; i < adders; i++) {\n            workers.add(new Thread(() -> {\n                try {\n                    for (int j = 0; j < n; j++) add();\n                } catch (InterruptedException e) {\n                    Thread.currentThread().interrupt();\n                }\n            }));\n        }\n        for (int i = 0; i < subtractors; i++) {\n            workers.add(new Thread(() -> {\n                try {\n                    for (int j = 0; j < n; j++) subtract();\n                } catch (InterruptedException e) {\n                    Thread.currentThread().interrupt();\n                }\n            }));\n        }\n        for (Thread w : workers) w.start();\n        for (Thread w : workers) w.join();\n\n        System.out.println(\"Value: \" + value);\n    }\n}\n"
+}

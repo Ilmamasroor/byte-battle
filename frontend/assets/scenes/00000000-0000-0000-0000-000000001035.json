@@ -1,0 +1,708 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001035",
+ "title": "CPU scheduling: Round Robin",
+ "kind": "structure",
+ "intro": "Three jobs all want the CPU now. Round Robin gives each a short turn. Can you guess the average wait?",
+ "predict": {
+  "question": "P1 needs 5 ticks, P2 needs 3, P3 needs 2, all arrive at 0, quantum 2. What is the average waiting time?",
+  "options": [
+   "3.0",
+   "5.0",
+   "7.0"
+  ],
+  "answer": 1,
+  "reveal": "Waits are P1 5, P2 6, P3 4. Total 15 divided by 3 jobs is 5.0 ticks."
+ },
+ "takeaway": "Round Robin gives every process a fair slice (quantum) in turn; waiting time = finish time minus burst time (when all arrive at 0).",
+ "steps": [
+  {
+   "say": "P1 needs 5 ticks of CPU, P2 needs 3, P3 needs 2. All arrive at time 0. Quantum is 2: nobody holds the CPU longer than 2 ticks at once.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": []
+      }
+     ],
+     "max": 10,
+     "time": 0
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P1",
+       "s": "idle"
+      },
+      {
+       "v": "P2",
+       "s": "idle"
+      },
+      {
+       "v": "P3",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:5",
+       "s": "idle"
+      },
+      {
+       "v": "P2:3",
+       "s": "idle"
+      },
+      {
+       "v": "P3:2",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ]
+  },
+  {
+   "say": "P1 is first in line and runs for its quantum, ticks 0 to 2. It still needs 3 more.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "cur"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 2
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P2",
+       "s": "idle"
+      },
+      {
+       "v": "P3",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:3",
+       "s": "cur"
+      },
+      {
+       "v": "P2:3",
+       "s": "idle"
+      },
+      {
+       "v": "P3:2",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "t = 0..2  P1 runs"
+  },
+  {
+   "say": "Quantum used up, so P1 is kicked off and goes to the BACK of the queue. P2 is next.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 2
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P2",
+       "s": "idle"
+      },
+      {
+       "v": "P3",
+       "s": "idle"
+      },
+      {
+       "v": "P1",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:3",
+       "s": "idle"
+      },
+      {
+       "v": "P2:3",
+       "s": "idle"
+      },
+      {
+       "v": "P3:2",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "P1 re-queued"
+  },
+  {
+   "say": "P2 runs ticks 2 to 4 and still needs 1 more, so it goes to the back too.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "cur"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 4
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P3",
+       "s": "idle"
+      },
+      {
+       "v": "P1",
+       "s": "idle"
+      },
+      {
+       "v": "P2",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:3",
+       "s": "idle"
+      },
+      {
+       "v": "P2:1",
+       "s": "cur"
+      },
+      {
+       "v": "P3:2",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "t = 2..4  P2 runs"
+  },
+  {
+   "say": "P3 needs exactly 2, so it finishes at time 6 and leaves the system for good.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 6
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P1",
+       "s": "idle"
+      },
+      {
+       "v": "P2",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:3",
+       "s": "idle"
+      },
+      {
+       "v": "P2:1",
+       "s": "idle"
+      },
+      {
+       "v": "P3:0",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "t = 4..6  P3 done at 6"
+  },
+  {
+   "say": "P1 runs again, ticks 6 to 8. It has 1 tick left, so back it goes behind P2.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 6,
+         "len": 2,
+         "s": "cur"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 8
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P2",
+       "s": "idle"
+      },
+      {
+       "v": "P1",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:1",
+       "s": "cur"
+      },
+      {
+       "v": "P2:1",
+       "s": "idle"
+      },
+      {
+       "v": "P3:0",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "t = 6..8  P1 runs"
+  },
+  {
+   "say": "P2 needs only 1 tick, so it finishes early at time 9 and hands back the CPU without using its whole quantum.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 6,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 8,
+         "len": 1,
+         "s": "found"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 9
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": [
+      {
+       "v": "P1",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:1",
+       "s": "idle"
+      },
+      {
+       "v": "P2:0",
+       "s": "done"
+      },
+      {
+       "v": "P3:0",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "P2 done at 9"
+  },
+  {
+   "say": "P1 gets the last tick, 9 to 10, and finishes at time 10. Total work was 5 + 3 + 2 = 10 ticks, so the CPU never sat idle.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 6,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 8,
+         "len": 1,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 9,
+         "len": 1,
+         "s": "found"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 10
+    },
+    {
+     "kind": "queue",
+     "name": "Ready queue (front first)",
+     "items": []
+    },
+    {
+     "kind": "array",
+     "name": "Time left",
+     "cells": [
+      {
+       "v": "P1:0",
+       "s": "done"
+      },
+      {
+       "v": "P2:0",
+       "s": "done"
+      },
+      {
+       "v": "P3:0",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "P1 done at 10"
+  },
+  {
+   "say": "Waiting time = finish time - burst time. P1: 10 - 5 = 5. P2: 9 - 3 = 6. P3: 6 - 2 = 4.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 6,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 8,
+         "len": 1,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 9,
+         "len": 1,
+         "s": "found"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 10
+    },
+    {
+     "kind": "array",
+     "name": "Waiting time",
+     "cells": [
+      {
+       "v": "P1:5",
+       "s": "compare"
+      },
+      {
+       "v": "P2:6",
+       "s": "compare"
+      },
+      {
+       "v": "P3:4",
+       "s": "compare"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "waits: 5, 6, 4"
+  },
+  {
+   "say": "Average waiting time = (5 + 6 + 4) / 3 = 15 / 3 = 5.0 ticks. A smaller quantum means more switching but quicker first turns.",
+   "structures": [
+    {
+     "kind": "gantt",
+     "name": "CPU timeline (quantum = 2)",
+     "lanes": [
+      {
+       "name": "CPU",
+       "blocks": [
+        {
+         "label": "P1",
+         "start": 0,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 2,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P3",
+         "start": 4,
+         "len": 2,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 6,
+         "len": 2,
+         "s": "done"
+        },
+        {
+         "label": "P2",
+         "start": 8,
+         "len": 1,
+         "s": "found"
+        },
+        {
+         "label": "P1",
+         "start": 9,
+         "len": 1,
+         "s": "found"
+        }
+       ]
+      }
+     ],
+     "max": 10,
+     "time": 10
+    },
+    {
+     "kind": "array",
+     "name": "Average wait",
+     "cells": [
+      {
+       "v": "15 / 3",
+       "s": "idle"
+      },
+      {
+       "v": "5.0",
+       "s": "found"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "note": "average = 5.0 ticks"
+  }
+ ]
+}

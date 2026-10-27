@@ -13,6 +13,12 @@ class ExplanationCard extends StatelessWidget {
   final String conceptExplanation;
   final String simplifiedExplanation;
   final String levelLabel;
+  final String primaryLabel;
+  final String secondaryLabel;
+  final String subtitle;
+
+  /// Optional line under the text (e.g. "AI service was unavailable - showing a basic overview").
+  final String? note;
 
   const ExplanationCard({
     super.key,
@@ -20,7 +26,11 @@ class ExplanationCard extends StatelessWidget {
     required this.onToggle,
     required this.conceptExplanation,
     required this.simplifiedExplanation,
-    this.levelLabel = 'Beginner Level',
+    required this.levelLabel,
+    this.primaryLabel = 'Concept Explanation',
+    this.secondaryLabel = 'Simplified Explanation',
+    this.subtitle = 'Tailored to your learning level',
+    this.note,
   });
 
   @override
@@ -40,7 +50,7 @@ class ExplanationCard extends StatelessWidget {
                   shape: BoxShape.circle,
                   gradient: AppColors.primaryGradient,
                 ),
-                child: const Icon(Icons.smart_toy_outlined, color: AppColors.white, size: 18),
+                child: const Icon(Icons.smart_toy_outlined, color: AppColors.onAccent, size: 18),
               ),
               const SizedBox(width: AppDimensions.spacingSm),
               Expanded(
@@ -51,11 +61,10 @@ class ExplanationCard extends StatelessWidget {
                       children: [
                         Text('AI Explanation', style: AppTextStyles.bodyBold),
                         const SizedBox(width: 4),
-                        const Icon(Icons.auto_awesome_rounded,
-                            size: 14, color: AppColors.accentCyan),
+                        const Icon(Icons.auto_awesome_rounded, size: 14, color: AppColors.accentCyan),
                       ],
                     ),
-                    Text('Tailored to your learning level', style: AppTextStyles.caption),
+                    Text(subtitle, style: AppTextStyles.caption),
                   ],
                 ),
               ),
@@ -75,7 +84,7 @@ class ExplanationCard extends StatelessWidget {
             children: [
               Expanded(
                 child: _TabButton(
-                  label: 'Concept Explanation',
+                  label: primaryLabel,
                   selected: !simplified,
                   onTap: () => onToggle(false),
                 ),
@@ -83,7 +92,7 @@ class ExplanationCard extends StatelessWidget {
               const SizedBox(width: AppDimensions.spacingSm),
               Expanded(
                 child: _TabButton(
-                  label: 'Simplified Explanation',
+                  label: secondaryLabel,
                   selected: simplified,
                   onTap: () => onToggle(true),
                 ),
@@ -102,7 +111,7 @@ class ExplanationCard extends StatelessWidget {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
-                  simplified ? 'Simplified Explanation' : 'Concept Explanation',
+                  simplified ? secondaryLabel : primaryLabel,
                   style: AppTextStyles.bodyBold.copyWith(color: AppColors.accentCyan),
                 ),
                 const SizedBox(height: AppDimensions.spacingSm),
@@ -110,6 +119,10 @@ class ExplanationCard extends StatelessWidget {
                   simplified ? simplifiedExplanation : conceptExplanation,
                   style: AppTextStyles.body,
                 ),
+                if (note != null) ...[
+                  const SizedBox(height: AppDimensions.spacingSm),
+                  Text(note!, style: AppTextStyles.caption),
+                ],
               ],
             ),
           ),

@@ -29,11 +29,12 @@ class MnemonicController extends ChangeNotifier {
   MnemonicModel? mnemonic;
 
   String? _loadedConceptId;
+  String? _loadedLens;
 
   /// `POST /api/ai/mnemonic?conceptId=...`. Set [force] to true to
   /// re-fetch even if this conceptId is already loaded.
-  Future<void> loadMnemonic(String conceptId, {bool force = false}) async {
-    if (!force && _loadedConceptId == conceptId && mnemonic != null) {
+  Future<void> loadMnemonic(String conceptId, {bool force = false, String? lens}) async {
+    if (!force && _loadedConceptId == conceptId && _loadedLens == lens && mnemonic != null) {
       return;
     }
     isLoading = true;
@@ -41,8 +42,9 @@ class MnemonicController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      mnemonic = await _repository.getMnemonic(conceptId);
+      mnemonic = await _repository.getMnemonic(conceptId, lens: lens);
       _loadedConceptId = conceptId;
+      _loadedLens = lens;
       debugPrint('🎵 [MnemonicController] loaded mnemonic for $conceptId');
     } on NetworkException catch (e) {
       errorMessage = e.message;

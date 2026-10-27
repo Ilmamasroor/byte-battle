@@ -1,3 +1,4 @@
+import '../../utils/ui_text.dart';
 import 'package:flutter/material.dart';
 import '../../../app/theme/app_colors.dart';
 import '../../../app/theme/app_dimensions.dart';
@@ -75,13 +76,13 @@ class StatusButton extends StatelessWidget {
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Icon(type.icon, size: size.iconSize, color: AppColors.white),
+          Icon(type.icon, size: size.iconSize, color: AppColors.onAccent),
           SizedBox(width: size.iconGap),
           Text(
-            label ?? type.defaultLabel,
+            UiText.sentence(label ?? type.defaultLabel),
             style: AppTextStyles.button.copyWith(
               fontSize: size.fontSize,
-              color: AppColors.white,
+              color: AppColors.onAccent,
             ),
           ),
         ],

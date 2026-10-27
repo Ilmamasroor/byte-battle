@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
-import '../../../../app/constants/app_constants.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../core/widgets/app_button.dart';
+import '../../../../core/widgets/app_logo.dart';
 import '../../../../core/widgets/buttons/app_text_button.dart';
 import '../../data/models/onboarding_model.dart';
 import '../widgets/onboarding_page.dart';
@@ -47,56 +47,42 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
     final isLast = _currentPage == _pages.length - 1;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          // Full-screen onboarding artwork — the only background shown on
-          // this screen (sits on top of the app-wide background painted by
-          // BytlBattleApp.builder).
-          Positioned.fill(
-            child: Image.asset(
-              AppConstants.onboardingBackground,
-              fit: BoxFit.cover,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.fromLTRB(AppDimensions.screenPadding, AppDimensions.spacingSm, AppDimensions.spacingSm, 0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  const AppLogo(logoSize: 22, fontSize: 18),
+                  if (!isLast) AppTextButton(label: 'Skip', onPressed: _skip) else const SizedBox(height: 40),
+                ],
+              ),
             ),
-          ),
-          SafeArea(
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.topRight,
-                  child: Padding(
-                    padding: const EdgeInsets.all(AppDimensions.spacingMd),
-                    child: AppTextButton(
-                      label: 'Skip',
-                      onPressed: _skip,
-                    ),
-                  ),
-                ),
-                Expanded(
-                  child: PageView.builder(
-                    controller: _pageController,
-                    itemCount: _pages.length,
-                    onPageChanged: (i) => setState(() => _currentPage = i),
-                    itemBuilder: (context, index) =>
-                        OnboardingPage(data: _pages[index]),
-                  ),
-                ),
-                const SizedBox(height: 30),
-                _DotIndicator(count: _pages.length, activeIndex: _currentPage),
-                const SizedBox(height: AppDimensions.spacingXl),
-                Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: AppDimensions.screenPadding,
-                  ),
-                  child: AppButton(
-                    label: isLast ? 'GET STARTED' : 'NEXT',
-                    onPressed: _next,
-                  ),
-                ),
-                const SizedBox(height: AppDimensions.spacingXl),
-              ],
+            const SizedBox(height: AppDimensions.spacingMd),
+            Expanded(
+              child: PageView.builder(
+                controller: _pageController,
+                itemCount: _pages.length,
+                onPageChanged: (i) => setState(() => _currentPage = i),
+                itemBuilder: (context, index) => OnboardingPage(data: _pages[index]),
+              ),
             ),
-          ),
-        ],
+            const SizedBox(height: 24),
+            _DotIndicator(count: _pages.length, activeIndex: _currentPage),
+            const SizedBox(height: AppDimensions.spacingLg),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenPadding),
+              child: AppButton(
+                label: isLast ? 'Start my journey' : 'Next',
+                icon: Icons.arrow_forward_rounded,
+                onPressed: _next,
+              ),
+            ),
+            const SizedBox(height: AppDimensions.spacingLg),
+          ],
+        ),
       ),
     );
   }

@@ -1,0 +1,128 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001043",
+ "title": "HTTP and HTTPS: a request, a code, a page",
+ "kind": "sequence",
+ "intro": "Typing a web address starts a short conversation. Let's watch it, then see what the S in HTTPS protects.",
+ "predict": {
+  "question": "A snoop on cafe wifi watches your HTTPS login. What can they read?",
+  "options": [
+   "Your username and password",
+   "Only scrambled bytes, not the content",
+   "Nothing, not even which server you talk to"
+  ],
+  "answer": 1,
+  "reveal": "HTTPS encrypts the content, so the snoop only sees scrambled bytes. They can still tell which server you connected to."
+ },
+ "takeaway": "HTTP is request, status code, response. HTTPS wraps it in TLS so others on the network cannot read or alter it.",
+ "steps": [
+  {
+   "say": "You open https://shop.com. The browser must talk to the web server. A snoop shares the same cafe wifi. First, the secure connection.",
+   "actors": [
+    "Browser",
+    "Web server",
+    "Snoop"
+   ],
+   "actorState": {
+    "0": "idle",
+    "1": "LISTEN",
+    "2": "watching"
+   }
+  },
+  {
+   "say": "After TCP connects, the browser starts the TLS handshake with ClientHello: the encryption methods it supports.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "TLS ClientHello",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The server replies with its certificate, a signed ID card for shop.com, and picks the encryption method.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "ServerHello + certificate",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "The browser checks the certificate is genuine and both sides agree on a secret key. Handshake done: everything now is encrypted.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "Key agreed, channel secure",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "secure",
+    "1": "secure",
+    "2": "watching"
+   }
+  },
+  {
+   "say": "Now the HTTP request: a method (GET), a path, and headers. Only the server can read it.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "GET /index.html",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The server answers with a status code first. 200 OK means success, then the page itself follows.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "200 OK + HTML page",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "A missing page gets a different code. 404 Not Found means the client asked for something that does not exist. 500 means the server broke.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "404 Not Found",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "Now imagine plain HTTP with no TLS. Everything travels as readable text, so the snoop can read the password.",
+   "msg": {
+    "from": 2,
+    "to": 2,
+    "label": "HTTP: reads pw=1234",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "idle",
+    "1": "LISTEN",
+    "2": "reading!"
+   }
+  },
+  {
+   "say": "With HTTPS the snoop gets only scrambled bytes. They can neither read nor quietly change the page on the way.",
+   "msg": {
+    "from": 2,
+    "to": 2,
+    "label": "HTTPS: sees 9fA2x7Qz",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "secure",
+    "1": "secure",
+    "2": "blind"
+   }
+  },
+  {
+   "say": "HTTPS gives privacy, integrity and proof you reached the real shop.com. Always look for the padlock before typing a password.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "Safe: https://shop.com",
+    "kind": "req"
+   }
+  }
+ ]
+}

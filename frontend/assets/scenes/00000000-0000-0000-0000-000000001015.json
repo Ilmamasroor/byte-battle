@@ -1,0 +1,441 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001015",
+ "title": "Deadlock: two threads waiting forever",
+ "kind": "computer",
+ "intro": "Two locks, A and B. Thread-1 wants A then B. Thread-2 wants B then A. What could possibly go wrong?",
+ "predict": {
+  "question": "Thread-1 holds A and wants B. Thread-2 holds B and wants A. What does the program do?",
+  "options": [
+   "Java detects it and throws an error",
+   "Both threads wait forever",
+   "One thread wins after a timeout"
+  ],
+  "answer": 1,
+  "reveal": "Java does not detect or break it. Both threads stay BLOCKED forever, using no CPU, and the program just freezes."
+ },
+ "takeaway": "Deadlock is a circular wait for locks. Make every thread take locks in the same order and the circle can never form.",
+ "code": [
+  "// Thread-1",
+  "synchronized (A) {",
+  "  synchronized (B) { work(); }",
+  "}",
+  "// Thread-2 (deadlock version)",
+  "synchronized (B) {",
+  "  synchronized (A) { work(); }",
+  "}",
+  "// Thread-2 (fixed: same order as Thread-1)",
+  "synchronized (A) {",
+  "  synchronized (B) { work(); }",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Two locks, A and B, and two threads that need both. The danger is the order: Thread-1 locks A first, Thread-2 locks B first.",
+   "cpu": {
+    "doing": "two threads about to start",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {}
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {}
+    }
+   ],
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [],
+   "panels": [],
+   "highlight": [
+    "heap"
+   ],
+   "at": -1
+  },
+  {
+   "say": "Thread-1 locks A. It owns A now.",
+   "cpu": {
+    "doing": "Thread-1: lock A",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 1,
+   "note": "one possible interleaving"
+  },
+  {
+   "say": "At the same moment Thread-2 locks B. Both threads now hold one lock each, on their own cores.",
+   "cpu": {
+    "doing": "Thread-2: lock B",
+    "regs": {
+     "PC": "line 6"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "Thread-2"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 5
+  },
+  {
+   "say": "Thread-1 reaches for B, but Thread-2 owns it. Thread-1 is BLOCKED and waits. It still holds A.",
+   "cpu": {
+    "doing": "Thread-1 BLOCKED, wants B",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     null,
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "status": "BLOCKED, wants B"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {}
+    }
+   ],
+   "highlight": [
+    "stack",
+    "cpu"
+   ],
+   "at": 2
+  },
+  {
+   "say": "Thread-2 reaches for A, but Thread-1 owns it. Now both threads are BLOCKED and every core is idle. Nothing will ever wake them.",
+   "cpu": {
+    "doing": "DEADLOCK: no thread can run",
+    "regs": {
+     "PC": "frozen"
+    },
+    "cores": [
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "status": "BLOCKED, wants B"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "BLOCKED, wants A"
+     }
+    }
+   ],
+   "highlight": [
+    "stack",
+    "cpu"
+   ],
+   "at": [
+    2,
+    6
+   ],
+   "note": "program is frozen"
+  },
+  {
+   "say": "Look at the circle: Thread-1 holds A and waits for B, while Thread-2 holds B and waits for A. Each waits for the other. No error is shown.",
+   "panels": [
+    {
+     "title": "Who waits for whom",
+     "rows": [
+      [
+       "thread",
+       "holds",
+       "wants"
+      ],
+      [
+       "Thread-1",
+       "A",
+       "B"
+      ],
+      [
+       "Thread-2",
+       "B",
+       "A"
+      ]
+     ],
+     "hl": [
+      1,
+      2
+     ]
+    }
+   ],
+   "highlight": [
+    "panel:0"
+   ],
+   "at": [
+    2,
+    6
+   ]
+  },
+  {
+   "say": "Deadlock needs all four at once: mutual exclusion, hold and wait, no preemption, and circular wait. Break any one and it cannot happen.",
+   "panels": [
+    {
+     "title": "The 4 conditions",
+     "rows": [
+      [
+       "1",
+       "Mutual exclusion"
+      ],
+      [
+       "2",
+       "Hold and wait"
+      ],
+      [
+       "3",
+       "No preemption"
+      ],
+      [
+       "4",
+       "Circular wait"
+      ]
+     ],
+     "hl": [
+      3
+     ]
+    }
+   ],
+   "highlight": [
+    "panel:0"
+   ],
+   "at": -1
+  },
+  {
+   "say": "The easiest one to break is circular wait. After a restart, Thread-2 uses the fixed code and also locks A first. Thread-1 takes A.",
+   "cpu": {
+    "doing": "restart: Thread-1 locks A",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     "Thread-1",
+     "Thread-2",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {}
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {}
+    }
+   ],
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "panels": [],
+   "highlight": [
+    "heap"
+   ],
+   "at": 1,
+   "note": "same order: A then B"
+  },
+  {
+   "say": "Thread-2 wants A too, so it simply waits at the first lock. It holds nothing, so no circle. Thread-1 locks B, runs work() and releases both.",
+   "cpu": {
+    "doing": "Thread-1 works, Thread-2 waits for A",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     "Thread-1",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "Thread-1 run()",
+     "vars": {
+      "status": "holds A and B"
+     }
+    },
+    {
+     "frame": "Thread-2 run()",
+     "vars": {
+      "status": "BLOCKED, wants A"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "Thread-1"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "stack"
+   ],
+   "at": [
+    2,
+    9
+   ]
+  },
+  {
+   "say": "Thread-1 released A and B, so Thread-2 wakes, locks A then B, finishes, and both threads end. Same order everywhere means no deadlock.",
+   "cpu": {
+    "doing": "both threads finished",
+    "regs": {
+     "PC": "done"
+    },
+    "cores": [
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [],
+   "heap": [
+    {
+     "id": "A",
+     "type": "Lock A",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    },
+    {
+     "id": "B",
+     "type": "Lock B",
+     "fields": {
+      "owner": "nobody"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "both done"
+   ],
+   "highlight": [
+    "console"
+   ],
+   "at": -1
+  }
+ ]
+}

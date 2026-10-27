@@ -54,6 +54,89 @@ class ApiClient {
   final Dio _dio;
   final SecureStorageService _secureStorage;
 
+  /// Called (once per request) when the backend answers 403 ONBOARDING_REQUIRED, so the app can send the
+  /// learner to the onboarding questionnaire from anywhere. Set once in `main.dart`.
+  static void Function()? onOnboardingRequired;
+
+  /// Code runs through Judge0 (compile + several test cases) and can take 5-20 s; AI calls up to ~15 s.
+  static const Duration slowTimeout = Duration(seconds: 60);
+
+  /// GET that returns the decoded JSON body as-is (a Map OR a List). For endpoints that answer with a bare
+  /// array or without the `{success, data}` envelope. If an envelope is present, its `data` is returned.
+  Future<dynamic> getJson(String path, {Map<String, dynamic>? query, Duration? timeout}) {
+    return _requestJson('GET', path, query: query, timeout: timeout);
+  }
+
+  /// POST counterpart of [getJson]. Pass [timeout] for slow calls (code execution, AI).
+  Future<dynamic> postJson(String path, {Object? body, Map<String, dynamic>? query, Duration? timeout}) {
+    return _requestJson('POST', path, query: query, body: body, timeout: timeout);
+  }
+
+  Future<dynamic> _requestJson(
+    String method,
+    String path, {
+    Map<String, dynamic>? query,
+    Object? body,
+    Duration? timeout,
+  }) async {
+    _logRequest(method, path, query: query, body: body is Map<String, dynamic> ? body : null);
+
+    Response<dynamic> response;
+    try {
+      response = await _dio.request<dynamic>(
+        path,
+        queryParameters: query,
+        data: body,
+        options: Options(
+          method: method,
+          receiveTimeout: timeout,
+          sendTimeout: timeout,
+        ),
+      );
+    } on DioException catch (e) {
+      final mapped = _mapDioException(e);
+      _logError(method, path, mapped);
+      throw mapped;
+    } catch (e) {
+      _logError(method, path, e);
+      throw const NetworkException(
+        message: 'Something went wrong. Please try again.',
+        type: NetworkExceptionType.unknown,
+      );
+    }
+
+    final status = response.statusCode ?? 0;
+    final decoded = response.data;
+
+    if (status >= 200 && status < 300) {
+      if (decoded is Map && decoded.containsKey('success') && decoded.containsKey('data')) {
+        if (decoded['success'] != true) {
+          throw NetworkException(
+            message: (decoded['message']?.toString().trim().isNotEmpty ?? false)
+                ? decoded['message'].toString()
+                : _fallbackMessageFor(status),
+            statusCode: status,
+            type: NetworkExceptionType.badRequest,
+          );
+        }
+        return decoded['data'];
+      }
+      return decoded;
+    }
+
+    final message = decoded is Map ? _withFieldErrors(decoded) : null;
+    final exception = NetworkException(
+      message: (message != null && message.isNotEmpty) ? message : _fallbackMessageFor(status),
+      statusCode: status,
+      type: status >= 500 ? NetworkExceptionType.server : NetworkExceptionType.badRequest,
+    );
+    if (exception.isOnboardingRequired) {
+      onOnboardingRequired?.call();
+    }
+    _logError(method, path, exception);
+    throw exception;
+  }
+
   Future<Map<String, dynamic>> get(String path, {Map<String, dynamic>? query}) {
     return _request(
       'GET',
@@ -180,7 +263,7 @@ class ApiClient {
 
     // Backend follows the same `{success, message, data, timestamp}` shape
     // on errors too, so surface its `message` whenever it's present.
-    final message = (json['message'] as String?)?.trim();
+    final message = _withFieldErrors(json);
     final exception = NetworkException(
       message: (message != null && message.isNotEmpty)
           ? message
@@ -190,6 +273,9 @@ class ApiClient {
           ? NetworkExceptionType.server
           : NetworkExceptionType.badRequest,
     );
+    if (exception.isOnboardingRequired) {
+      onOnboardingRequired?.call();
+    }
     _logError(method, path, exception);
     throw exception;
   }
@@ -252,8 +338,23 @@ class ApiClient {
           ? NetworkExceptionType.server
           : NetworkExceptionType.badRequest,
     );
+    if (exception.isOnboardingRequired) {
+      onOnboardingRequired?.call();
+    }
     _logError(method, path, exception);
     throw exception;
+  }
+
+  /// The backend answers validation failures with `message: "Validation failed"` and `data: {field: reason}`.
+  /// Append those reasons so the learner sees what to fix, not just "Validation failed".
+  static String? _withFieldErrors(Map<dynamic, dynamic> json) {
+    final message = (json['message'] as String?)?.trim();
+    final data = json['data'];
+    if (data is Map && data.isNotEmpty && data.values.every((v) => v is String)) {
+      final reasons = data.values.map((v) => v.toString()).join(' ');
+      return (message == null || message.isEmpty) ? reasons : '$message: $reasons';
+    }
+    return message;
   }
 
   NetworkException _mapDioException(DioException e) {

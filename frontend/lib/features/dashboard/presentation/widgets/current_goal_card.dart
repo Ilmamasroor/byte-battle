@@ -5,9 +5,8 @@ import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../../core/widgets/glow_card.dart';
 
-/// "Current Mission" hero card on the dashboard — icon/label header, title,
-/// description, progress bar, topic chips, a focus-area tip and a
-/// Continue Mission CTA, matching the reference dashboard screenshot.
+/// "Your next move": the one spotlighted card on the dashboard. Shows the concept, a four-step journey strip
+/// (Learn, See, Battle, Code) that fills as the learner progresses, a focus tip, and the Continue CTA.
 class CurrentGoalCard extends StatelessWidget {
   final String title;
   final String description;
@@ -26,144 +25,127 @@ class CurrentGoalCard extends StatelessWidget {
     required this.onContinue,
   });
 
+  static const _steps = [
+    (Icons.auto_stories_rounded, 'Learn'),
+    (Icons.visibility_rounded, 'See'),
+    (Icons.bolt_rounded, 'Battle'),
+    (Icons.terminal_rounded, 'Code'),
+  ];
+
   @override
   Widget build(BuildContext context) {
+    final done = (progress * _steps.length).floor().clamp(0, _steps.length);
     return GlowCard(
-      glowColor: AppColors.primary,
-      borderColor: AppColors.primaryLight,
+      emphasized: true,
+      padding: const EdgeInsets.all(AppDimensions.spacingMd + 4),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                      decoration: BoxDecoration(
-                        color: AppColors.primary.withOpacity(0.15),
-                        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                        border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          const Icon(Icons.track_changes_rounded,
-                              size: 13, color: AppColors.accentCyan),
-                          const SizedBox(width: 5),
-                          Text(
-                            'CURRENT MISSION',
-                            style: AppTextStyles.caption.copyWith(
-                              color: AppColors.accentCyan,
-                              fontWeight: FontWeight.w700,
-                              letterSpacing: 0.6,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(height: AppDimensions.spacingSm),
-                    Text(title, style: AppTextStyles.heading1.copyWith(fontSize: 22)),
-                  ],
-                ),
-              ),
-              Container(
-                width: 52,
-                height: 52,
-                decoration: BoxDecoration(
-                  color: AppColors.background.withOpacity(0.4),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                  border: Border.all(color: AppColors.primary.withOpacity(0.5)),
-                ),
-                child: const Icon(Icons.code_rounded, color: AppColors.accentCyan, size: 24),
-              ),
+              Text('YOUR NEXT MOVE', style: AppTextStyles.eyebrow.copyWith(color: AppColors.primary)),
+              const Spacer(),
+              Text('${(progress * 100).round()}% complete', style: AppTextStyles.caption),
             ],
           ),
-          const SizedBox(height: AppDimensions.spacingSm),
-          Text(description, style: AppTextStyles.body),
+          const SizedBox(height: 10),
+          Text(title, style: AppTextStyles.display.copyWith(fontSize: 26)),
+          const SizedBox(height: 8),
+          Text(description, style: AppTextStyles.body, maxLines: 3, overflow: TextOverflow.ellipsis),
           const SizedBox(height: AppDimensions.spacingMd),
           Row(
             children: [
-              Expanded(
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-                  child: LinearProgressIndicator(
-                    value: progress,
-                    minHeight: 7,
-                    backgroundColor: AppColors.background,
-                    valueColor: const AlwaysStoppedAnimation(AppColors.accentCyan),
+              for (var i = 0; i < _steps.length; i++) ...[
+                Expanded(child: _Step(icon: _steps[i].$1, label: _steps[i].$2, done: i < done, current: i == done)),
+                if (i < _steps.length - 1)
+                  Container(
+                    width: 14,
+                    height: 2,
+                    margin: const EdgeInsets.only(bottom: 18),
+                    color: i < done ? AppColors.primary : AppColors.border,
                   ),
-                ),
-              ),
-              const SizedBox(width: 10),
-              Text('${(progress * 100).round()}%', style: AppTextStyles.bodyBold),
+              ],
             ],
+          ),
+          const SizedBox(height: AppDimensions.spacingMd),
+          Container(
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.background.withOpacity(0.55),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Icon(Icons.lightbulb_rounded, size: 16, color: AppColors.xp),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: Text(focusAreaNote, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, height: 1.45)),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: AppDimensions.spacingMd),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: tags.map((t) => _MissionTag(label: t)).toList(),
+            children: tags.map((t) => _Tag(label: t)).toList(),
           ),
           const SizedBox(height: AppDimensions.spacingMd),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const Padding(
-                padding: EdgeInsets.only(top: 2),
-                child: Icon(Icons.lightbulb_outline_rounded,
-                    size: 15, color: AppColors.warning),
-              ),
-              const SizedBox(width: 6),
-              Expanded(
-                child: RichText(
-                  text: TextSpan(
-                    style: AppTextStyles.caption.copyWith(height: 1.4),
-                    children: [
-                      TextSpan(
-                        text: 'Focus area: ',
-                        style: AppTextStyles.caption.copyWith(
-                          color: AppColors.accentCyan,
-                          fontWeight: FontWeight.w700,
-                        ),
-                      ),
-                      TextSpan(text: focusAreaNote),
-                    ],
-                  ),
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: AppDimensions.spacingMd),
-          AppButton(
-            label: 'Continue Mission',
-            icon: Icons.arrow_forward_rounded,
-            onPressed: onContinue,
-          ),
+          AppButton(label: 'Continue learning', icon: Icons.arrow_forward_rounded, onPressed: onContinue),
         ],
       ),
     );
   }
 }
 
-class _MissionTag extends StatelessWidget {
+class _Step extends StatelessWidget {
+  final IconData icon;
   final String label;
+  final bool done;
+  final bool current;
+  const _Step({required this.icon, required this.label, required this.done, required this.current});
 
-  const _MissionTag({required this.label});
+  @override
+  Widget build(BuildContext context) {
+    final Color fg = done ? AppColors.onAccent : (current ? AppColors.primary : AppColors.textHint);
+    return Column(
+      children: [
+        Container(
+          width: 40,
+          height: 40,
+          decoration: BoxDecoration(
+            color: done ? AppColors.primary : AppColors.background.withOpacity(0.6),
+            shape: BoxShape.circle,
+            border: Border.all(color: done ? AppColors.primary : (current ? AppColors.primary : AppColors.border), width: current ? 1.8 : 1),
+          ),
+          child: Icon(done ? Icons.check_rounded : icon, size: 19, color: fg),
+        ),
+        const SizedBox(height: 6),
+        Text(label,
+            style: AppTextStyles.caption.copyWith(
+              fontSize: 11,
+              fontWeight: current || done ? FontWeight.w800 : FontWeight.w500,
+              color: current || done ? AppColors.textPrimary : AppColors.textHint,
+            )),
+      ],
+    );
+  }
+}
+
+class _Tag extends StatelessWidget {
+  final String label;
+  const _Tag({required this.label});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 5),
       decoration: BoxDecoration(
-        color: AppColors.background.withOpacity(0.4),
+        color: AppColors.surfaceRaised,
         borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-        border: Border.all(color: AppColors.border),
       ),
-      child: Text(label, style: AppTextStyles.caption),
+      child: Text(label, style: AppTextStyles.caption.copyWith(color: AppColors.textSecondary, fontSize: 11.5)),
     );
   }
 }

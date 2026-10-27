@@ -32,13 +32,13 @@ class AppTextButton extends StatelessWidget {
             color = AppColors.btnNeutralGrey.withOpacity(0.5);
             break;
           case ButtonInteractionState.pressed:
-            color = const Color(0xFF7E22CE); // darker purple
+            color = const Color(0xFFD9511C); // pressed Flame
             break;
           case ButtonInteractionState.hover:
-            color = const Color(0xFFC084FC); // lighter purple
+            color = AppColors.primaryLight;
             break;
           case ButtonInteractionState.normal:
-            color = AppColors.btnAccentPurple;
+            color = AppColors.primaryLight;
             break;
         }
 

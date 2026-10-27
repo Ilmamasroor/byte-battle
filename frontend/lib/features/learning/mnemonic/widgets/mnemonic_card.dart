@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import '../../../../app/theme/app_colors.dart';
 
 /// MnemonicCard — auto-scaffolded to match the project's target file structure.
 class MnemonicCard extends StatelessWidget {

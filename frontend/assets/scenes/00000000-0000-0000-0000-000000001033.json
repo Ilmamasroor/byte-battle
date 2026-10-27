@@ -1,0 +1,161 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001033",
+ "title": "Isolation levels: what can B see of A?",
+ "kind": "sequence",
+ "intro": "Txn A changes a balance but has not committed. Should Txn B be allowed to see that unsaved number?",
+ "predict": {
+  "question": "At READ UNCOMMITTED, B reads Alice's balance while A has an unsaved change to 0. Then A rolls back. What does B see?",
+  "options": [
+   "100, the real balance",
+   "0, A's unsaved change",
+   "An error"
+  ],
+  "answer": 1,
+  "reveal": "B reads the dirty value 0. A rolled back, so 0 was never real. Higher isolation levels stop B from seeing it."
+ },
+ "takeaway": "Higher isolation hides more of other transactions' work: READ COMMITTED stops dirty reads, REPEATABLE READ also keeps your reads stable.",
+ "steps": [
+  {
+   "say": "Alice's balance is 100. Two transactions are about to use it at the same time.",
+   "actors": [
+    "Txn A",
+    "Txn B",
+    "Database"
+   ],
+   "actorState": {
+    "0": "idle",
+    "1": "idle",
+    "2": "bal=100"
+   }
+  },
+  {
+   "say": "Txn A starts a withdrawal and sets the balance to 0. It has NOT committed yet, so this might still be undone.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "UPDATE bal = 0",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "open",
+    "1": "idle",
+    "2": "bal=0 (A unsaved)"
+   }
+  },
+  {
+   "say": "Txn B reads the balance. It runs at the weakest level, READ UNCOMMITTED, which lets it see unsaved changes.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "SELECT bal",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "open",
+    "1": "READ UNCOMMITTED",
+    "2": "bal=0 (A unsaved)"
+   }
+  },
+  {
+   "say": "The database hands B the value 0. B just read data that nobody has committed. This is a dirty read.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "bal = 0",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "Now Txn A changes its mind and rolls back. The balance returns to 100.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "ROLLBACK",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "rolled back",
+    "1": "READ UNCOMMITTED",
+    "2": "bal=100"
+   }
+  },
+  {
+   "say": "B is holding a 0 that never really existed. It may have refused a purchase or shown a wrong total. That is the danger.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "I saw 0. It was fake!",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "Replay at a higher level. A again sets the balance to 0 without committing. B now runs at READ COMMITTED.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "UPDATE bal = 0",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "open",
+    "1": "READ COMMITTED",
+    "2": "bal=0 (A unsaved)"
+   }
+  },
+  {
+   "say": "B reads again. The database only shows data that has been committed.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "SELECT bal",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "B gets 100, the last committed value. A's unsaved 0 stays hidden. The dirty read is gone.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "bal = 100",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "Now A commits, so 0 is the real balance.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "COMMIT",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "done",
+    "1": "READ COMMITTED",
+    "2": "bal=0 (committed)"
+   }
+  },
+  {
+   "say": "B reads again in the same transaction. At READ COMMITTED it now sees 0, so one query gave 100 and the next gave 0. That is a non-repeatable read.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "bal = 0",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "REPEATABLE READ would give B a stable snapshot, 100 both times, until B finishes. Stronger isolation, fewer surprises.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "REPEATABLE READ: 100",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "done",
+    "1": "REPEATABLE READ",
+    "2": "bal=0 (committed)"
+   }
+  }
+ ]
+}

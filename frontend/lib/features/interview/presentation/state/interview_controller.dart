@@ -1,164 +1,149 @@
 import 'package:flutter/foundation.dart';
-import '../../../../core/network/api_client.dart';
-import '../../../../core/network/network_exception.dart';
-import '../../../../core/storage/secure_storage_service.dart';
-import '../../../concepts/data/models/concept_model.dart';
-import '../../../learning/explanation/data/models/canonical_knowledge_model.dart';
-import '../../data/datasources/interview_ai_remote_datasource.dart';
-import '../../data/models/interview_message_model.dart';
-import '../../data/models/interview_question_model.dart';
-import '../../data/models/interview_result_model.dart';
-import '../../data/repositories/interview_repository.dart';
+import '../../../../core/models/backend_models.dart';
+import '../../../../core/network/backend_api.dart';
 
-/// Single source of truth for one Mock Interview session: the running
-/// `conversationHistory`, the current question, and the most recent
-/// answer evaluation. Same plain-singleton pattern as
-/// `CodingFeedbackController.instance` / `BattleAiController.instance`.
+/// One answered question: what was asked, what the learner wrote and how the backend's AI rubric graded it.
+class InterviewAnswer {
+  final String question;
+  final String answer;
+  final int? score; // 0-100, null when the AI service could not grade it
+  final String feedback;
+  final Map<String, double> rubric;
+  const InterviewAnswer(this.question, this.answer, this.score, this.feedback, this.rubric);
+}
+
+/// One persisted mock interview (`/api/interviews`): the backend asks the questions, grades every answer
+/// against a rubric, stores the session and records the result as learner evidence when it is completed.
 class InterviewController extends ChangeNotifier {
-  InterviewController._(this._repository);
+  InterviewController._();
+  static final InterviewController instance = InterviewController._();
 
-  static InterviewController? _instance;
+  /// The backend's closing prompt after the last allowed answer.
+  static const lastQuestionPrefix = 'That was the last question';
 
-  static InterviewController get instance {
-    if (_instance != null) return _instance!;
-    final secureStorage = SecureStorageService();
-    final apiClient = ApiClient(secureStorage: secureStorage);
-    final repository = InterviewRepository(InterviewAiRemoteDatasource(apiClient));
-    _instance = InterviewController._(repository);
-    return _instance!;
-  }
+  final BackendApi _api = BackendApi.instance;
 
-  final InterviewRepository _repository;
+  ConceptInfo? concept;
+  InterviewSessionModel? session;
+  String? currentQuestion;
+  final List<InterviewAnswer> answers = [];
+  InterviewResultModel? result;
 
-  bool isLoadingQuestion = false;
-  bool isEvaluating = false;
+  bool isStarting = false;
+  bool isSending = false;
+  bool isCompleting = false;
   String? errorMessage;
 
-  ConceptModel? _concept;
-  CanonicalKnowledgeModel? _canonicalKnowledge;
-  final List<InterviewMessageModel> conversationHistory = [];
+  /// True once the backend says there are no more questions.
+  bool get noMoreQuestions => currentQuestion?.startsWith(lastQuestionPrefix) ?? false;
 
-  InterviewQuestionModel? currentQuestion;
-  InterviewEvaluationModel? lastEvaluation;
+  /// The latest graded answer, shown as feedback above the next question.
+  InterviewAnswer? get lastAnswer => answers.isEmpty ? null : answers.last;
 
-  /// `POST /api/ai/interview/question` with an empty conversation history
-  /// — call this once, from [InterviewIntroScreen], to kick off a fresh
-  /// session for [concept]/[canonicalKnowledge].
-  Future<void> startInterview({
-    required ConceptModel concept,
-    required CanonicalKnowledgeModel canonicalKnowledge,
-  }) async {
-    _concept = concept;
-    _canonicalKnowledge = canonicalKnowledge;
-    conversationHistory.clear();
-    lastEvaluation = null;
+  /// Mean of each rubric dimension over all graded answers (0..1); empty when nothing was graded.
+  Map<String, double> get averageRubric {
+    final sums = <String, double>{};
+    final counts = <String, int>{};
+    for (final a in answers) {
+      a.rubric.forEach((k, v) {
+        sums[k] = (sums[k] ?? 0) + v;
+        counts[k] = (counts[k] ?? 0) + 1;
+      });
+    }
+    return {for (final k in sums.keys) k: sums[k]! / counts[k]!};
+  }
+
+  String _message(Object e) => e is Exception ? e.toString() : 'Something went wrong. Please try again.';
+
+  void reset() {
+    concept = null;
+    session = null;
     currentQuestion = null;
-
-    isLoadingQuestion = true;
+    answers.clear();
+    result = null;
     errorMessage = null;
     notifyListeners();
+  }
 
+  /// Loads the real concept for the intro screen.
+  Future<void> loadConcept(String conceptId) async {
+    errorMessage = null;
+    notifyListeners();
     try {
-      currentQuestion = await _repository.generateQuestion(
-        concept: concept,
-        canonicalKnowledge: canonicalKnowledge,
-        conversationHistory: conversationHistory,
-      );
-      debugPrint('🎤 [InterviewController] loaded opening question for ${concept.id}');
-    } on NetworkException catch (e) {
-      errorMessage = e.message;
-      debugPrint('🎤 [InterviewController] FAILED (question) -> ${e.message} (status: ${e.statusCode})');
+      concept = await _api.concept(conceptId);
     } catch (e) {
-      errorMessage = 'Something went wrong. Please try again.';
-      debugPrint('🎤 [InterviewController] FAILED (question) -> unexpected error: $e');
+      errorMessage = _message(e);
+    }
+    notifyListeners();
+  }
+
+  /// `POST /api/interviews` then `GET .../messages` for the opening question. Returns true on success.
+  Future<bool> start(String conceptId, String difficulty) async {
+    isStarting = true;
+    errorMessage = null;
+    answers.clear();
+    result = null;
+    notifyListeners();
+    try {
+      final created = await _api.startInterview(conceptId, difficulty);
+      final messages = await _api.interviewMessages(created.id);
+      final question = messages.lastWhere((m) => m.role == 'ASSISTANT', orElse: () => messages.first).content;
+      session = created;
+      currentQuestion = question;
+      return true;
+    } catch (e) {
+      errorMessage = _message(e);
+      debugPrint('🎤 [InterviewController.start] FAILED -> $e');
+      return false;
     } finally {
-      isLoadingQuestion = false;
+      isStarting = false;
       notifyListeners();
     }
   }
 
-  /// `POST /api/ai/interview/evaluate` for [answer] against
-  /// [currentQuestion], then records both turns in [conversationHistory]
-  /// so a later [askFollowUpQuestion] call has the full context.
-  /// Returns true on success.
-  Future<bool> submitAnswer(String answer) async {
-    final concept = _concept;
-    final canonicalKnowledge = _canonicalKnowledge;
-    final question = currentQuestion?.question;
-    if (concept == null || canonicalKnowledge == null || question == null) {
-      errorMessage = 'Start the interview before answering.';
+  /// `POST /api/interviews/{id}/messages`: the reply carries the next question plus the grade of this answer.
+  Future<bool> submit(String text) async {
+    final s = session, question = currentQuestion;
+    if (s == null || question == null) {
+      errorMessage = 'Start the interview first.';
       notifyListeners();
       return false;
     }
-
-    isEvaluating = true;
+    isSending = true;
     errorMessage = null;
     notifyListeners();
-
-    var success = false;
     try {
-      lastEvaluation = await _repository.evaluateAnswer(
-        concept: concept,
-        canonicalKnowledge: canonicalKnowledge,
-        question: question,
-        learnerAnswer: answer,
-      );
-      conversationHistory.add(InterviewMessageModel.assistant(question));
-      conversationHistory.add(InterviewMessageModel.user(answer));
-      success = true;
-      debugPrint('🎤 [InterviewController] evaluated answer for ${concept.id}');
-    } on NetworkException catch (e) {
-      errorMessage = e.message;
-      debugPrint('🎤 [InterviewController] FAILED (evaluate) -> ${e.message} (status: ${e.statusCode})');
+      final reply = await _api.sendInterviewAnswer(s.id, text);
+      answers.add(InterviewAnswer(question, text, reply.score, reply.feedback, reply.rubric));
+      currentQuestion = reply.content;
+      return true;
     } catch (e) {
-      errorMessage = 'Something went wrong. Please try again.';
-      debugPrint('🎤 [InterviewController] FAILED (evaluate) -> unexpected error: $e');
+      errorMessage = _message(e);
+      debugPrint('🎤 [InterviewController.submit] FAILED -> $e');
+      return false;
     } finally {
-      isEvaluating = false;
-      notifyListeners();
-    }
-    return success;
-  }
-
-  /// `POST /api/ai/interview/question` again, this time with the
-  /// conversation so far, so the AI can ask a deeper follow-up. Not
-  /// wired into a screen yet (the current flow goes straight to the
-  /// result screen after one answer) but ready for when the "AI will
-  /// ask a follow-up question" copy on [InterviewScreen] becomes real.
-  Future<void> askFollowUpQuestion() async {
-    final concept = _concept;
-    final canonicalKnowledge = _canonicalKnowledge;
-    if (concept == null || canonicalKnowledge == null) return;
-
-    isLoadingQuestion = true;
-    errorMessage = null;
-    notifyListeners();
-
-    try {
-      currentQuestion = await _repository.generateQuestion(
-        concept: concept,
-        canonicalKnowledge: canonicalKnowledge,
-        conversationHistory: conversationHistory,
-      );
-    } on NetworkException catch (e) {
-      errorMessage = e.message;
-    } catch (e) {
-      errorMessage = 'Something went wrong. Please try again.';
-    } finally {
-      isLoadingQuestion = false;
+      isSending = false;
       notifyListeners();
     }
   }
 
-  /// Clears the whole session (called when the learner backs out of the
-  /// interview flow, e.g. from [InterviewIntroScreen]'s dispose or before
-  /// starting a new concept's interview).
-  void reset() {
-    _concept = null;
-    _canonicalKnowledge = null;
-    conversationHistory.clear();
-    currentQuestion = null;
-    lastEvaluation = null;
+  /// `POST /api/interviews/{id}/complete`: stores the score and records the evidence. Idempotent.
+  Future<bool> complete() async {
+    final s = session;
+    if (s == null) return false;
+    isCompleting = true;
     errorMessage = null;
+    notifyListeners();
+    try {
+      result = await _api.completeInterview(s.id);
+      return true;
+    } catch (e) {
+      errorMessage = _message(e);
+      debugPrint('🎤 [InterviewController.complete] FAILED -> $e');
+      return false;
+    } finally {
+      isCompleting = false;
+      notifyListeners();
+    }
   }
 }

@@ -1,0 +1,560 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001029",
+ "title": "Normal forms: stop repeating yourself",
+ "kind": "table",
+ "intro": "This one table stores orders, but Ann's city is copied again and again. Why is that dangerous?",
+ "predict": {
+  "question": "Ann moves from Paris to Lyon. How many rows of this messy table must you edit?",
+  "options": [
+   "1",
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": 2,
+  "reveal": "Ann appears in 3 rows, so 3 edits. Miss one and Ann lives in two cities at once. A good design stores her city once."
+ },
+ "takeaway": "Normalise so every fact is stored once: 1NF one value per cell, 2NF no partial key dependence, 3NF no dependence through a non-key.",
+ "steps": [
+  {
+   "say": "Orders, customers and cities all crammed in one table. Notice Ann and Paris repeat, and order 1 has two items in one cell.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city",
+      "items"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Paris",
+       "Pen,Ink"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome",
+       "Pen"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Ann moves to Lyon. We update only the first row and forget the others. Now Ann lives in Paris AND Lyon. That is an update anomaly.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city",
+      "items"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Lyon",
+       "Pen,Ink"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome",
+       "Pen"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris",
+       "Pad"
+      ]
+     ],
+     "hl": [
+      0,
+      2,
+      3
+     ],
+     "dim": [],
+     "hlCols": [
+      2
+     ]
+    }
+   ],
+   "note": "Ann: Lyon or Paris?"
+  },
+  {
+   "say": "Fix 1: First Normal Form. One value per cell, so Pen,Ink becomes two rows. Each row is now one order line.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Paris",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ann",
+       "Paris",
+       "Ink"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome",
+       "Pen"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris",
+       "Pad"
+      ]
+     ],
+     "hl": [
+      0,
+      1
+     ],
+     "dim": [],
+     "hlCols": [
+      3
+     ]
+    }
+   ],
+   "note": "1NF: atomic cells"
+  },
+  {
+   "say": "The key is now oid + item. But cust and city depend on oid alone, not on item. That is a partial dependency, and Ann's data is still repeated.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Paris",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ann",
+       "Paris",
+       "Ink"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome",
+       "Pen"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ],
+   "note": "key = oid + item"
+  },
+  {
+   "say": "Fix 2: Second Normal Form. Split out what depends only on oid. Orders keep cust and city; order_items keep each item.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Paris"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    },
+    {
+     "name": "order_items",
+     "cols": [
+      "oid",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ink"
+      ],
+      [
+       "2",
+       "Pen"
+      ],
+      [
+       "3",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    }
+   ],
+   "note": "2NF: no partial dependency"
+  },
+  {
+   "say": "Still a problem: city depends on cust, not really on the order. Ann's city sits in three order rows. oid decides cust, and cust decides city.",
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust",
+      "city"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Paris"
+      ],
+      [
+       "2",
+       "Ben",
+       "Rome"
+      ],
+      [
+       "3",
+       "Ann",
+       "Paris"
+      ],
+      [
+       "4",
+       "Ann",
+       "Paris"
+      ]
+     ],
+     "hl": [
+      0,
+      2,
+      3
+     ],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    },
+    {
+     "name": "order_items",
+     "cols": [
+      "oid",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ink"
+      ],
+      [
+       "2",
+       "Pen"
+      ],
+      [
+       "3",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "note": "oid -> cust -> city"
+  },
+  {
+   "say": "Fix 3: Third Normal Form. Move city next to the customer it describes. Now each fact lives in exactly one place.",
+   "tables": [
+    {
+     "name": "customers",
+     "cols": [
+      "cust",
+      "city"
+     ],
+     "rows": [
+      [
+       "Ann",
+       "Paris"
+      ],
+      [
+       "Ben",
+       "Rome"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Ann"
+      ],
+      [
+       "4",
+       "Ann"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    },
+    {
+     "name": "order_items",
+     "cols": [
+      "oid",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ink"
+      ],
+      [
+       "2",
+       "Pen"
+      ],
+      [
+       "3",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "note": "3NF: no transitive dependency"
+  },
+  {
+   "say": "Ann moves to Lyon again. Now we edit ONE row in customers. Every order of hers sees the change through cust. No anomaly.",
+   "tables": [
+    {
+     "name": "customers",
+     "cols": [
+      "cust",
+      "city"
+     ],
+     "rows": [
+      [
+       "Ann",
+       "Lyon"
+      ],
+      [
+       "Ben",
+       "Rome"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "oid",
+      "cust"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Ann"
+      ],
+      [
+       "4",
+       "Ann"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    },
+    {
+     "name": "order_items",
+     "cols": [
+      "oid",
+      "item"
+     ],
+     "rows": [
+      [
+       "1",
+       "Pen"
+      ],
+      [
+       "1",
+       "Ink"
+      ],
+      [
+       "2",
+       "Pen"
+      ],
+      [
+       "3",
+       "Lamp"
+      ],
+      [
+       "4",
+       "Pad"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "note": "1 edit instead of 3"
+  },
+  {
+   "say": "Rule of thumb: every non-key column should depend on the key, the whole key, and nothing but the key. Join the tables back when you need the full picture.",
+   "note": "key, whole key, nothing but"
+  }
+ ]
+}

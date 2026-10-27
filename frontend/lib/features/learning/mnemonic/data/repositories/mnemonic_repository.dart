@@ -7,7 +7,7 @@ class MnemonicRepository {
 
   final MnemonicRemoteDatasource _remote;
 
-  Future<MnemonicModel> getMnemonic(String conceptId) {
-    return _remote.getMnemonic(conceptId);
+  Future<MnemonicModel> getMnemonic(String conceptId, {String? lens}) {
+    return _remote.getMnemonic(conceptId, lens: lens);
   }
 }

@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../../../../app/router/route_names.dart';
+import '../../../readiness/data/readiness_store.dart';
 import '../../../../app/theme/app_dimensions.dart';
-import '../../../../core/utils/helpers.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../auth/presentation/state/auth_controller.dart';
 import '../state/dashboard_controller.dart';
@@ -22,26 +23,9 @@ class DashboardScreen extends StatefulWidget {
 class _DashboardScreenState extends State<DashboardScreen> {
   int _navIndex = 0;
 
-  // TODO: swap for real data once `/api/ai/diagnose/summary` (skill
-  // radar), `/api/ai/recommend` (recommended battles / current mission)
-  // and a gamification/XP endpoint are wired — see DashboardController's
-  // doc comment for exactly which sections below are real vs. placeholder.
-  final _skills = const {
-    'Understanding': 0.72,
-    'Application': 0.58,
-    'Debugging': 0.41,
-    'Communication': 0.65,
-  };
-
   @override
   void initState() {
     super.initState();
-    Helpers.noApiYet(
-      'DashboardScreen',
-      note: 'user + learner-profile are live (GET /api/learner-profile); '
-          'XP/level/streak/skills/recommended-battles still hardcoded, no '
-          'backend endpoint for those yet',
-    );
     _load();
   }
 
@@ -64,23 +48,21 @@ class _DashboardScreenState extends State<DashboardScreen> {
 
   void _onNavTap(int index) {
     if (index == _navIndex) return;
+    const routes = {
+      1: RouteNames.conceptList,
+      2: RouteNames.bossBattleIntro,
+      3: RouteNames.coding,
+      4: RouteNames.profile,
+    };
+    final route = routes[index];
+    if (route == null) return;
     setState(() => _navIndex = index);
-    switch (index) {
-      case 1:
-        Navigator.of(context).pushReplacementNamed(RouteNames.conceptList);
-        break;
-      case 2:
-        Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleIntro);
-        break;
-      case 3:
-        Navigator.of(context).pushReplacementNamed(RouteNames.coding);
-        break;
-      case 4:
-        Navigator.of(context).pushReplacementNamed(RouteNames.profile);
-        break;
-      default:
-        break;
-    }
+    // pushNamed (not replace) so the back button on screens without their own bottom bar returns to the dashboard.
+    Navigator.of(context).pushNamed(route).then((_) {
+      if (!mounted) return;
+      setState(() => _navIndex = 0);
+      _load();
+    });
   }
 
   @override
@@ -103,11 +85,42 @@ class _DashboardScreenState extends State<DashboardScreen> {
               UserHeader(
                 name: user?.username ?? 'Learner',
                 avatarInitials: _initialsFor(user?.username),
-                level: 12,
-                xp: 840,
+                level: dashboard.stats.level,
+                xp: dashboard.stats.xp,
+                streakDays: dashboard.stats.streakDays,
                 onProfileTap: () => Navigator.of(context).pushNamed(RouteNames.profile),
               ),
-              const SizedBox(height: AppDimensions.spacingXl),
+              const SizedBox(height: AppDimensions.spacingLg),
+              CurrentGoalCard(
+                title: dashboard.concept?.name ?? 'Race Conditions',
+                description: dashboard.concept?.description ??
+                    'Understand shared resources, data races, synchronization and execution order.',
+                progress: dashboard.conceptProgress,
+                tags: const ['Java', 'Concurrency', 'Threads'],
+                focusAreaNote: dashboard.nextMove?.message.isNotEmpty == true
+                    ? dashboard.nextMove!.message
+                    : (dashboard.nextMove?.title.isNotEmpty == true
+                        ? 'Recommended next: ${dashboard.nextMove!.title}'
+                        : 'Start the journey: learn it, see it, battle it, code it. Every attempt shapes your Byte DNA.'),
+                onContinue: () async {
+                  await ReadinessStore.open(context, AppConstants.defaultConceptId, RouteNames.learningJourney);
+                  if (mounted) _load();
+                },
+              ),
+              const SizedBox(height: AppDimensions.spacingLg),
+              PerformanceSummary(
+                skills: dashboard.skills,
+                onTap: () => Navigator.of(context).pushNamed(RouteNames.byteDnaSummary),
+              ),
+              const SizedBox(height: AppDimensions.spacingLg),
+              ProgressSummary(
+                xp: dashboard.stats.xp,
+                xpTarget: dashboard.xpTarget,
+                level: dashboard.stats.level,
+                streakDays: dashboard.stats.streakDays,
+                weekCompleted: DashboardController.weekStrip(dashboard.stats.streakDays, DateTime.now()),
+              ),
+              const SizedBox(height: AppDimensions.spacingLg),
               // Real: GET /api/learner-profile.
               LearnerProfileSummaryCard(
                 isLoading: dashboard.isLoading,
@@ -116,33 +129,10 @@ class _DashboardScreenState extends State<DashboardScreen> {
                     .pushNamed(RouteNames.learnerProfile)
                     .then((_) => _load()),
               ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              CurrentGoalCard(
-                title: 'Loop Boundaries',
-                description:
-                    'Understand when to start, stop and control loops effectively in your code.',
-                progress: 0.58,
-                tags: const ['Loops', 'Control Flow', 'Logic'],
-                focusAreaNote:
-                    'Loop boundaries have been challenging recently. Let\'s strengthen this concept and build confidence.',
-                onContinue: () =>
-                    Navigator.of(context).pushNamed(RouteNames.learningJourney),
-              ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              PerformanceSummary(
-                skills: _skills,
-                onTap: () => Navigator.of(context).pushNamed(RouteNames.byteDnaSummary),
-              ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              const ProgressSummary(
-                xp: 840,
-                xpTarget: 1000,
-                level: 12,
-                streakDays: 7,
-                weekCompleted: [true, true, true, true, true, true, false],
-              ),
-              const SizedBox(height: AppDimensions.spacingXl),
+              const SizedBox(height: AppDimensions.spacingLg),
               DomainSection(
+                isLoading: dashboard.isLoading,
+                battles: dashboard.battles,
                 onViewAll: () => Navigator.of(context).pushNamed(RouteNames.bossBattleIntro),
               ),
               const SizedBox(height: AppDimensions.spacingLg),

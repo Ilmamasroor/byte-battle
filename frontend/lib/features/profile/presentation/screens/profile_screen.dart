@@ -3,6 +3,9 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../../../../app/router/route_names.dart';
+import '../../../../core/personalization/hero_prefs.dart';
+import '../../../../core/widgets/app_logo.dart';
+import '../../../../core/widgets/brand/personalize_sheet.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
@@ -265,43 +268,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                         icon: Icons.arrow_back_rounded,
                         onTap: () => Navigator.of(context).maybePop(),
                       ),
-                      Expanded(
-                        child: Column(
-                          children: [
-                            Row(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Container(
-                                  width: 26,
-                                  height: 26,
-                                  alignment: Alignment.center,
-                                  decoration: BoxDecoration(
-                                    gradient: AppColors.primaryGradient,
-                                    borderRadius: BorderRadius.circular(6),
-                                  ),
-                                  child: const Text('B',
-                                      style: TextStyle(
-                                        color: AppColors.white,
-                                        fontWeight: FontWeight.w800,
-                                        fontSize: 15,
-                                      )),
-                                ),
-                                const SizedBox(width: 8),
-                                const Text('BYTE BATTLE',
-                                    style: TextStyle(
-                                      color: AppColors.textPrimary,
-                                      fontWeight: FontWeight.w800,
-                                      fontSize: 14,
-                                      letterSpacing: 0.5,
-                                    )),
-                              ],
-                            ),
-                            const SizedBox(height: 2),
-                            Text('Think Deeper. Code Better.',
-                                style: AppTextStyles.caption),
-                          ],
-                        ),
-                      ),
+                      const Expanded(child: Center(child: AppLogo(logoSize: 20, fontSize: 17))),
                       _EditProfilePill(
                         onTap: () => FocusScope.of(context).requestFocus(_nameFocusNode),
                       ),
@@ -310,9 +277,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   const SizedBox(height: AppDimensions.spacingXl),
 
                   // ── Title ──
-                  const Text('Profile', style: AppTextStyles.heading1),
-                  const SizedBox(height: 6),
-                  Container(width: 36, height: 3, color: AppColors.accentCyan),
+                  Text('Your profile', style: AppTextStyles.display.copyWith(fontSize: 32)),
                   const SizedBox(height: AppDimensions.spacingSm),
                   const Text(
                     'Your journey. Your progress. Your next level.',
@@ -334,9 +299,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
                               width: 96,
                               height: 96,
                               padding: const EdgeInsets.all(3),
-                              decoration: BoxDecoration(
+                              decoration: const BoxDecoration(
                                 shape: BoxShape.circle,
-                                gradient: AppColors.btnPrimaryGradient,
+                                gradient: AppColors.primaryGradient,
                               ),
                               child: Container(
                                 alignment: Alignment.center,
@@ -361,7 +326,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                                               color: AppColors.primary,
                                             ),
                                           )
-                                        : Text(initials, style: AppTextStyles.heading1)),
+                                        : HeroAvatar(initials: initials, size: 90)),
                               ),
                             ),
                           ),
@@ -388,20 +353,30 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       ),
                       const SizedBox(width: AppDimensions.spacingLg),
                       Expanded(
-                        child: Container(
-                          padding: const EdgeInsets.all(AppDimensions.spacingMd),
-                          decoration: BoxDecoration(
-                            color: AppColors.surface.withOpacity(0.5),
-                            borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                            border: Border.all(color: AppColors.borderLight.withOpacity(0.4)),
-                          ),
-                          child: const Text(
-                            '"Same learner.\nHigher version."',
-                            style: TextStyle(
-                              fontStyle: FontStyle.italic,
-                              color: AppColors.primaryLight,
-                              fontSize: 14,
-                              height: 1.4,
+                        child: InkWell(
+                          onTap: () => showPersonalizeSheet(context, initials: initials),
+                          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                          child: Container(
+                            padding: const EdgeInsets.all(AppDimensions.spacingMd),
+                            decoration: BoxDecoration(
+                              color: AppColors.surface,
+                              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                              border: Border.all(color: AppColors.border),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('MAKE IT YOURS', style: AppTextStyles.eyebrow.copyWith(color: AppColors.primary)),
+                                const SizedBox(height: 6),
+                                Text('Pick your avatar colours and name your study buddy.',
+                                    style: AppTextStyles.body.copyWith(fontSize: 13, height: 1.4)),
+                                const SizedBox(height: 8),
+                                Row(children: [
+                                  Text('Customise', style: AppTextStyles.link),
+                                  const SizedBox(width: 4),
+                                  const Icon(Icons.arrow_forward_rounded, size: 14, color: AppColors.primaryLight),
+                                ]),
+                              ],
                             ),
                           ),
                         ),

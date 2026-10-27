@@ -29,12 +29,13 @@ class AnalogyController extends ChangeNotifier {
   AnalogyModel? analogy;
 
   String? _loadedConceptId;
+  String? _loadedLens;
 
   /// `POST /api/ai/analogy?conceptId=...`. Set [force] to true to
   /// re-fetch even if this conceptId is already loaded (e.g. a
   /// "Regenerate" tap).
-  Future<void> loadAnalogy(String conceptId, {bool force = false}) async {
-    if (!force && _loadedConceptId == conceptId && analogy != null) {
+  Future<void> loadAnalogy(String conceptId, {bool force = false, String? lens}) async {
+    if (!force && _loadedConceptId == conceptId && _loadedLens == lens && analogy != null) {
       return;
     }
     isLoading = true;
@@ -42,8 +43,9 @@ class AnalogyController extends ChangeNotifier {
     notifyListeners();
 
     try {
-      analogy = await _repository.getAnalogy(conceptId);
+      analogy = await _repository.getAnalogy(conceptId, lens: lens);
       _loadedConceptId = conceptId;
+      _loadedLens = lens;
       debugPrint('🔗 [AnalogyController] loaded analogy for $conceptId');
     } on NetworkException catch (e) {
       errorMessage = e.message;

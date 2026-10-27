@@ -1,3 +1,4 @@
+import '../utils/ui_text.dart';
 import 'package:flutter/material.dart';
 import '../../app/theme/app_colors.dart';
 import '../../app/theme/app_dimensions.dart';
@@ -29,7 +30,7 @@ class DualIconButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isDisabled = onPressed == null;
-    final textColor = outlined ? AppColors.accentCyan : AppColors.white;
+    final textColor = outlined ? AppColors.accentCyan : AppColors.onAccent;
 
     final content = isLoading
         ? SizedBox(
@@ -47,7 +48,7 @@ class DualIconButton extends StatelessWidget {
               const SizedBox(width: 8),
               Flexible(
                 child: Text(
-                  label,
+                  UiText.sentence(label),
                   overflow: TextOverflow.ellipsis,
                   style: AppTextStyles.button.copyWith(fontSize: 16, color: textColor),
                 ),

@@ -1,0 +1,334 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001055",
+ "title": "Design round: build a URL shortener step by step",
+ "kind": "flow",
+ "intro": "A design interview is a conversation with a shape. Follow it through one concrete example.",
+ "predict": {
+  "question": "Which should come first in a system design round?",
+  "options": [
+   "Draw the database schema",
+   "Clarify requirements and estimate scale",
+   "Pick the tech stack"
+  ],
+  "answer": 1,
+  "reveal": "Requirements and scale. Every later box, cache or database choice is justified by what the system must do and how big it gets."
+ },
+ "takeaway": "Requirements, scale, boxes, deep dive, bottlenecks and trade-offs, in that order, backed by numbers.",
+ "steps": [
+  {
+   "say": "Design prompt: 'Design a URL shortener.' A big open question, so follow five steps in order. Do not start by drawing boxes.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Features and limits.",
+     "s": "todo"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "Writes, reads, storage.",
+     "s": "todo"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client to database.",
+     "s": "todo"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "One hard part.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Requirements first: create a short link, redirect quickly. Park extras like analytics and custom aliases as out of scope.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "active"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "Writes, reads, storage.",
+     "s": "todo"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client to database.",
+     "s": "todo"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "One hard part.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Estimate scale: 100 million new links a month is about 40 writes a second. If reads are 100 times more, that is about 4,000 a second.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "100M new links a month is about 40 writes per second.",
+     "s": "active"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client to database.",
+     "s": "todo"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "One hard part.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Storage: at about 500 bytes a record, 100 million links is 50 GB a month, roughly 3 TB over five years. One database can cope.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "active"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client to database.",
+     "s": "todo"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "One hard part.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Now draw boxes: client, load balancer, app servers, cache and database. Writes create a code; reads look the code up.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "done"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client, load balancer, app servers, cache, database.",
+     "s": "active"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "One hard part.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Deep dive on the code: 7 base62 characters give 62^7, about 3.5 trillion links. Encode a counter instead of guessing random codes.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "done"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client, load balancer, app servers, cache, database.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "7 chars of base62 = about 3.5 trillion codes.",
+     "s": "active"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Where it breaks.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Bottlenecks: reads dominate, so cache hot links. One shared counter is a single point of failure, so give each server its own range.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "done"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client, load balancer, app servers, cache, database.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "7 chars of base62 = about 3.5 trillion codes.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Cache hot links. Give each server its own counter range.",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Say a trade-off: a 301 redirect is cached by browsers and cheap, but hides click counts. A 302 reaches your server each time for analytics.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "done"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client, load balancer, app servers, cache, database.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "7 chars of base62 = about 3.5 trillion codes.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Cache hot links. Give each server its own counter range.",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Five steps, always in this order: requirements, scale, boxes, deep dive, bottlenecks. The numbers justify every box you draw.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Requirements",
+     "text": "Create a short link. Redirect fast. No analytics yet.",
+     "s": "done"
+    },
+    {
+     "icon": "speed",
+     "title": "Scale",
+     "text": "500 B x 100M = 50 GB a month, about 3 TB in 5 years.",
+     "s": "done"
+    },
+    {
+     "icon": "cloud",
+     "title": "Boxes",
+     "text": "Client, load balancer, app servers, cache, database.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Deep dive",
+     "text": "7 chars of base62 = about 3.5 trillion codes.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Bottlenecks",
+     "text": "Cache hot links. Give each server its own counter range.",
+     "s": "done"
+    }
+   ]
+  }
+ ]
+}

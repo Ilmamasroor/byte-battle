@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
+import '../../../../app/theme/app_text_styles.dart';
 
 class CodeEditor extends StatelessWidget {
   final TextEditingController controller;
@@ -13,7 +14,7 @@ class CodeEditor extends StatelessWidget {
       width: double.infinity,
       padding: const EdgeInsets.all(AppDimensions.spacingMd),
       decoration: BoxDecoration(
-        color: const Color(0xFF0A0A14),
+        color: AppColors.background,
         borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
         border: Border.all(color: AppColors.border),
       ),
@@ -21,10 +22,10 @@ class CodeEditor extends StatelessWidget {
         controller: controller,
         maxLines: 14,
         minLines: 10,
-        style: const TextStyle(
-          fontFamily: 'monospace',
+        style: TextStyle(
+          fontFamily: AppTextStyles.monoFamily,
           fontSize: 13,
-          color: Color(0xFFD4D4F5),
+          color: AppColors.textPrimary,
           height: 1.5,
         ),
         cursorColor: AppColors.primary,

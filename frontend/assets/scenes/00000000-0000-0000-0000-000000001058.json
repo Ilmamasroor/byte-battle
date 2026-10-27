@@ -1,0 +1,1438 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001058",
+ "title": "Backtracking: choose, explore, un-choose",
+ "kind": "structure",
+ "intro": "Recursion can try every option, taking one back when it is done. Watch it list every subset of A, B, C.",
+ "predict": {
+  "question": "How many subsets does a 3-item set have, counting the empty one?",
+  "options": [
+   "6",
+   "8",
+   "9"
+  ],
+  "answer": 1,
+  "reveal": "8. Each item is either taken or skipped, so there are 2 x 2 x 2 = 8 choices, one leaf in the tree for each."
+ },
+ "takeaway": "Backtracking: choose an option, explore deeper, then un-choose it so the next option starts from a clean path.",
+ "code": [
+  "void go(int i) {",
+  "  if (i == n) { print(path); return; }",
+  "  path.add(a[i]);       // choose",
+  "  go(i + 1);            // explore",
+  "  path.removeLast();    // un-choose",
+  "  go(i + 1);            // skip a[i]",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Subsets of {A, B, C}. At each item we decide: take it or skip it. Left branches take, right branches skip.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "idle",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "idle",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "idle",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "idle"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "idle"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": []
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": []
+    }
+   ]
+  },
+  {
+   "say": "go(0): CHOOSE A. It joins the path, then we explore what comes next.",
+   "at": 2,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "cur",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "idle",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "idle",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "idle"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "idle"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": []
+    }
+   ]
+  },
+  {
+   "say": "go(1): choose B. The path is now A, B. We keep exploring deeper before undoing anything.",
+   "at": 2,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "cur",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "idle",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "idle"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "idle"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A",
+      "B"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": []
+    }
+   ]
+  },
+  {
+   "say": "go(2): choose C. The path is A, B, C.",
+   "at": 2,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "compare",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "cur",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "idle"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "idle"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": []
+    }
+   ]
+  },
+  {
+   "say": "go(3): i equals n, so every item is decided. Print {A,B,C}. This leaf is the first subset.",
+   "at": 1,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "compare",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "compare",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "idle"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A",
+      "B",
+      "C"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Back in go(2): UN-CHOOSE C (backtrack), then explore the skip branch. Leaf {A,B} prints.",
+   "at": [
+    4,
+    5
+   ],
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "compare",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A",
+      "B"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Back in go(1): UN-CHOOSE B. The path shrinks to just A. The path always shows the choices still in force.",
+   "at": 4,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "cur",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "idle",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "idle"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Skip B, then choose C: the path is A, C and leaf {A,C} prints.",
+   "at": [
+    5,
+    2,
+    1
+   ],
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "done",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "compare",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "found"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A",
+      "C"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB",
+      "AC"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Un-choose C and skip it: leaf {A} prints. That finishes everything that starts with A: 4 subsets.",
+   "at": [
+    4,
+    5
+   ],
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "compare",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "done",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "done",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "found"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": [
+      "A"
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB",
+      "AC",
+      "A"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Back at go(0): UN-CHOOSE A. The path is empty again, ready for the other half.",
+   "at": 4,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "cur",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "done",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "idle",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "done",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "idle",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "idle",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "found"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "idle"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": []
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB",
+      "AC",
+      "A"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Skip A, and the same dance runs for B and C: it prints {B,C}, {B}, {C} and {} (nothing chosen). All 8 subsets are done.",
+   "at": [
+    5,
+    2,
+    3,
+    4
+   ],
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "done",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "done",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "done",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "done",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "done",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "done",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "found"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "found"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "found"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "found"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "found"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": []
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB",
+      "AC",
+      "A",
+      "BC",
+      "B",
+      "C",
+      "{}"
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Choose, explore, un-choose. Every item is take-or-skip, so 3 items give 2 x 2 x 2 = 8 leaves and 8 subsets.",
+   "at": -1,
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "left = take, right = skip",
+     "nodes": [
+      {
+       "id": "n",
+       "v": "A?",
+       "s": "done",
+       "l": "nt",
+       "r": "ns"
+      },
+      {
+       "id": "nt",
+       "v": "B?",
+       "s": "done",
+       "l": "ntt",
+       "r": "nts"
+      },
+      {
+       "id": "ns",
+       "v": "B?",
+       "s": "done",
+       "l": "nst",
+       "r": "nss"
+      },
+      {
+       "id": "ntt",
+       "v": "C?",
+       "s": "done",
+       "l": "nttt",
+       "r": "ntts"
+      },
+      {
+       "id": "nts",
+       "v": "C?",
+       "s": "done",
+       "l": "ntst",
+       "r": "ntss"
+      },
+      {
+       "id": "nst",
+       "v": "C?",
+       "s": "done",
+       "l": "nstt",
+       "r": "nsts"
+      },
+      {
+       "id": "nss",
+       "v": "C?",
+       "s": "done",
+       "l": "nsst",
+       "r": "nsss"
+      },
+      {
+       "id": "nttt",
+       "v": "ABC",
+       "s": "found"
+      },
+      {
+       "id": "ntts",
+       "v": "AB",
+       "s": "found"
+      },
+      {
+       "id": "ntst",
+       "v": "AC",
+       "s": "found"
+      },
+      {
+       "id": "ntss",
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "id": "nstt",
+       "v": "BC",
+       "s": "found"
+      },
+      {
+       "id": "nsts",
+       "v": "B",
+       "s": "found"
+      },
+      {
+       "id": "nsst",
+       "v": "C",
+       "s": "found"
+      },
+      {
+       "id": "nsss",
+       "v": "{}",
+       "s": "found"
+      }
+     ]
+    },
+    {
+     "kind": "stack",
+     "name": "path",
+     "items": []
+    },
+    {
+     "kind": "queue",
+     "name": "printed subsets",
+     "items": [
+      "ABC",
+      "AB",
+      "AC",
+      "A",
+      "BC",
+      "B",
+      "C",
+      "{}"
+     ]
+    }
+   ]
+  }
+ ]
+}

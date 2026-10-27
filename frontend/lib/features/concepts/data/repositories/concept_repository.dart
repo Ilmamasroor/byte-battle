@@ -1,8 +1,12 @@
-/// ConceptRepository — data layer repository.
-/// Wraps the remote/local data sources for this feature.
-/// Auto-scaffolded to match the project's target file structure.
+import '../../../../core/network/backend_api.dart';
+import '../models/concept_model.dart';
+
+/// Concept metadata from `GET /api/concepts/{id}`.
 class ConceptRepository {
   const ConceptRepository();
 
-  // TODO: wire up ApiClient calls once endpoints are available.
+  Future<ConceptModel> get(String conceptId) async {
+    final info = await BackendApi.instance.concept(conceptId);
+    return ConceptModel(id: info.id, name: info.name, description: info.description, difficulty: info.difficulty);
+  }
 }

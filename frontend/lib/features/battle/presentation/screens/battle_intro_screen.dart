@@ -1,69 +1,100 @@
 import 'package:flutter/material.dart';
-import '../../../../core/utils/helpers.dart';
+import '../../../../core/models/backend_models.dart';
+import '../../../../core/network/backend_api.dart';
+import '../../../../core/network/network_exception.dart';
+import '../../../../core/widgets/error_view.dart';
+import '../../../../core/widgets/loading_view.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
 import '../../../concepts/data/models/concept_model.dart';
-import '../../../learning/explanation/data/models/canonical_knowledge_model.dart';
 import '../../data/models/boss_battle_model.dart';
 import '../state/battle_ai_controller.dart';
+import '../state/battle_controller.dart';
 
 /// "Challenge Prep" screen — shown before a timed Boss Battle stage.
 /// Matches the boss-battle intro screenshot: skull badge, BOSS BATTLE
 /// title, concept subtitle, Lives / Rounds info cards, a Time Limit
 /// card, the primary CONTINUE cta and a one-attempt warning banner.
 class BattleIntroScreen extends StatefulWidget {
-  final String bossTitle;
-  final String conceptSubtitle;
-  final String description;
-  final int lives;
-  final int rounds;
-  final String timeLimitLabel;
+  final String conceptId;
 
-  const BattleIntroScreen({
-    super.key,
-    this.bossTitle = 'BOSS BATTLE',
-    this.conceptSubtitle = 'Binary Search Master',
-    this.description =
-        'Prove that you\'ve mastered the concept. Solve the maze, trace '
-        'the array, and defeat the system boundaries.',
-    this.lives = 3,
-    this.rounds = 5,
-    this.timeLimitLabel = '05:00',
-  });
+  const BattleIntroScreen({super.key, required this.conceptId});
 
   @override
   State<BattleIntroScreen> createState() => _BattleIntroScreenState();
 }
 
 class _BattleIntroScreenState extends State<BattleIntroScreen> {
-  // TODO: replace with the concept actually being battled, plus its real
-  // canonical knowledge (e.g. from ExplanationController once that stage
-  // has run for this concept) instead of an empty placeholder.
-  static const _concept = ConceptModel(
-    id: '00000000-0000-0000-0000-000000001001',
-    name: 'Java Fundamentals',
-    difficulty: 'BEGINNER',
-  );
-  static const _canonicalKnowledge = CanonicalKnowledgeModel(
-    keyPoints: [],
-    rules: [],
-    examples: [],
-  );
-
   final _controller = BattleAiController.instance;
+
+  ConceptInfo? _concept;
+  BattleInfo? _battle;
+  bool _loading = true;
+  String? _error;
 
   @override
   void initState() {
     super.initState();
-    _controller.loadBossBattle(concept: _concept, canonicalKnowledge: _canonicalKnowledge);
+    _load();
+  }
+
+  Future<void> _load() async {
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
+    try {
+      final api = BackendApi.instance;
+      final results = await Future.wait<Object>([api.battles(), api.concept(widget.conceptId)]);
+      final concept = results[1] as ConceptInfo;
+      final battle = pickBattle(results[0] as List<BattleInfo>, widget.conceptId, boss: true);
+      if (!mounted) return;
+      setState(() {
+        _concept = concept;
+        _battle = battle;
+        _error = battle == null ? 'There is no boss battle for ${concept.name} yet.' : null;
+        _loading = false;
+      });
+      if (battle != null) _loadBriefing();
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _error = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _error = 'Could not load the boss battle. Please try again.';
+        _loading = false;
+      });
+    }
+  }
+
+  /// `POST /api/ai/boss-battle`: the AI briefing for this concept.
+  Future<void> _loadBriefing() async {
+    final c = _concept;
+    if (c == null) return;
+    final knowledge = await _controller.canonicalFor(c.id);
+    if (!mounted) return;
+    await _controller.loadBossBattle(
+      concept: ConceptModel(id: c.id, name: c.name, description: c.description, difficulty: c.difficulty),
+      canonicalKnowledge: knowledge,
+    );
+  }
+
+  static String _timeLabel(int seconds) {
+    if (seconds <= 0) return 'No limit';
+    final m = (seconds ~/ 60).toString().padLeft(2, '0');
+    final s = (seconds % 60).toString().padLeft(2, '0');
+    return '$m:$s per question';
   }
 
   @override
   Widget build(BuildContext context) {
-    Helpers.noApiYet('BattleIntroScreen', note: 'lives/rounds/timer are hardcoded; boss briefing calls POST /api/ai/boss-battle');
     return Scaffold(
       backgroundColor: Colors.transparent,
       appBar: AppBar(
@@ -75,137 +106,133 @@ class _BattleIntroScreenState extends State<BattleIntroScreen> {
         ),
         title: const Text('Challenge Prep', style: AppTextStyles.bodyBold),
         centerTitle: false,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Icon(Icons.more_vert_rounded, color: AppColors.textSecondary),
-          ),
-        ],
       ),
       body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenPadding),
-          child: Column(
+        child: _loading
+            ? const LoadingView(message: 'Summoning the boss...')
+            : _battle == null
+                ? ErrorView(message: _error ?? 'Could not load the boss battle.', onRetry: _load)
+                : _buildBody(context, _battle!),
+      ),
+    );
+  }
+
+  Widget _buildBody(BuildContext context, BattleInfo battle) {
+    return SingleChildScrollView(
+      padding: const EdgeInsets.symmetric(horizontal: AppDimensions.screenPadding),
+      child: Column(
+        children: [
+          const SizedBox(height: AppDimensions.spacingXl),
+          Container(
+            width: 96,
+            height: 96,
+            decoration: BoxDecoration(
+              shape: BoxShape.circle,
+              color: AppColors.orchid.withOpacity(0.14),
+              border: Border.all(color: AppColors.orchid.withOpacity(0.6), width: 1.5),
+            ),
+            child: const Icon(Icons.pest_control_rounded, color: AppColors.orchid, size: 44),
+          ),
+          const SizedBox(height: AppDimensions.spacingLg),
+          Text(
+            'BOSS BATTLE',
+            style: AppTextStyles.eyebrow.copyWith(color: AppColors.orchid, fontSize: 13, letterSpacing: 3),
+          ),
+          const SizedBox(height: AppDimensions.spacingXs),
+          Text(_concept?.name ?? battle.title, style: AppTextStyles.display.copyWith(fontSize: 30), textAlign: TextAlign.center),
+          const SizedBox(height: AppDimensions.spacingMd),
+          Text(
+            battle.description.isNotEmpty ? battle.description : battle.title,
+            textAlign: TextAlign.center,
+            style: AppTextStyles.body,
+          ),
+          const SizedBox(height: AppDimensions.spacingLg),
+          ListenableBuilder(
+            listenable: _controller,
+            builder: (context, _) => _BossBriefingCard(
+              isLoading: _controller.isBossBattleLoading,
+              errorMessage: _controller.bossBattleErrorMessage,
+              bossBattle: _controller.bossBattle,
+              onRetry: _loadBriefing,
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingXl),
+          Row(
             children: [
-              const SizedBox(height: AppDimensions.spacingXl),
-              Container(
-                width: 96,
-                height: 96,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  color: AppColors.error.withOpacity(0.12),
-                  border: Border.all(color: AppColors.error.withOpacity(0.6), width: 1.5),
-                ),
-                child: const Icon(Icons.face_retouching_off_rounded,
-                    color: AppColors.error, size: 40),
-              ),
-              const SizedBox(height: AppDimensions.spacingLg),
-              Text(
-                widget.bossTitle,
-                style: AppTextStyles.heading1.copyWith(
-                  color: AppColors.error,
-                  letterSpacing: 2,
-                  fontWeight: FontWeight.w800,
-                ),
-              ),
-              const SizedBox(height: AppDimensions.spacingXs),
-              Text(widget.conceptSubtitle, style: AppTextStyles.bodyBold),
-              const SizedBox(height: AppDimensions.spacingMd),
-              Text(
-                widget.description,
-                textAlign: TextAlign.center,
-                style: AppTextStyles.body,
-              ),
-              const SizedBox(height: AppDimensions.spacingLg),
-              ListenableBuilder(
-                listenable: _controller,
-                builder: (context, _) => _BossBriefingCard(
-                  isLoading: _controller.isBossBattleLoading,
-                  errorMessage: _controller.bossBattleErrorMessage,
-                  bossBattle: _controller.bossBattle,
-                  onRetry: () => _controller.loadBossBattle(
-                    concept: _concept,
-                    canonicalKnowledge: _canonicalKnowledge,
+              Expanded(
+                child: _InfoCard(
+                  label: 'LIVES',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.favorite_rounded, color: AppColors.error, size: 18),
+                      const SizedBox(width: AppDimensions.spacingXs),
+                      Text('x${battle.totalLives}', style: AppTextStyles.bodyBold),
+                    ],
                   ),
                 ),
               ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              Row(
-                children: [
-                  Expanded(
-                    child: _InfoCard(
-                      label: 'LIVES',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.favorite_rounded, color: AppColors.error, size: 18),
-                          const SizedBox(width: AppDimensions.spacingXs),
-                          Text('x${widget.lives}', style: AppTextStyles.bodyBold),
-                        ],
-                      ),
-                    ),
+              const SizedBox(width: AppDimensions.spacingMd),
+              Expanded(
+                child: _InfoCard(
+                  label: 'ROUNDS',
+                  child: Row(
+                    children: [
+                      const Icon(Icons.flag_rounded, color: AppColors.primaryLight, size: 18),
+                      const SizedBox(width: AppDimensions.spacingXs),
+                      Text('${battle.totalQuestions}', style: AppTextStyles.bodyBold),
+                    ],
                   ),
-                  const SizedBox(width: AppDimensions.spacingMd),
-                  Expanded(
-                    child: _InfoCard(
-                      label: 'ROUNDS',
-                      child: Row(
-                        children: [
-                          const Icon(Icons.flag_rounded, color: AppColors.primaryLight, size: 18),
-                          const SizedBox(width: AppDimensions.spacingXs),
-                          Text('${widget.rounds}', style: AppTextStyles.bodyBold),
-                        ],
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
-              _InfoCard(
-                label: 'TIME LIMIT',
-                fullWidth: true,
-                child: Row(
-                  children: [
-                    const Icon(Icons.timer_outlined, color: AppColors.textSecondary, size: 18),
-                    const SizedBox(width: AppDimensions.spacingXs),
-                    Text(widget.timeLimitLabel, style: AppTextStyles.bodyBold),
-                  ],
                 ),
               ),
-              const SizedBox(height: AppDimensions.spacingXl),
-              AppButton(
-                label: 'CONTINUE',
-                onPressed: () =>
-                    Navigator.of(context).pushReplacementNamed(RouteNames.battle),
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  vertical: AppDimensions.spacingMd,
-                  horizontal: AppDimensions.spacingMd,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.error.withOpacity(0.08),
-                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-                  border: Border.all(color: AppColors.error.withOpacity(0.35)),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
-                    const SizedBox(width: AppDimensions.spacingSm),
-                    Expanded(
-                      child: Text(
-                        'Retry allowed only once. Lose all lives and the boss wins.',
-                        style: AppTextStyles.caption.copyWith(color: AppColors.error),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(height: AppDimensions.spacingMd),
             ],
           ),
-        ),
+          const SizedBox(height: AppDimensions.spacingMd),
+          _InfoCard(
+            label: 'TIME LIMIT',
+            fullWidth: true,
+            child: Row(
+              children: [
+                const Icon(Icons.timer_outlined, color: AppColors.textSecondary, size: 18),
+                const SizedBox(width: AppDimensions.spacingXs),
+                Text(_timeLabel(battle.timeLimitSeconds), style: AppTextStyles.bodyBold),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingXl),
+          AppButton(
+            label: 'CONTINUE',
+            onPressed: () => Navigator.of(context).pushReplacementNamed(
+              RouteNames.battle,
+              arguments: {'conceptId': widget.conceptId, 'boss': true},
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingMd),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.symmetric(
+              vertical: AppDimensions.spacingMd,
+              horizontal: AppDimensions.spacingMd,
+            ),
+            decoration: BoxDecoration(
+              color: AppColors.error.withOpacity(0.08),
+              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+              border: Border.all(color: AppColors.error.withOpacity(0.35)),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                const SizedBox(width: AppDimensions.spacingSm),
+                Expanded(
+                  child: Text(
+                    'Lose all ${battle.totalLives} lives and the boss wins.',
+                    style: AppTextStyles.caption.copyWith(color: AppColors.error),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: AppDimensions.spacingMd),
+        ],
       ),
     );
   }

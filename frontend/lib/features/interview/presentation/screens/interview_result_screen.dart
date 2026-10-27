@@ -4,7 +4,7 @@ import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/dual_icon_button.dart';
-import '../../data/models/interview_result_model.dart';
+import '../../../performance/presentation/widgets/xp_chip.dart';
 import '../state/interview_controller.dart';
 
 class _CriterionRow {
@@ -16,37 +16,36 @@ class _CriterionRow {
   const _CriterionRow(this.label, this.icon, this.color, this.scoreOf5);
 }
 
-/// "Explanation Feedback" screen — matches the reference screenshot:
-/// back button + BYTE BATTLE header + XP chip, a "Your Explanation"
-/// scorecard (5 criteria bars + an Overall x/20) and an AI Feedback
-/// callout, sourced from `POST /api/ai/interview/evaluate`'s response
-/// (set by [InterviewScreen] before navigating here), plus a Continue CTA.
+/// "Explanation Feedback": the stored result of the interview (`POST /api/interviews/{id}/complete`) and the
+/// rubric grades the backend's AI gave to each answer.
 class InterviewResultScreen extends StatelessWidget {
   const InterviewResultScreen({super.key});
 
-  /// Converts a 0.0–1.0 API score into the 0–5 scale the bars use.
+  /// Converts a 0.0-1.0 rubric score into the 0-5 scale the bars use.
   static int _scoreOf5(double score) => (score * 5).round().clamp(0, 5);
 
-  static List<_CriterionRow> _criteriaFor(InterviewEvaluationModel e) => [
+  static List<_CriterionRow> _criteriaFor(Map<String, double> r) => [
         _CriterionRow('Conceptual Correctness', Icons.check_circle_rounded,
-            AppColors.success, _scoreOf5(e.conceptualCorrectness)),
+            AppColors.success, _scoreOf5(r['conceptualCorrectness'] ?? 0)),
         _CriterionRow('Reasoning', Icons.psychology_rounded,
-            AppColors.btnAccentPurple, _scoreOf5(e.reasoning)),
+            AppColors.btnAccentPurple, _scoreOf5(r['reasoning'] ?? 0)),
         _CriterionRow('Technical Clarity', Icons.menu_book_rounded,
-            AppColors.accentCyan, _scoreOf5(e.technicalClarity)),
+            AppColors.accentCyan, _scoreOf5(r['technicalClarity'] ?? 0)),
         _CriterionRow('Completeness', Icons.track_changes_rounded,
-            AppColors.btnGamificationPink, _scoreOf5(e.completeness)),
+            AppColors.btnGamificationPink, _scoreOf5(r['completeness'] ?? 0)),
         _CriterionRow('Explanation', Icons.description_rounded,
-            AppColors.btnWarningOrange, _scoreOf5(e.explanation)),
+            AppColors.btnWarningOrange, _scoreOf5(r['explanation'] ?? 0)),
       ];
 
   @override
   Widget build(BuildContext context) {
-    final evaluation = InterviewController.instance.lastEvaluation;
-    final criteria = evaluation != null ? _criteriaFor(evaluation) : const <_CriterionRow>[];
-    final overall = evaluation?.overallOf20 ?? 0;
-    final feedback = evaluation?.feedback ??
-        'No feedback yet — answer a question on the interview screen first.';
+    final controller = InterviewController.instance;
+    final result = controller.result;
+    final rubric = controller.averageRubric;
+    final criteria = rubric.isNotEmpty ? _criteriaFor(rubric) : const <_CriterionRow>[];
+    final graded = controller.answers.where((a) => a.score != null).length;
+    final overall = result?.score ?? 0;
+    final answers = controller.answers;
 
     return Scaffold(
       backgroundColor: Colors.transparent,
@@ -61,7 +60,7 @@ class InterviewResultScreen extends StatelessWidget {
         actions: const [
           Padding(
             padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(child: _XpChip(xp: 840)),
+            child: Center(child: LiveXpChip()),
           ),
         ],
       ),
@@ -81,7 +80,7 @@ class InterviewResultScreen extends StatelessWidget {
                       gradient: AppColors.primaryGradient,
                       borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
                     ),
-                    child: const Icon(Icons.fact_check_rounded, color: AppColors.white),
+                    child: const Icon(Icons.fact_check_rounded, color: AppColors.onAccent),
                   ),
                   const SizedBox(width: AppDimensions.spacingMd),
                   Expanded(
@@ -90,8 +89,9 @@ class InterviewResultScreen extends StatelessWidget {
                       children: [
                         Text('Explanation Feedback', style: AppTextStyles.heading1),
                         Text(
-                          "Great effort! Here's how your explanation performed "
-                          "and what to improve.",
+                          result == null
+                              ? 'No finished interview to show yet.'
+                              : "Here's how your explanations performed and what to improve.",
                           style: AppTextStyles.body.copyWith(color: AppColors.primaryLight),
                         ),
                       ],
@@ -143,7 +143,7 @@ class InterviewResultScreen extends StatelessWidget {
                                     .copyWith(fontSize: 30, color: AppColors.accentCyan),
                               ),
                               const TextSpan(
-                                text: '/20',
+                                text: '/100',
                                 style: AppTextStyles.body,
                               ),
                             ],
@@ -155,12 +155,33 @@ class InterviewResultScreen extends StatelessWidget {
                 ),
               ),
               const SizedBox(height: AppDimensions.spacingMd),
-              _CalloutCard(
-                icon: Icons.auto_awesome_rounded,
-                color: AppColors.btnAccentPurple,
-                title: 'AI Feedback:',
-                child: _BulletLine(icon: Icons.arrow_forward_rounded, text: feedback),
-              ),
+              if (answers.isEmpty)
+                _CalloutCard(
+                  icon: Icons.auto_awesome_rounded,
+                  color: AppColors.btnAccentPurple,
+                  title: 'AI Feedback:',
+                  child: const _BulletLine(
+                      icon: Icons.arrow_forward_rounded,
+                      text: 'You finished without answering any question, so there is nothing to grade.'),
+                )
+              else
+                for (var i = 0; i < answers.length; i++)
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: AppDimensions.spacingMd),
+                    child: _CalloutCard(
+                      icon: Icons.auto_awesome_rounded,
+                      color: AppColors.btnAccentPurple,
+                      title: 'Answer ${i + 1}: ${answers[i].score == null ? 'not graded' : '${answers[i].score}/100'}',
+                      child: _BulletLine(
+                          icon: Icons.arrow_forward_rounded,
+                          text: answers[i].feedback.isNotEmpty
+                              ? answers[i].feedback
+                              : 'The AI grader was unavailable for this answer.'),
+                    ),
+                  ),
+              if (answers.isNotEmpty && graded < answers.length)
+                Text('$graded of ${answers.length} answers were graded; the score uses only those.',
+                    style: AppTextStyles.caption),
               const SizedBox(height: AppDimensions.spacingXl),
               DualIconButton(
                 label: 'Continue',
@@ -281,31 +302,6 @@ class _BulletLine extends StatelessWidget {
         const SizedBox(width: AppDimensions.spacingSm),
         Expanded(child: Text(text, style: AppTextStyles.body)),
       ],
-    );
-  }
-}
-
-class _XpChip extends StatelessWidget {
-  final int xp;
-  const _XpChip({required this.xp});
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
-      decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.5),
-        borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
-        border: Border.all(color: AppColors.borderLight.withOpacity(0.5)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.bolt_rounded, size: 14, color: AppColors.accentCyan),
-          const SizedBox(width: 4),
-          Text('$xp XP', style: AppTextStyles.caption),
-        ],
-      ),
     );
   }
 }

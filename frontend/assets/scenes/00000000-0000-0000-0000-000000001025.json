@@ -1,0 +1,612 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001025",
+ "title": "Tabulation: fill the table from the bottom up",
+ "kind": "structure",
+ "intro": "Fewest coins to make 6 using coins 1, 3 and 4? Instead of recursion we fill a table from small amounts upward.",
+ "predict": {
+  "question": "Fewest coins to make 6 using coins of 1, 3 and 4?",
+  "options": [
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": 0,
+  "reveal": "3 + 3 is two coins. Grabbing the biggest coin first (4 + 1 + 1) needs three. The table finds the true best."
+ },
+ "takeaway": "Tabulation fills a table from the smallest case up, and each cell is built from cells already filled. No recursion, no repeated work.",
+ "code": [
+  "dp[0] = 0",
+  "for i in 1..amount:",
+  "  dp[i] = INF",
+  "  for c in coins: if c <= i:",
+  "    dp[i] = min(dp[i], dp[i-c] + 1)"
+ ],
+ "steps": [
+  {
+   "say": "dp[i] means: fewest coins to make amount i. Coins: 1, 3, 4. We fill dp from 0 to 6, and every cell uses earlier cells.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "dp[i] = min over c of dp[i-c] + 1"
+  },
+  {
+   "say": "Base case: amount 0 needs 0 coins. dp[0] = 0. Everything else is built on this.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "done"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 0
+     }
+    }
+   ],
+   "at": 0,
+   "note": "dp[0] = 0"
+  },
+  {
+   "say": "dp[1]: only coin 1 fits. dp[0] + 1 = 1 coin.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 1
+     }
+    }
+   ],
+   "at": [
+    1,
+    3,
+    4
+   ],
+   "note": "dp[1] = dp[0] + 1 = 1"
+  },
+  {
+   "say": "dp[2]: only coin 1 fits again. dp[1] + 1 = 2 coins.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    }
+   ],
+   "at": [
+    1,
+    3,
+    4
+   ],
+   "note": "dp[2] = dp[1] + 1 = 2"
+  },
+  {
+   "say": "dp[3]: coin 1 gives dp[2] + 1 = 3, coin 3 gives dp[0] + 1 = 1. The minimum is 1: a single 3 coin.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 3
+     }
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "min(dp[2]+1, dp[0]+1) = min(3, 1) = 1"
+  },
+  {
+   "say": "dp[4]: via 1 gives dp[3] + 1 = 2, via 3 gives dp[1] + 1 = 2, via 4 gives dp[0] + 1 = 1. Minimum is 1.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 4
+     }
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "min(2, 2, 1) = 1"
+  },
+  {
+   "say": "dp[5]: via 1 gives dp[4] + 1 = 2, via 3 gives dp[2] + 1 = 3, via 4 gives dp[1] + 1 = 2. Minimum is 2.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "?",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 5
+     }
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "min(2, 3, 2) = 2"
+  },
+  {
+   "say": "dp[6]: via 1 gives dp[5] + 1 = 3, via 3 gives dp[3] + 1 = 2, via 4 gives dp[2] + 1 = 3. Minimum is 2.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "compare"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "compare"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      }
+     ],
+     "pointers": {
+      "i": 6
+     }
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "min(3, 2, 3) = 2"
+  },
+  {
+   "say": "Answer: dp[6] = 2, which is 3 + 3. Greedy (take the biggest coin first, 4 + 1 + 1) would use 3 coins. The table checks every option.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "coins",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "dp[i] = fewest coins for amount i",
+     "cells": [
+      {
+       "v": "0",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      }
+     ],
+     "pointers": {
+      "i": 6
+     },
+     "caption": "6 = 3 + 3"
+    }
+   ],
+   "at": -1,
+   "note": "dp[6] = 2 coins"
+  }
+ ]
+}

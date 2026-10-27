@@ -3,9 +3,24 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'app/app.dart';
 import 'app/router/route_names.dart';
+import 'core/network/api_client.dart';
+import 'core/personalization/hero_prefs.dart';
+import 'core/voice/bit_voice.dart';
+
+/// Prevents a burst of parallel 403s from stacking several onboarding screens.
+bool _redirectingToOnboarding = false;
 
 void main() {
   runZonedGuarded(() {
+    WidgetsFlutterBinding.ensureInitialized();
+    // Any call answered 403 ONBOARDING_REQUIRED sends the learner to the questionnaire, wherever they are.
+    ApiClient.onOnboardingRequired = () {
+      if (_redirectingToOnboarding) return;
+      _redirectingToOnboarding = true;
+      navigatorKey.currentState?.pushNamedAndRemoveUntil(RouteNames.byteDnaSetup, (route) => false);
+      Future<void>.delayed(const Duration(seconds: 3), () => _redirectingToOnboarding = false);
+    };
+
     // A widget that fails to build would otherwise show Flutter's
     // default error screen. Replace that with a small, friendly fallback
     // that auto-recovers instead.
@@ -28,6 +43,8 @@ void main() {
       return true; // handled — don't let it propagate as fatal.
     };
 
+    HeroPrefs.instance.load();
+    BitVoice.instance.load();
     runApp(const BytlBattleApp());
   }, (error, stack) {
     // Last line of defense: anything thrown in a Future/async gap that
@@ -71,7 +88,7 @@ class _CrashSafeFallbackState extends State<_CrashSafeFallback> {
   @override
   Widget build(BuildContext context) {
     return ColoredBox(
-      color: Colors.black,
+      color: Color(0xFF0E0D13),
       child: Center(
         child: Padding(
           padding: const EdgeInsets.all(24),

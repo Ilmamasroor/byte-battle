@@ -6,69 +6,68 @@ import 'app_dimensions.dart';
 class AppTheme {
   AppTheme._();
 
+  static OutlineInputBorder _border(Color c, [double w = 1.2]) => OutlineInputBorder(
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        borderSide: BorderSide(color: c, width: w),
+      );
+
   static ThemeData get darkTheme {
     return ThemeData(
       brightness: Brightness.dark,
-      // The real background is the app-wide image painted once behind
-      // every route in BytlBattleApp's MaterialApp.builder — every
-      // Scaffold stays transparent so that image always shows through.
+      // The canvas (ink + soft ambient glow) is painted once behind every route in BytlBattleApp's builder,
+      // so every Scaffold stays transparent.
       scaffoldBackgroundColor: Colors.transparent,
       primaryColor: AppColors.primary,
       fontFamily: AppTextStyles.fontFamily,
       colorScheme: const ColorScheme.dark(
         primary: AppColors.primary,
+        onPrimary: AppColors.onAccent,
         secondary: AppColors.accentCyan,
+        onSecondary: AppColors.onAccent,
         surface: AppColors.surface,
         error: AppColors.error,
       ),
+      splashFactory: InkRipple.splashFactory,
       appBarTheme: const AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
+        scrolledUnderElevation: 0,
         centerTitle: true,
         iconTheme: IconThemeData(color: AppColors.textPrimary),
         titleTextStyle: AppTextStyles.heading2,
       ),
-      textTheme: TextTheme(
+      textTheme: const TextTheme(
         headlineLarge: AppTextStyles.heading1,
         headlineMedium: AppTextStyles.heading2,
         bodyMedium: AppTextStyles.body,
         labelLarge: AppTextStyles.button,
       ),
+      dividerColor: AppColors.divider,
+      progressIndicatorTheme: const ProgressIndicatorThemeData(
+        color: AppColors.primary,
+        linearTrackColor: AppColors.surfaceRaised,
+      ),
       inputDecorationTheme: InputDecorationTheme(
-        // No more solid filled "box" look — fill is kept, but mostly
-        // see-through, with a light, shiny border doing the work of
-        // outlining the field instead.
         filled: true,
-        fillColor: AppColors.inputFill.withOpacity(0.25),
+        fillColor: AppColors.inputFill,
         hintStyle: AppTextStyles.hint,
         contentPadding: const EdgeInsets.symmetric(
           horizontal: AppDimensions.spacingMd,
           vertical: AppDimensions.spacingMd,
         ),
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.borderLight, width: 1.1),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.borderLight, width: 1.1),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.accentCyan, width: 1.4),
-        ),
-        errorBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-          borderSide: const BorderSide(color: AppColors.error),
-        ),
+        border: _border(AppColors.border),
+        enabledBorder: _border(AppColors.border),
+        focusedBorder: _border(AppColors.primary, 1.6),
+        errorBorder: _border(AppColors.error),
+        focusedErrorBorder: _border(AppColors.error, 1.6),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: AppColors.primary,
-          foregroundColor: AppColors.white,
+          foregroundColor: AppColors.onAccent,
           minimumSize: const Size.fromHeight(AppDimensions.buttonHeight),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+            borderRadius: BorderRadius.circular(AppDimensions.buttonRadius),
           ),
           textStyle: AppTextStyles.button,
         ),
@@ -79,6 +78,7 @@ class AppTheme {
           textStyle: AppTextStyles.link,
         ),
       ),
+      snackBarTheme: const SnackBarThemeData(behavior: SnackBarBehavior.floating),
       useMaterial3: true,
     );
   }

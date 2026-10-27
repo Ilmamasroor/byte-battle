@@ -1,0 +1,309 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001040",
+ "title": "Layers: wrapping a message and unwrapping it",
+ "kind": "flow",
+ "intro": "A chat message 'Hi' crosses the internet in layers. Each layer adds its own label going down. Can you spot who adds the IP address?",
+ "predict": {
+  "question": "Going down the stack, which layer adds the IP addresses?",
+  "options": [
+   "Transport (TCP)",
+   "Internet (IP, OSI Network layer)",
+   "Link (Ethernet)"
+  ],
+  "answer": 1,
+  "reveal": "The Internet layer wraps the segment in an IP header with source and destination addresses so routers can forward it."
+ },
+ "takeaway": "Going down, each layer wraps the data in its own header (encapsulation); going up, each layer strips its header (decapsulation).",
+ "steps": [
+  {
+   "say": "TCP/IP has 4 layers (OSI splits them into 7). Your phone sends 'Hi' to a friend. It travels down 4 layers, across the wire, then up 4 layers.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Your app makes the message: Hi",
+     "s": "todo"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "TCP adds ports and a sequence number",
+     "s": "todo"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP adds source and destination address",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Adds MAC addresses, sends bits",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Application layer: the chat app creates the data, just the text Hi, using a protocol like HTTP. No addressing yet.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Data: Hi",
+     "s": "active"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "TCP adds ports and a sequence number",
+     "s": "todo"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP adds source and destination address",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Adds MAC addresses, sends bits",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Transport layer: TCP adds a header with port numbers (which app) and a sequence number. Data plus header is now a segment.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Data: Hi",
+     "s": "done"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Segment: [TCP hdr] Hi",
+     "s": "active"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP adds source and destination address",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Adds MAC addresses, sends bits",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Internet layer: IP adds a header with your IP and your friend's IP. Now it is a packet that routers can forward across networks.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Data: Hi",
+     "s": "done"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Segment: [TCP hdr] Hi",
+     "s": "done"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "Packet: [IP hdr] [TCP] Hi",
+     "s": "active"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Adds MAC addresses, sends bits",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Link layer: adds a frame header with MAC addresses for the next hop, plus a check value at the end. The frame becomes bits on the wire.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Data: Hi",
+     "s": "done"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Segment: [TCP hdr] Hi",
+     "s": "done"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "Packet: [IP hdr] [TCP] Hi",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Frame: [MAC hdr] packet [check]",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Routers along the way peel only the link and IP layers to choose the next hop, then re-wrap. At last the frame reaches your friend's phone.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Waits for data",
+     "s": "todo"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Waits for segment",
+     "s": "todo"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "Waits for packet",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Bits arrive: a frame!",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Receiver link layer: checks the MAC address and check value, strips the frame header and passes the packet up.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Waits for data",
+     "s": "todo"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Waits for segment",
+     "s": "todo"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "Packet: [IP hdr] [TCP] Hi",
+     "s": "todo"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Frame checked, header removed",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "Internet layer: confirms the destination IP is mine, strips the IP header, and hands the segment up.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Waits for data",
+     "s": "todo"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Segment: [TCP hdr] Hi",
+     "s": "todo"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP address matches, header removed",
+     "s": "active"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Frame checked, header removed",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "Transport layer: TCP checks the sequence number, uses the port to pick the right app, strips its header, and hands up the data.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Data: Hi",
+     "s": "todo"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Port picks the chat app, header removed",
+     "s": "active"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP address matches, header removed",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Frame checked, header removed",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "Application layer: the chat app receives plain Hi. Each layer only read its own header, like unwrapping nested gift boxes.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Application",
+     "text": "Hi arrives, shown on screen",
+     "s": "active"
+    },
+    {
+     "icon": "loop",
+     "title": "Transport",
+     "text": "Port picks the chat app, header removed",
+     "s": "done"
+    },
+    {
+     "icon": "compare",
+     "title": "Internet",
+     "text": "IP address matches, header removed",
+     "s": "done"
+    },
+    {
+     "icon": "storage",
+     "title": "Link",
+     "text": "Frame checked, header removed",
+     "s": "done"
+    }
+   ]
+  }
+ ]
+}

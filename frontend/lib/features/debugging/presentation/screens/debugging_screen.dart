@@ -1,27 +1,25 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
-import '../../../../core/utils/helpers.dart';
-import '../../../../core/models/diagnosis_model.dart';
+import '../../../../app/constants/app_constants.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
+import '../../../../core/models/backend_models.dart';
+import '../../../../core/network/backend_api.dart';
+import '../../../../core/network/network_exception.dart';
 import '../../../../core/widgets/app_bottom_nav.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/glow_card.dart';
-import '../../../concepts/data/models/concept_model.dart';
+import '../../../coding/presentation/widgets/code_editor.dart';
+import '../../../coding/presentation/widgets/load_error_view.dart';
 import '../../../concepts/presentation/widgets/concept_header.dart';
 import '../../../concepts/presentation/widgets/concept_progress.dart';
-import '../state/debugging_hint_controller.dart';
-import '../widgets/buggy_code_view.dart';
 import '../widgets/debug_result_card.dart';
 
-/// Debug challenge screen — "your solution failed 1 test case", the
-/// buggy code, the failing test's expected/received values, and a
-/// Submit Fix / Need a Hint pair. Submitting a fix flips the same
-/// screen into the "DEBUG RESULT — all test cases passed" state, then
-/// "Continue" hands off to related follow-ups (AI feedback, Byte DNA,
-/// more practice) instead of a dead end.
+/// Debug stage: the learner gets a real buggy program for the concept, edits it, and submits the fix. The backend
+/// runs it in the Judge0 sandbox against hidden + sample tests and answers with the verdict, the error category,
+/// the failure streak and what to do next. Progressive hints come from the exercise's hint ladder.
 class DebuggingScreen extends StatefulWidget {
   const DebuggingScreen({super.key});
 
@@ -30,88 +28,162 @@ class DebuggingScreen extends StatefulWidget {
 }
 
 class _DebuggingScreenState extends State<DebuggingScreen> {
-  @override
-  void initState() {
-    super.initState();
-    Helpers.noApiYet('DebuggingScreen', note: 'challenge is hardcoded');
-  }
-
   static const int _navIndex = 1;
 
-  // TODO: replace with data from DebuggingController / debugging_challenge_model.dart.
-  // The concept/diagnosis below feed the real `POST /api/ai/debugging-hint`
-  // call in [_needAHint] — they're still hardcoded here because the
-  // challenge itself is, but the AI call they drive is live.
-  static const _concept = ConceptModel(
-    id: '00000000-0000-0000-0000-000000001001',
-    name: 'Java Fundamentals',
-    difficulty: 'BEGINNER',
-  );
-  static const _diagnosis = DiagnosisModel(
-    errorType: 'LOGIC_ERROR',
-    explanation: "The loop's stopping condition runs one iteration past "
-        'the end of the array.',
-    suggestion: 'Compare i against nums.length using < instead of <=.',
-  );
+  final _codeController = TextEditingController();
+  final _watch = Stopwatch();
 
-  static const _code = '''public class Solution {
-    public static int loopBoundaries(int[] nums) {
-        int count = 0;
-        for (int i = 0; i <= nums.length; i++) {
-            if (nums[i] > 0) {
-                count++;
-            }
-        }
-        return count;
-    }
-}''';
-  static const _bugLine = 4;
-  static const _expected = '7';
-  static const _received = '9';
+  String _conceptId = AppConstants.defaultConceptId;
+  bool _started = false;
 
-  final _noteController = TextEditingController();
-  bool _fixed = false;
+  ConceptInfo? _concept;
+  DebugExerciseModel? _exercise;
+  bool _loading = true;
+  String? _loadError;
+  bool _noExercise = false;
+
   bool _isSubmitting = false;
   bool _isHintLoading = false;
+  String? _actionError;
+  DebugAttemptResult? _attempt;
+  final List<DebugHint> _hints = [];
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    if (_started) return;
+    _started = true;
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is Map && args['conceptId'] is String) _conceptId = args['conceptId'] as String;
+    _load();
+  }
 
   @override
   void dispose() {
-    _noteController.dispose();
+    _codeController.dispose();
     super.dispose();
   }
 
-  Future<void> _submitFix() async {
-    setState(() => _isSubmitting = true);
-    // TODO: send the fix via DebuggingController -> debugging repository.
-    await Future.delayed(const Duration(milliseconds: 600));
-    if (!mounted) return;
+  Future<void> _load() async {
     setState(() {
-      _isSubmitting = false;
-      _fixed = true;
+      _loading = true;
+      _loadError = null;
+      _noExercise = false;
     });
+    try {
+      final api = BackendApi.instance;
+      final results = await Future.wait<Object?>([
+        api.debugExercises(_conceptId),
+        api.concept(_conceptId).then<ConceptInfo?>((c) => c).catchError((_) => null),
+      ]);
+      final list = results[0] as List<DebugExerciseModel>;
+      if (!mounted) return;
+      if (list.isEmpty) {
+        setState(() {
+          _concept = results[1] as ConceptInfo?;
+          _noExercise = true;
+          _loading = false;
+        });
+        return;
+      }
+      final detail = await api.debugExercise(list.first.id);
+      if (!mounted) return;
+      _codeController.text = detail.buggyCode;
+      _watch
+        ..reset()
+        ..start();
+      setState(() {
+        _concept = results[1] as ConceptInfo?;
+        _exercise = detail;
+        _attempt = null;
+        _hints.clear();
+        _loading = false;
+      });
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = e.message;
+        _loading = false;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _loadError = 'Could not load the debugging exercise. Please try again.';
+        _loading = false;
+      });
+    }
+  }
+
+  static const _sandboxDown = 'The code sandbox is temporarily unavailable, so your fix was not judged. '
+      'This does not count as an attempt. Please try again in a moment.';
+
+  Future<void> _submitFix() async {
+    final ex = _exercise;
+    if (ex == null || _isSubmitting) return;
+    if (_codeController.text.trim().isEmpty) {
+      setState(() => _actionError = 'The code is empty. Fix the bug in the program above, then submit.');
+      return;
+    }
+    setState(() {
+      _isSubmitting = true;
+      _actionError = null;
+    });
+    try {
+      final r = await BackendApi.instance.debugAttempt(ex.id, _codeController.text, _watch.elapsed.inSeconds);
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _attempt = r;
+      });
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _actionError = e.statusCode == 503 ? _sandboxDown : e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isSubmitting = false;
+        _actionError = 'Something went wrong while running your fix. Please try again.';
+      });
+    }
   }
 
   Future<void> _needAHint() async {
-    final controller = DebuggingHintController.instance;
-    setState(() => _isHintLoading = true);
-
-    await controller.loadNextHint(concept: _concept, diagnosis: _diagnosis);
-
-    if (!mounted) return;
-    setState(() => _isHintLoading = false);
-
-    final hint = controller.hint?.hint;
-    final error = controller.errorMessage;
-    if (error != null) {
-      AppSnackBar.show(context, error);
-    } else if (hint != null && hint.isNotEmpty) {
-      AppSnackBar.show(context, hint);
-    } else {
-      AppSnackBar.show(
-        context,
-        "Hint: check the loop's stopping condition against the array length.",
-      );
+    final ex = _exercise;
+    if (ex == null || _isHintLoading) return;
+    setState(() {
+      _isHintLoading = true;
+      _actionError = null;
+    });
+    try {
+      final h = await BackendApi.instance.debugHint(ex.id, _hints.length + 1);
+      if (!mounted) return;
+      setState(() {
+        _isHintLoading = false;
+        if (h.hint.isNotEmpty) _hints.add(h);
+      });
+    } on NetworkException catch (e) {
+      if (!mounted) return;
+      setState(() {
+        _isHintLoading = false;
+        _actionError = e.message;
+      });
+    } catch (_) {
+      if (!mounted) return;
+      setState(() {
+        _isHintLoading = false;
+        _actionError = 'Could not load a hint. Please try again.';
+      });
     }
+  }
+
+  bool get _hintsLeft {
+    final ex = _exercise;
+    if (ex == null) return false;
+    final total = _hints.isNotEmpty ? _hints.last.totalLevels : ex.hintCount;
+    return _hints.length < total;
   }
 
   void _onNavTap(int index) {
@@ -124,7 +196,7 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
         Navigator.of(context).pushReplacementNamed(RouteNames.bossBattleIntro);
         break;
       case 3:
-        Navigator.of(context).pushReplacementNamed(RouteNames.coding);
+        Navigator.of(context).pushReplacementNamed(RouteNames.coding, arguments: {'conceptId': _conceptId});
         break;
       case 4:
         Navigator.of(context).pushReplacementNamed(RouteNames.profile);
@@ -147,47 +219,64 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
         ),
         title: const Text('BYTE BATTLE', style: AppTextStyles.heading2),
         centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(
-              child: Icon(Icons.notifications_none_rounded, color: AppColors.textPrimary),
-            ),
-          ),
-        ],
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(AppDimensions.screenPadding),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const ConceptHeader(
-                title: 'Loop Boundaries',
-                difficulty: 'Medium',
-                tags: ['Loops', 'Control Flow', 'Logic'],
-              ),
-              const SizedBox(height: AppDimensions.spacingLg),
-              ConceptProgress(
-                current: ConceptStage.coding,
-                routes: const {
-                  ConceptStage.concept: RouteNames.conceptDetail,
-                  ConceptStage.understand: RouteNames.understand,
-                  ConceptStage.visualize: RouteNames.explore,
-                  ConceptStage.battle: RouteNames.battle,
-                  ConceptStage.coding: RouteNames.debugging,
-                },
-              ),
-              const SizedBox(height: AppDimensions.spacingLg),
-              _fixed ? _buildResult(context) : _buildDebug(context),
-            ],
+      body: SafeArea(child: _buildBody(context)),
+    );
+  }
+
+  Widget _buildBody(BuildContext context) {
+    if (_loading) return const Center(child: CircularProgressIndicator());
+    if (_loadError != null) return LoadErrorView(message: _loadError!, onRetry: _load);
+    final ex = _exercise;
+    if (ex == null || _noExercise) {
+      return LoadErrorView(
+        message: 'There is no debugging exercise for ${_concept?.name ?? 'this concept'} yet.',
+        icon: Icons.bug_report_outlined,
+      );
+    }
+    final fixed = _attempt?.passed ?? false;
+    return SingleChildScrollView(
+      padding: const EdgeInsets.all(AppDimensions.screenPadding),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          ConceptHeader(
+            title: _concept?.name ?? ex.title,
+            difficulty: _titleCase(_concept?.difficulty ?? ex.difficulty),
+            tags: [if (ex.bugCategory.isNotEmpty) _titleCase(ex.bugCategory.replaceAll('_', ' '))],
           ),
-        ),
+          const SizedBox(height: AppDimensions.spacingLg),
+          ConceptProgress(
+            current: ConceptStage.coding,
+            routes: const {
+              ConceptStage.concept: RouteNames.conceptDetail,
+              ConceptStage.understand: RouteNames.understand,
+              ConceptStage.visualize: RouteNames.explore,
+              ConceptStage.battle: RouteNames.battle,
+              ConceptStage.coding: RouteNames.debugging,
+            },
+          ),
+          const SizedBox(height: AppDimensions.spacingLg),
+          fixed ? _buildResult(context, ex, _attempt!) : _buildDebug(context, ex),
+        ],
       ),
     );
   }
 
-  Widget _buildDebug(BuildContext context) {
+  static String _titleCase(String s) => s
+      .split(' ')
+      .where((w) => w.isNotEmpty)
+      .map((w) => w[0].toUpperCase() + w.substring(1).toLowerCase())
+      .join(' ');
+
+  String _caseDetail(CaseOutcome c) {
+    if (c.hidden) return c.passed ? 'Hidden case' : 'Hidden case (inputs are not revealed)';
+    if (c.passed) return 'Input: ${c.input}  |  Output: ${c.actual}';
+    return 'Input: ${c.input}  |  Expected: ${c.expected}  |  Received: ${c.actual.isEmpty ? c.status : c.actual}';
+  }
+
+  Widget _buildDebug(BuildContext context, DebugExerciseModel ex) {
+    final a = _attempt;
     return GlowCard(
       borderColor: AppColors.error,
       glowColor: AppColors.error,
@@ -201,10 +290,7 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
                 width: 44,
                 height: 44,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.error),
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.error)),
                 child: const Icon(Icons.bug_report_rounded, color: AppColors.error, size: 20),
               ),
               const SizedBox(width: AppDimensions.spacingMd),
@@ -212,93 +298,95 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('DEBUG',
-                        style: AppTextStyles.heading2.copyWith(color: AppColors.error)),
-                    Text('Your solution failed 1 test case.', style: AppTextStyles.body),
+                    Text('DEBUG', style: AppTextStyles.heading2.copyWith(color: AppColors.error)),
+                    Text(ex.title, style: AppTextStyles.body),
                   ],
                 ),
               ),
             ],
           ),
+          if (ex.description.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingMd),
+            Text(ex.description, style: AppTextStyles.body),
+          ],
+          if (ex.samples.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingSm),
+            for (final s in ex.samples)
+              Text(
+                'Example ${s.number}: input ${s.input.isEmpty ? '(none)' : s.input}  ->  expected ${s.expectedOutput}',
+                style: AppTextStyles.caption.copyWith(fontFamily: AppTextStyles.monoFamily),
+              ),
+          ],
           const SizedBox(height: AppDimensions.spacingLg),
-          const BuggyCodeView(code: _code, highlightLine: _bugLine),
-          const SizedBox(height: AppDimensions.spacingLg),
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(AppDimensions.spacingMd),
-            decoration: BoxDecoration(
-              color: AppColors.error.withOpacity(0.08),
-              borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
-              border: Border.all(color: AppColors.error.withOpacity(0.6)),
-            ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+          Text('Fix the bug in this code', style: AppTextStyles.bodyBold),
+          const SizedBox(height: AppDimensions.spacingSm),
+          CodeEditor(controller: _codeController),
+          if (a != null) ...[
+            const SizedBox(height: AppDimensions.spacingLg),
+            _buildFailure(a),
+          ],
+          if (_hints.isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingLg),
+            for (final h in _hints)
+              Container(
+                width: double.infinity,
+                margin: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
+                padding: const EdgeInsets.all(AppDimensions.spacingMd),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withOpacity(0.08),
+                  borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                  border: Border.all(color: AppColors.warning.withOpacity(0.5)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+                    const Icon(Icons.lightbulb_outline_rounded, color: AppColors.warning, size: 18),
                     const SizedBox(width: AppDimensions.spacingSm),
-                    Text('Error / Failed Test',
-                        style: AppTextStyles.bodyBold.copyWith(color: AppColors.error)),
+                    Expanded(
+                      child: Text.rich(TextSpan(style: AppTextStyles.body, children: [
+                        TextSpan(text: 'Hint ${h.level}/${h.totalLevels}: ', style: AppTextStyles.bodyBold),
+                        TextSpan(text: h.hint),
+                      ])),
+                    ),
                   ],
                 ),
-                const SizedBox(height: AppDimensions.spacingSm),
-                Text.rich(
-                  TextSpan(
-                    style: AppTextStyles.body,
-                    children: [
-                      const TextSpan(text: 'Expected: '),
-                      TextSpan(
-                        text: '$_expected\n',
-                        style: const TextStyle(
-                            color: AppColors.success, fontWeight: FontWeight.w700),
-                      ),
-                      const TextSpan(text: 'Received: '),
-                      TextSpan(
-                        text: _received,
-                        style: const TextStyle(
-                            color: AppColors.error, fontWeight: FontWeight.w700),
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-          ),
+              ),
+          ],
+          if (_actionError != null) ...[
+            const SizedBox(height: AppDimensions.spacingMd),
+            Text(_actionError!, style: AppTextStyles.body.copyWith(color: AppColors.warning)),
+          ],
           const SizedBox(height: AppDimensions.spacingLg),
-          TextField(
-            controller: _noteController,
-            style: AppTextStyles.body,
-            decoration: const InputDecoration(
-              labelText: 'Your note (optional)',
-              hintText: 'What do you think is wrong?',
-              prefixIcon: Icon(Icons.chat_bubble_outline_rounded,
-                  color: AppColors.textHint, size: 20),
+          if (_isSubmitting)
+            Padding(
+              padding: const EdgeInsets.only(bottom: AppDimensions.spacingSm),
+              child: Text('Compiling and testing your fix in the sandbox. This can take up to 30 seconds.',
+                  style: AppTextStyles.caption),
             ),
-          ),
-          const SizedBox(height: AppDimensions.spacingLg),
           Row(
             children: [
               Expanded(
                 flex: 3,
                 child: AppButton(
-                  label: 'Submit Fix',
+                  label: _isSubmitting ? 'Running...' : 'Submit Fix',
                   icon: Icons.play_arrow_rounded,
                   isLoading: _isSubmitting,
                   onPressed: _submitFix,
                 ),
               ),
-              const SizedBox(width: AppDimensions.spacingMd),
-              Expanded(
-                flex: 3,
-                child: AppButton(
-                  label: 'Need a Hint?',
-                  icon: Icons.auto_awesome_rounded,
-                  outlined: true,
-                  isLoading: _isHintLoading,
-                  onPressed: _needAHint,
+              if (ex.hintCount > 0) ...[
+                const SizedBox(width: AppDimensions.spacingMd),
+                Expanded(
+                  flex: 3,
+                  child: AppButton(
+                    label: _hintsLeft ? 'Need a Hint?' : 'No more hints',
+                    icon: Icons.auto_awesome_rounded,
+                    outlined: true,
+                    isLoading: _isHintLoading,
+                    onPressed: _hintsLeft ? _needAHint : null,
+                  ),
                 ),
-              ),
+              ],
             ],
           ),
         ],
@@ -306,7 +394,100 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
     );
   }
 
-  Widget _buildResult(BuildContext context) {
+  Widget _buildFailure(DebugAttemptResult a) {
+    final failed = a.testsTotal - a.testsPassed;
+    final String title;
+    switch (a.status) {
+      case 'COMPILATION_ERROR':
+        title = 'Your fix does not compile.';
+        break;
+      case 'RUNTIME_ERROR':
+        title = 'Your fix crashed while running.';
+        break;
+      case 'TIMEOUT':
+        title = 'Your fix timed out.';
+        break;
+      default:
+        title = 'Your fix failed $failed of ${a.testsTotal} test${a.testsTotal == 1 ? '' : 's'}.';
+    }
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(AppDimensions.spacingMd),
+      decoration: BoxDecoration(
+        color: AppColors.error.withOpacity(0.08),
+        borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+        border: Border.all(color: AppColors.error.withOpacity(0.6)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.error_outline_rounded, color: AppColors.error, size: 18),
+              const SizedBox(width: AppDimensions.spacingSm),
+              Expanded(child: Text(title, style: AppTextStyles.bodyBold.copyWith(color: AppColors.error))),
+            ],
+          ),
+          if (a.errorCategory.isNotEmpty) ...[
+            const SizedBox(height: 4),
+            Text('Error category: ${_titleCase(a.errorCategory.replaceAll('_', ' '))}', style: AppTextStyles.caption),
+          ],
+          const SizedBox(height: AppDimensions.spacingSm),
+          for (var i = 0; i < a.cases.length; i++)
+            DebugResultCard(
+              label: a.cases[i].hidden ? 'Hidden test ${a.cases[i].number}' : 'Test ${a.cases[i].number}',
+              passed: a.cases[i].passed,
+              detail: _caseDetail(a.cases[i]),
+              showDivider: i != a.cases.length - 1,
+            ),
+          if (a.errorMessage.trim().isNotEmpty) ...[
+            const SizedBox(height: AppDimensions.spacingSm),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.spacingSm + 4),
+              decoration: BoxDecoration(color: AppColors.background, borderRadius: BorderRadius.circular(AppDimensions.radiusSm)),
+              child: SelectableText(
+                a.errorMessage.trim(),
+                style: TextStyle(fontFamily: AppTextStyles.monoFamily, fontSize: 12, color: AppColors.error, height: 1.5),
+              ),
+            ),
+          ],
+          if (a.consecutiveFailures >= 2 || a.persistentWeakness) ...[
+            const SizedBox(height: AppDimensions.spacingMd),
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.all(AppDimensions.spacingMd),
+              decoration: BoxDecoration(
+                color: AppColors.btnAccentPurple.withOpacity(0.1),
+                borderRadius: BorderRadius.circular(AppDimensions.radiusMd),
+                border: Border.all(color: AppColors.btnAccentPurple.withOpacity(0.5)),
+              ),
+              child: Row(
+                children: [
+                  const Icon(Icons.track_changes_rounded, color: AppColors.btnAccentPurple, size: 18),
+                  const SizedBox(width: AppDimensions.spacingSm),
+                  Expanded(
+                    child: Text(
+                      a.persistentWeakness
+                          ? '${a.consecutiveFailures} misses in a row: we flagged this as a weak spot. Take a hint or review the diagnosis before another try.'
+                          : '${a.consecutiveFailures} misses in a row. A hint or the diagnosis may help.',
+                      style: AppTextStyles.caption,
+                    ),
+                  ),
+                  InkWell(
+                    onTap: () => Navigator.of(context).pushNamed(RouteNames.aiFeedback),
+                    child: const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+
+  Widget _buildResult(BuildContext context, DebugExerciseModel ex, DebugAttemptResult a) {
     return GlowCard(
       padding: const EdgeInsets.all(AppDimensions.spacingLg),
       child: Column(
@@ -318,10 +499,7 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
                 width: 44,
                 height: 44,
                 alignment: Alignment.center,
-                decoration: BoxDecoration(
-                  shape: BoxShape.circle,
-                  border: Border.all(color: AppColors.success),
-                ),
+                decoration: BoxDecoration(shape: BoxShape.circle, border: Border.all(color: AppColors.success)),
                 child: const Icon(Icons.check_rounded, color: AppColors.success, size: 22),
               ),
               const SizedBox(width: AppDimensions.spacingMd),
@@ -329,9 +507,12 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text('DEBUG RESULT',
-                        style: AppTextStyles.heading2.copyWith(color: AppColors.accentCyan)),
-                    Text('Your fix worked! All test cases passed.', style: AppTextStyles.body),
+                    Text('DEBUG RESULT', style: AppTextStyles.heading2.copyWith(color: AppColors.accentCyan)),
+                    Text(
+                      'Your fix worked! ${a.testsPassed}/${a.testsTotal} test cases passed'
+                      '${a.hintsUsed > 0 ? ' (${a.hintsUsed} hint${a.hintsUsed == 1 ? '' : 's'} used)' : ''}.',
+                      style: AppTextStyles.body,
+                    ),
                   ],
                 ),
               ),
@@ -351,9 +532,12 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
               children: [
                 Text('Test Results', style: AppTextStyles.bodyBold),
                 const SizedBox(height: AppDimensions.spacingSm),
-                const DebugResultCard(label: 'Test 1'),
-                const DebugResultCard(label: 'Test 2'),
-                const DebugResultCard(label: 'Test 3', showDivider: false),
+                for (var i = 0; i < a.cases.length; i++)
+                  DebugResultCard(
+                    label: a.cases[i].hidden ? 'Hidden test ${a.cases[i].number}' : 'Test ${a.cases[i].number}',
+                    passed: a.cases[i].passed,
+                    showDivider: i != a.cases.length - 1,
+                  ),
               ],
             ),
           ),
@@ -371,11 +555,9 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
               children: [
                 Row(
                   children: [
-                    const Icon(Icons.psychology_alt_rounded,
-                        color: AppColors.btnAccentPurple, size: 20),
+                    const Icon(Icons.psychology_alt_rounded, color: AppColors.btnAccentPurple, size: 20),
                     const SizedBox(width: AppDimensions.spacingSm),
                     Expanded(child: Text("What's Next?", style: AppTextStyles.bodyBold)),
-                    const Icon(Icons.chevron_right_rounded, color: AppColors.textHint),
                   ],
                 ),
                 const SizedBox(height: 4),
@@ -401,8 +583,7 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
                         icon: Icons.fingerprint_rounded,
                         label: 'Byte DNA',
                         caption: 'View your strengths, patterns, and progress.',
-                        onTap: () =>
-                            Navigator.of(context).pushNamed(RouteNames.byteDnaSummary),
+                        onTap: () => Navigator.of(context).pushNamed(RouteNames.byteDnaSummary),
                       ),
                     ),
                   ],
@@ -422,7 +603,8 @@ class _DebuggingScreenState extends State<DebuggingScreen> {
           AppButton(
             label: 'Continue',
             icon: Icons.arrow_forward_rounded,
-            onPressed: () => Navigator.of(context).pushReplacementNamed(RouteNames.dashboard),
+            onPressed: () => Navigator.of(context)
+                .pushReplacementNamed(RouteNames.interviewIntro, arguments: {'conceptId': _conceptId}),
           ),
         ],
       ),

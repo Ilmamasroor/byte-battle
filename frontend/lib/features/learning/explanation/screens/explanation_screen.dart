@@ -1,24 +1,27 @@
 import 'package:flutter/material.dart';
+import '../../data/learning_progress_service.dart';
 import '../../../../app/router/route_names.dart';
 import '../../../../app/theme/app_colors.dart';
 import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/app_button.dart';
-import '../../../../core/widgets/app_snackbar.dart';
 import '../../../../core/widgets/error_view.dart';
 import '../../../../core/widgets/glow_card.dart';
 import '../../../../core/widgets/loading_view.dart';
+import '../../../concepts/data/models/concept_model.dart';
+import '../../../concepts/presentation/state/concept_controller.dart';
 import '../../../concepts/presentation/widgets/concept_header.dart';
 import '../../../concepts/presentation/widgets/concept_progress.dart';
 import '../data/models/canonical_knowledge_model.dart';
+import '../data/models/explanation_model.dart';
 import '../presentation/state/explanation_controller.dart';
-import '../widgets/explanation_card.dart';
+import '../../../../core/widgets/ai/companion_says.dart';
+import '../../../../core/widgets/ai/story_deck.dart';
+import '../../../../core/widgets/brand/bit_mascot.dart';
 
-/// "Understand" stage of the concept learning flow — AI-generated
-/// "Key Points"/"Rules"/"Example" content (from
-/// `POST /api/ai/canonical-knowledge`), an "Ask for Clarification"
-/// affordance, and a "Next: Visualize" CTA that hands off to the
-/// Visualize stage.
+/// "Understand" stage of the concept learning flow: the concept's real metadata (`GET /api/concepts/{id}`), the
+/// grounded + personalized AI explanation (`POST /api/ai/explanation`), the canonical Key Points / Rules /
+/// Example (`POST /api/ai/canonical-knowledge`), and a "Next: Visualize" CTA.
 class ExplanationScreen extends StatefulWidget {
   final String conceptId;
 
@@ -30,8 +33,9 @@ class ExplanationScreen extends StatefulWidget {
 
 class _ExplanationScreenState extends State<ExplanationScreen> {
   final _controller = ExplanationController.instance;
+  final _concept = ConceptController();
 
-  bool _simplified = false;
+  bool _overview = false;
   bool _showKeyPoints = false;
   bool _showRules = false;
   bool _showExample = false;
@@ -39,7 +43,19 @@ class _ExplanationScreenState extends State<ExplanationScreen> {
   @override
   void initState() {
     super.initState();
-    _controller.loadCanonicalKnowledge(widget.conceptId);
+    _concept.load(widget.conceptId);
+    _controller.load(widget.conceptId);
+  }
+
+  @override
+  void dispose() {
+    _concept.dispose();
+    super.dispose();
+  }
+
+  void _retry() {
+    _concept.load(widget.conceptId, force: true);
+    _controller.load(widget.conceptId, force: true);
   }
 
   @override
@@ -54,43 +70,43 @@ class _ExplanationScreenState extends State<ExplanationScreen> {
         ),
         title: const Text('BYTE BATTLE', style: AppTextStyles.heading2),
         centerTitle: true,
-        actions: const [
-          Padding(
-            padding: EdgeInsets.only(right: AppDimensions.spacingMd),
-            child: Center(
-              child: Icon(Icons.notifications_none_rounded, color: AppColors.textPrimary),
-            ),
-          ),
-        ],
       ),
       body: SafeArea(
         child: ListenableBuilder(
-          listenable: _controller,
+          listenable: Listenable.merge([_controller, _concept]),
           builder: (context, _) {
-            final knowledge = _controller.knowledge;
+            final hasContent = _controller.knowledge != null || _controller.explanation != null;
 
-            if (_controller.isLoading && knowledge == null) {
-              return const LoadingView(message: 'Fetching key points, rules & examples...');
+            if ((_controller.isLoading || _concept.isLoading) && !hasContent) {
+              return const LoadingView(message: 'Preparing your explanation...');
             }
-            if (_controller.errorMessage != null && knowledge == null) {
-              return ErrorView(
-                message: _controller.errorMessage!,
-                onRetry: () =>
-                    _controller.loadCanonicalKnowledge(widget.conceptId, force: true),
-              );
+            if (_concept.concept == null && _concept.errorMessage != null) {
+              return ErrorView(message: _concept.errorMessage!, onRetry: _retry);
+            }
+            if (_controller.failedCompletely) {
+              return ErrorView(message: _controller.errorMessage!, onRetry: _retry);
             }
 
             return _Content(
               conceptId: widget.conceptId,
-              knowledge: knowledge,
-              simplified: _simplified,
-              onToggleSimplified: (v) => setState(() => _simplified = v),
+              concept: _concept.concept,
+              explanation: _controller.explanation,
+              explanationError: _controller.explanationError,
+              knowledge: _controller.knowledge,
+              knowledgeError: _controller.knowledgeError,
+              refreshing: _controller.isLoading,
+              overview: _overview,
+              onToggleOverview: (v) => setState(() => _overview = v),
               showKeyPoints: _showKeyPoints,
               onToggleKeyPoints: () => setState(() => _showKeyPoints = !_showKeyPoints),
               showRules: _showRules,
               onToggleRules: () => setState(() => _showRules = !_showRules),
               showExample: _showExample,
               onToggleExample: () => setState(() => _showExample = !_showExample),
+              onRegenerate: () {
+                setState(() => _overview = false);
+                _controller.load(widget.conceptId, force: true);
+              },
             );
           },
         ),
@@ -100,46 +116,53 @@ class _ExplanationScreenState extends State<ExplanationScreen> {
 }
 
 class _Content extends StatelessWidget {
-  // TODO: replace with real concept metadata once GET /api/concepts/{id}
-  // (or equivalent) is available — canonical-knowledge only returns
-  // keyPoints/rules/examples, not the concept's title/description.
-  static const _title = 'Loop Boundaries';
-  static const _difficulty = 'Medium';
-  static const _tags = ['Loops', 'Control Flow', 'Logic'];
-  static const _conceptExplanation =
-      'Loop boundaries define the starting point, ending point, and the '
-      'condition under which a loop will continue or stop. They help '
-      'control how many times a block of code is executed, preventing '
-      'infinite loops or skipped iterations.';
-  static const _simplifiedExplanation =
-      "Think of a loop like walking down a hallway of numbered doors. "
-      "The boundary tells you which door to start at and which door to "
-      "stop at — get it wrong and you either miss doors or keep walking "
-      "forever.";
-
   final String conceptId;
+  final ConceptModel? concept;
+  final ExplanationModel? explanation;
+  final String? explanationError;
   final CanonicalKnowledgeModel? knowledge;
-  final bool simplified;
-  final ValueChanged<bool> onToggleSimplified;
+  final String? knowledgeError;
+  final bool refreshing;
+  final bool overview;
+  final ValueChanged<bool> onToggleOverview;
   final bool showKeyPoints;
   final VoidCallback onToggleKeyPoints;
   final bool showRules;
   final VoidCallback onToggleRules;
   final bool showExample;
   final VoidCallback onToggleExample;
+  final VoidCallback onRegenerate;
 
   const _Content({
     required this.conceptId,
+    required this.concept,
+    required this.explanation,
+    required this.explanationError,
     required this.knowledge,
-    required this.simplified,
-    required this.onToggleSimplified,
+    required this.knowledgeError,
+    required this.refreshing,
+    required this.overview,
+    required this.onToggleOverview,
     required this.showKeyPoints,
     required this.onToggleKeyPoints,
     required this.showRules,
     required this.onToggleRules,
     required this.showExample,
     required this.onToggleExample,
+    required this.onRegenerate,
   });
+
+  String get _explanationText {
+    final e = explanation;
+    if (e != null && e.content.isNotEmpty) return e.content;
+    if (explanationError != null) return 'The AI explanation could not be loaded: $explanationError';
+    return 'No explanation is available for this concept yet.';
+  }
+
+  String get _overviewText {
+    final d = concept?.description?.trim() ?? '';
+    return d.isEmpty ? 'No overview is available for this concept yet.' : d;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,10 +171,9 @@ class _Content extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const ConceptHeader(
-            title: _title,
-            difficulty: _difficulty,
-            tags: _tags,
+          ConceptHeader(
+            title: concept?.name ?? 'Concept',
+            difficulty: difficultyLabel(concept?.difficulty),
           ),
           const SizedBox(height: AppDimensions.spacingLg),
           ConceptProgress(
@@ -164,13 +186,27 @@ class _Content extends StatelessWidget {
             },
           ),
           const SizedBox(height: AppDimensions.spacingLg),
-          ExplanationCard(
-            simplified: simplified,
-            onToggle: onToggleSimplified,
-            conceptExplanation: _conceptExplanation,
-            simplifiedExplanation: _simplifiedExplanation,
+          CompanionSays(
+            mood: BitMood.curious,
+            text: explanation?.fallback == true
+                ? 'My AI brain is offline, so here is the basic version. Tap Explain again in a moment.'
+                : 'Here is ${concept?.name ?? 'this idea'} in a few quick cards${explanation?.personalized == true ? ', shaped around how you learn' : ''}. Tap through at your own pace.',
           ),
           const SizedBox(height: AppDimensions.spacingMd),
+          Row(
+            children: [
+              _ModeChip(label: 'Story cards', selected: !overview, onTap: () => onToggleOverview(false)),
+              const SizedBox(width: 8),
+              _ModeChip(label: 'Quick overview', selected: overview, onTap: () => onToggleOverview(true)),
+            ],
+          ),
+          const SizedBox(height: AppDimensions.spacingMd),
+          StoryDeck(
+            key: ValueKey('${overview}_${(overview ? _overviewText : _explanationText).hashCode}'),
+            cards: StoryDeck.fromText(overview ? _overviewText : _explanationText),
+          ),
+          const SizedBox(height: AppDimensions.spacingMd),
+          if (knowledgeError != null && knowledge == null) Text('Key points could not be loaded: $knowledgeError', style: AppTextStyles.caption),
           _ExpandableSection(
             icon: Icons.lightbulb_outline_rounded,
             label: 'Key Points',
@@ -195,6 +231,7 @@ class _Content extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if ((knowledge?.examples ?? const []).isEmpty) Text('Nothing here yet.', style: AppTextStyles.caption),
                 for (final example in (knowledge?.examples ?? const []))
                   Container(
                     width: double.infinity,
@@ -207,7 +244,7 @@ class _Content extends StatelessWidget {
                     child: Text(
                       example,
                       style: AppTextStyles.body.copyWith(
-                        fontFamily: 'monospace',
+                        fontFamily: AppTextStyles.monoFamily,
                         color: AppColors.accentCyan,
                       ),
                     ),
@@ -219,8 +256,7 @@ class _Content extends StatelessWidget {
           GlowCard(
             child: Row(
               children: [
-                const Icon(Icons.chat_bubble_outline_rounded,
-                    color: AppColors.primaryLight, size: 20),
+                const Icon(Icons.chat_bubble_outline_rounded, color: AppColors.primaryLight, size: 20),
                 const SizedBox(width: AppDimensions.spacingMd),
                 Expanded(
                   child: Column(
@@ -228,7 +264,7 @@ class _Content extends StatelessWidget {
                     children: [
                       Text('Still confused?', style: AppTextStyles.bodyBold),
                       Text(
-                        'Ask our AI for a simpler explanation or specific help.',
+                        'Ask our AI to explain it again, from a fresh angle.',
                         style: AppTextStyles.caption,
                       ),
                     ],
@@ -236,14 +272,9 @@ class _Content extends StatelessWidget {
                 ),
                 const SizedBox(width: AppDimensions.spacingSm),
                 TextButton.icon(
-                  onPressed: () {
-                    onToggleSimplified(true);
-                    AppSnackBar.show(context, 'Here\'s a simpler take on it above.');
-                  },
-                  icon: const Icon(Icons.auto_awesome_rounded,
-                      size: 16, color: AppColors.accentCyan),
-                  label: const Text('Ask for Clarification',
-                      style: TextStyle(color: AppColors.accentCyan)),
+                  onPressed: refreshing ? null : onRegenerate,
+                  icon: const Icon(Icons.auto_awesome_rounded, size: 16, color: AppColors.accentCyan),
+                  label: Text(refreshing ? 'Thinking...' : 'Explain Again', style: const TextStyle(color: AppColors.accentCyan)),
                 ),
               ],
             ),
@@ -252,10 +283,14 @@ class _Content extends StatelessWidget {
           AppButton(
             label: 'Next: Visualize',
             icon: Icons.arrow_forward_rounded,
-            onPressed: () => Navigator.of(context).pushReplacementNamed(
-              RouteNames.relate,
-              arguments: {'conceptId': conceptId},
-            ),
+            onPressed: () async {
+              await LearningProgressService.completeIfAt(conceptId, 'UNDERSTAND');
+              if (!context.mounted) return;
+              Navigator.of(context).pushReplacementNamed(
+                RouteNames.explore,
+                arguments: {'conceptId': conceptId},
+              );
+            },
           ),
         ],
       ),
@@ -348,6 +383,30 @@ class _ExpandableSection extends StatelessWidget {
               child: child,
             ),
         ],
+      ),
+    );
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  final String label;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ModeChip({required this.label, required this.selected, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+        decoration: BoxDecoration(
+          color: selected ? AppColors.primary : AppColors.surface,
+          borderRadius: BorderRadius.circular(AppDimensions.radiusPill),
+          border: Border.all(color: selected ? AppColors.primary : AppColors.border),
+        ),
+        child: Text(label, style: AppTextStyles.caption.copyWith(color: selected ? AppColors.onAccent : AppColors.textSecondary, fontWeight: FontWeight.w700)),
       ),
     );
   }

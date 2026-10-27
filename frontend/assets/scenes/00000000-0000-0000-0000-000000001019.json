@@ -1,0 +1,315 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001019",
+ "title": "Hash maps and sets: jump straight to the slot",
+ "kind": "structure",
+ "intro": "How can a map find a key without checking every entry? A hash turns the key into a bucket number.",
+ "predict": {
+  "question": "A hash map holds 1,000,000 entries. About how many entries does get(key) look at, on average?",
+  "options": [
+   "About 500,000",
+   "About 20",
+   "About 1"
+  ],
+  "answer": 2,
+  "reveal": "The key is hashed to a bucket number, so get jumps right there. Average cost is O(1), no scanning."
+ },
+ "takeaway": "A hash function turns a key into a bucket index, so put and get jump straight to the slot. A set is just keys, and it rejects duplicates.",
+ "code": [
+  "map[\"cat\"] = 3;",
+  "map[\"dog\"] = 5;",
+  "map[\"ant\"] = 2;",
+  "x = map[\"dog\"];",
+  "set.add(\"cat\");"
+ ],
+ "steps": [
+  {
+   "say": "A hash map stores key and value pairs in buckets, numbered 0 to 3. A hash function picks the bucket for each key.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "hash = letter sum, then % 4"
+    }
+   ],
+   "at": -1,
+   "note": "hash(key) = letter sum % 4"
+  },
+  {
+   "say": "put cat = 3. Letters c, a, t are 3 + 1 + 20 = 24. 24 % 4 = 0, so cat goes in bucket 0.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "hash = letter sum, then % 4"
+    }
+   ],
+   "at": 0,
+   "note": "cat -> 24 -> 24 % 4 = 0"
+  },
+  {
+   "say": "put dog = 5. d + o + g = 4 + 15 + 7 = 26. 26 % 4 = 2, so bucket 2.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "hash = letter sum, then % 4"
+    }
+   ],
+   "at": 1,
+   "note": "dog -> 26 -> 26 % 4 = 2"
+  },
+  {
+   "say": "put ant = 2. a + n + t = 1 + 14 + 20 = 35. 35 % 4 = 3, so bucket 3.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "ant:2",
+         "s": "cur"
+        }
+       ]
+      }
+     ],
+     "caption": "hash = letter sum, then % 4"
+    }
+   ],
+   "at": 2,
+   "note": "ant -> 35 -> 35 % 4 = 3"
+  },
+  {
+   "say": "get dog: hash it again, get 2, open bucket 2 and read 5. Nothing else was checked.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "found"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "ant:2",
+         "s": "dim"
+        }
+       ]
+      }
+     ],
+     "caption": "hash = letter sum, then % 4"
+    }
+   ],
+   "at": 3,
+   "note": "dog -> 2 -> value 5"
+  },
+  {
+   "say": "A Set is a map with only keys. add(cat) hashes to bucket 0 and stores it. Here is an empty set getting its first key.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "set (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "same hash function"
+    }
+   ],
+   "at": 4,
+   "note": "set.add(cat) -> bucket 0"
+  },
+  {
+   "say": "add(cat) again. Bucket 0 already holds cat, so the set rejects the duplicate and stays the same size.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "set (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat",
+         "s": "bad"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "duplicate rejected"
+    }
+   ],
+   "at": 4,
+   "note": "cat already there -> ignored"
+  },
+  {
+   "say": "The payoff: scanning a list of a million items checks them all, while a hash jumps to one bucket.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "lookups in 1,000,000 items",
+     "bars": [
+      {
+       "label": "list scan",
+       "value": 1.0,
+       "text": "1,000,000",
+       "s": "swap"
+      },
+      {
+       "label": "hash",
+       "value": 0.01,
+       "text": "~1",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  }
+ ]
+}

@@ -4,11 +4,11 @@ import '../../../../app/theme/app_dimensions.dart';
 import '../../../../app/theme/app_text_styles.dart';
 import '../../../../core/widgets/glow_card.dart';
 
-/// Status of one step on [RoadmapScreen] — same completed/current/locked
+/// Status of one step on [RoadmapScreen] — same completed/current/not-started
 /// idea as `ConceptProgress`'s `isDone`/`isActive` pattern, just
 /// expressed as an enum here since each step also needs its own status
 /// label text (not just an icon).
-enum RoadmapStepStatus { completed, current, locked }
+enum RoadmapStepStatus { completed, current, notStarted }
 
 /// One row on the vertical curriculum roadmap (e.g. "Java", "Data
 /// Structures & Algorithms"...) — a status icon, the domain name and a
@@ -34,8 +34,8 @@ class RoadmapStep extends StatelessWidget {
         return Icons.check_rounded;
       case RoadmapStepStatus.current:
         return Icons.bolt_rounded;
-      case RoadmapStepStatus.locked:
-        return Icons.lock_outline_rounded;
+      case RoadmapStepStatus.notStarted:
+        return Icons.radio_button_unchecked_rounded;
     }
   }
 
@@ -45,8 +45,8 @@ class RoadmapStep extends StatelessWidget {
         return 'Completed';
       case RoadmapStepStatus.current:
         return 'In Progress';
-      case RoadmapStepStatus.locked:
-        return 'Locked';
+      case RoadmapStepStatus.notStarted:
+        return 'Not Started';
     }
   }
 
@@ -56,22 +56,21 @@ class RoadmapStep extends StatelessWidget {
         return AppColors.success;
       case RoadmapStepStatus.current:
         return AppColors.accentCyan;
-      case RoadmapStepStatus.locked:
+      case RoadmapStepStatus.notStarted:
         return AppColors.textHint;
     }
   }
 
   @override
   Widget build(BuildContext context) {
-    final isLocked = status == RoadmapStepStatus.locked;
     final color = _color;
 
     return InkWell(
-      onTap: isLocked ? null : onTap,
+      onTap: onTap,
       borderRadius: BorderRadius.circular(AppDimensions.radiusLg),
       child: GlowCard(
         glowColor: color,
-        borderColor: isLocked ? AppColors.border : color,
+        borderColor: status == RoadmapStepStatus.notStarted ? AppColors.border : color,
         child: Row(
           children: [
             Container(
@@ -115,10 +114,7 @@ class RoadmapStep extends StatelessWidget {
                 ],
               ),
             ),
-            if (!isLocked)
-              Icon(Icons.chevron_right_rounded, color: color)
-            else
-              const Icon(Icons.lock_outline_rounded, color: AppColors.textHint, size: 18),
+            Icon(Icons.chevron_right_rounded, color: color),
           ],
         ),
       ),

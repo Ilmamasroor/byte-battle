@@ -13,6 +13,7 @@ class RouteNames {
   static const String conceptList = '/concept-list';
   static const String conceptDetail = '/concept-detail';
   static const String learningJourney = '/learning-journey';
+  static const String readiness = '/readiness';
   static const String domainList = '/domain-list';
   static const String topicList = '/topic-list';
   static const String roadmap = '/roadmap';

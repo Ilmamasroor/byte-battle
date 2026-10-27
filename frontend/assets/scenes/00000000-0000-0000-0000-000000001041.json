@@ -1,0 +1,497 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001041",
+ "title": "IP addresses and subnet masks, worked by hand",
+ "kind": "table",
+ "intro": "An IPv4 address is just 32 bits. Let's split 192.168.1.130 into a network part and a host part. How many hosts fit in a /24?",
+ "predict": {
+  "question": "How many usable host addresses does a /24 network give?",
+  "options": [
+   "256",
+   "254",
+   "255",
+   "24"
+  ],
+  "answer": 1,
+  "reveal": "8 host bits give 2^8 = 256 addresses. The all-zeros one names the network and the all-ones one is the broadcast, so 254 are usable."
+ },
+ "takeaway": "The mask marks network bits (1s) and host bits (0s). With h host bits you get 2^h - 2 usable hosts.",
+ "steps": [
+  {
+   "say": "The address 192.168.1.130 is four octets (8 bits each). Written in decimal for humans, but the computer sees 32 bits.",
+   "query": {
+    "text": "IP address 192.168.1.130",
+    "focus": ""
+   },
+   "tables": [
+    {
+     "name": "Address",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "192",
+       "11000000"
+      ],
+      [
+       "2",
+       "168",
+       "10101000"
+      ],
+      [
+       "3",
+       "1",
+       "00000001"
+      ],
+      [
+       "4",
+       "130",
+       "10000010"
+      ]
+     ],
+     "hlCols": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Convert the last octet: 130 = 128 + 2, so the bits are 1000 0010. The others convert the same way.",
+   "tables": [
+    {
+     "name": "Address",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "192",
+       "11000000"
+      ],
+      [
+       "2",
+       "168",
+       "10101000"
+      ],
+      [
+       "3",
+       "1",
+       "00000001"
+      ],
+      [
+       "4",
+       "130",
+       "10000010"
+      ]
+     ],
+     "hl": [
+      3
+     ],
+     "hlCols": [
+      2
+     ]
+    }
+   ],
+   "note": "130 = 128 + 2 = 10000010"
+  },
+  {
+   "say": "The mask /24 means the first 24 bits are 1s. In octets that is 255.255.255.0: three full octets of ones, then eight zeros.",
+   "query": {
+    "text": "Mask /24 = 255.255.255.0",
+    "focus": ""
+   },
+   "tables": [
+    {
+     "name": "Mask /24",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "255",
+       "11111111"
+      ],
+      [
+       "2",
+       "255",
+       "11111111"
+      ],
+      [
+       "3",
+       "255",
+       "11111111"
+      ],
+      [
+       "4",
+       "0",
+       "00000000"
+      ]
+     ],
+     "hl": [
+      0,
+      1,
+      2
+     ],
+     "dim": [
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Where the mask has 1s, the address bits are the NETWORK part (first three octets). Where it has 0s, they are the HOST part (last octet).",
+   "tables": [
+    {
+     "name": "Address",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "192",
+       "11000000"
+      ],
+      [
+       "2",
+       "168",
+       "10101000"
+      ],
+      [
+       "3",
+       "1",
+       "00000001"
+      ],
+      [
+       "4",
+       "130",
+       "10000010"
+      ]
+     ],
+     "hl": [
+      0,
+      1,
+      2
+     ],
+     "dim": [
+      3
+     ]
+    },
+    {
+     "name": "Mask /24",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "255",
+       "11111111"
+      ],
+      [
+       "2",
+       "255",
+       "11111111"
+      ],
+      [
+       "3",
+       "255",
+       "11111111"
+      ],
+      [
+       "4",
+       "0",
+       "00000000"
+      ]
+     ],
+     "hl": [
+      0,
+      1,
+      2
+     ],
+     "dim": [
+      3
+     ]
+    }
+   ]
+  },
+  {
+   "say": "To get the network address, AND each address bit with the mask bit. 130 AND 0 = 0, and the other octets stay as they are.",
+   "query": {
+    "text": "network = address AND mask",
+    "focus": "AND"
+   },
+   "tables": [
+    {
+     "name": "Address AND mask",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "192",
+       "11000000"
+      ],
+      [
+       "2",
+       "168",
+       "10101000"
+      ],
+      [
+       "3",
+       "1",
+       "00000001"
+      ],
+      [
+       "4",
+       "0",
+       "00000000"
+      ]
+     ],
+     "hl": [
+      3
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "what",
+     "value"
+    ],
+    "rows": [
+     [
+      "Network",
+      "192.168.1.0"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "There are 8 host bits. That gives 2^8 = 256 addresses, but all-zeros (.0) is the network name and all-ones (.255) is the broadcast.",
+   "tables": [
+    {
+     "name": "Host part (8 bits)",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "all 0s",
+       "0",
+       "00000000"
+      ],
+      [
+       "all 1s",
+       "255",
+       "11111111"
+      ]
+     ],
+     "hl": [
+      0,
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "what",
+     "value"
+    ],
+    "rows": [
+     [
+      "Network",
+      "192.168.1.0"
+     ],
+     [
+      "Broadcast",
+      "192.168.1.255"
+     ],
+     [
+      "Usable",
+      "254 (.1 - .254)"
+     ]
+    ],
+    "hl": [
+     2
+    ]
+   }
+  },
+  {
+   "say": "So 256 - 2 = 254 usable hosts. Our address .130 is one of them. Now try a longer mask: /26.",
+   "query": {
+    "text": "Mask /26 = 255.255.255.192",
+    "focus": ""
+   },
+   "tables": [
+    {
+     "name": "Mask /26",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "255",
+       "11111111"
+      ],
+      [
+       "2",
+       "255",
+       "11111111"
+      ],
+      [
+       "3",
+       "255",
+       "11111111"
+      ],
+      [
+       "4",
+       "192",
+       "11000000"
+      ]
+     ],
+     "hl": [
+      0,
+      1,
+      2,
+      3
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "what",
+     "value"
+    ],
+    "rows": [
+     [
+      "Host bits",
+      "6"
+     ],
+     [
+      "Usable",
+      "2^6 - 2 = 62"
+     ]
+    ]
+   }
+  },
+  {
+   "say": "Last octet of the mask is 1100 0000 = 192. Now 130 = 1000 0010 AND 1100 0000 = 1000 0000 = 128.",
+   "query": {
+    "text": "130 AND 192 = 128",
+    "focus": "AND"
+   },
+   "tables": [
+    {
+     "name": "Address AND /26",
+     "cols": [
+      "octet",
+      "decimal",
+      "binary"
+     ],
+     "rows": [
+      [
+       "1",
+       "192",
+       "11000000"
+      ],
+      [
+       "2",
+       "168",
+       "10101000"
+      ],
+      [
+       "3",
+       "1",
+       "00000001"
+      ],
+      [
+       "4",
+       "128",
+       "10000000"
+      ]
+     ],
+     "hl": [
+      3
+     ]
+    }
+   ],
+   "note": "10000010 AND 11000000 = 10000000"
+  },
+  {
+   "say": "So .130 lives in network 192.168.1.128/26 with 62 usable hosts. Its broadcast is 128 + 63 = .191. Same address, smaller network.",
+   "result": {
+    "cols": [
+     "what",
+     "value"
+    ],
+    "rows": [
+     [
+      "Network",
+      "192.168.1.128"
+     ],
+     [
+      "Broadcast",
+      "192.168.1.191"
+     ],
+     [
+      "Usable",
+      "62 (.129 - .190)"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "More mask bits means fewer host bits. Each extra bit halves the hosts: /24 gives 254, /25 gives 126, /26 gives 62.",
+   "result": {
+    "cols": [
+     "what",
+     "value"
+    ],
+    "rows": [
+     [
+      "/24",
+      "254 hosts"
+     ],
+     [
+      "/25",
+      "126 hosts"
+     ],
+     [
+      "/26",
+      "62 hosts"
+     ]
+    ],
+    "hl": [
+     2
+    ]
+   }
+  }
+ ]
+}

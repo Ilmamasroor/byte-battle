@@ -9,11 +9,15 @@ class AnalogyModel {
   final String connection;
   final String memoryTip;
 
+  /// True when the AI service was unavailable and the backend returned a local template.
+  final bool fallback;
+
   const AnalogyModel({
     required this.concept,
     required this.analogy,
     required this.connection,
     required this.memoryTip,
+    this.fallback = false,
   });
 
   factory AnalogyModel.fromJson(Map<String, dynamic> json) {
@@ -24,6 +28,7 @@ class AnalogyModel {
       analogy: json['analogy']?.toString() ?? '',
       connection: json['connection']?.toString() ?? '',
       memoryTip: json['memoryTip']?.toString() ?? '',
+      fallback: json['fallback'] == true,
     );
   }
 
