@@ -1,0 +1,1349 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001022",
+ "title": "BFS and DFS: wide versus deep",
+ "kind": "structure",
+ "intro": "Two ways to explore a graph from A. One spreads out like ripples, the other dives deep first.",
+ "predict": {
+  "question": "DFS from A, trying neighbors in alphabetical order. Which node does it visit LAST?",
+  "options": [
+   "B",
+   "C",
+   "F"
+  ],
+  "answer": 1,
+  "reveal": "DFS dives A, B, D, then E, F, and only then reaches C, even though C is right next to A. BFS visits C second."
+ },
+ "takeaway": "BFS uses a queue and visits level by level. DFS uses a stack and goes as deep as it can before backing up. Both mark visited nodes.",
+ "steps": [
+  {
+   "say": "Graph: A-B, A-C, B-D, B-E, C-F, E-F. We start at A. First, BFS: a queue plus a visited list.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": []
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "BFS: put A in the queue and mark it visited.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "cur"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "A",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "visited = {A}"
+  },
+  {
+   "say": "Take A out. Its unvisited neighbors B and C join the queue and get marked visited.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "compare"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "compare"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "done"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "dequeue A, enqueue B, C"
+  },
+  {
+   "say": "Take B out. A is visited already, so D and E join. Level 1 nodes are finishing and level 2 begins.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "compare"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "compare"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "compare"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "done"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "done"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "done"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "dequeue B, enqueue D, E"
+  },
+  {
+   "say": "Take C out. Its only new neighbor is F, so F joins the queue.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "compare"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "compare"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "compare"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "done"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "done"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "done"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "done"
+      },
+      {
+       "v": "F",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": [
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "dequeue C, enqueue F"
+  },
+  {
+   "say": "D, E, F come out and find nothing unvisited (E sees F already marked). Queue empty. BFS order: A B C D E F, level by level.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "done"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "done"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "done"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "done"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "done"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "done"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "done"
+      },
+      {
+       "v": "F",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "queue",
+     "items": []
+    }
+   ],
+   "at": -1,
+   "note": "order: A B C D E F"
+  },
+  {
+   "say": "Now DFS from A with a stack (the call stack). Push A, mark it visited.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "cur"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "A",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "visit A"
+  },
+  {
+   "say": "Go deep: A's first neighbor is B, then B's first new one is D. Stack grows A, B, D.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "cur"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "idle"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "A -> B -> D"
+  },
+  {
+   "say": "D has no unvisited neighbors, so pop back to B. B's next new neighbor is E. Push E.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "done"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "cur"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "done"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "idle"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "done"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "back to B, then E"
+  },
+  {
+   "say": "From E go to F, then F reaches C. C is next to A but visited last. When C finishes, everything pops. Order: A B D E F C.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.5,
+       "y": 0.1,
+       "s": "done"
+      },
+      {
+       "id": "B",
+       "x": 0.2,
+       "y": 0.45,
+       "s": "done"
+      },
+      {
+       "id": "C",
+       "x": 0.8,
+       "y": 0.45,
+       "s": "cur"
+      },
+      {
+       "id": "D",
+       "x": 0.1,
+       "y": 0.85,
+       "s": "done"
+      },
+      {
+       "id": "E",
+       "x": 0.45,
+       "y": 0.85,
+       "s": "done"
+      },
+      {
+       "id": "F",
+       "x": 0.85,
+       "y": 0.85,
+       "s": "done"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "done"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "D",
+       "s": "done"
+      },
+      {
+       "a": "B",
+       "b": "E",
+       "s": "done"
+      },
+      {
+       "a": "C",
+       "b": "F",
+       "s": "done"
+      },
+      {
+       "a": "E",
+       "b": "F",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "visited",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "C",
+       "s": "done"
+      },
+      {
+       "v": "D",
+       "s": "done"
+      },
+      {
+       "v": "E",
+       "s": "done"
+      },
+      {
+       "v": "F",
+       "s": "done"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "order: A B D E F C"
+  },
+  {
+   "say": "Same graph, same start, different order. BFS finds the closest nodes first, DFS follows one path to its end.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "BFS order",
+     "cells": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "DFS order",
+     "cells": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      },
+      {
+       "v": "E",
+       "s": "idle"
+      },
+      {
+       "v": "F",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "queue = wide, stack = deep"
+  }
+ ]
+}

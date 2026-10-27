@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001036",
+ "battle": {
+  "title": "Page Table Pit Stop",
+  "description": "Translate addresses, dodge fragmentation and race the TLB.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Compared with contiguous allocation, what does paging do about fragmentation?",
+    "options": [
+     "It removes internal and external fragmentation",
+     "It removes external fragmentation but can waste space in a process's last page",
+     "It removes internal fragmentation but causes external fragmentation",
+     "It has no effect on fragmentation"
+    ],
+    "answer": "It removes external fragmentation but can waste space in a process's last page",
+    "explanation": "Any free frame can hold any page, so scattered free frames are all usable and there is no external fragmentation. A process rarely fills its final page exactly, which leaves internal fragmentation.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A system uses 4096-byte pages. What does this program print for the logical address?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int pageSize = 4096;\n        int address = 20000;\n        System.out.println(address / pageSize);\n        System.out.println(address % pageSize);\n    }\n}",
+    "options": [
+     "5 / 3616",
+     "4 / 384",
+     "3 / 3616",
+     "4 / 3616"
+    ],
+    "answer": "4 / 3616",
+    "explanation": "Page number = address / page size = 20000 / 4096 = 4 (integer division). Offset = address % page size = 20000 - 4 * 4096 = 3616. Rounding up to page 5 is the common mistake.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What does the TLB (translation lookaside buffer) cache?",
+    "options": [
+     "Recently used page-table entries (page to frame translations)",
+     "Recently used data blocks from main memory",
+     "Pages that were swapped out to disk",
+     "The list of free frames"
+    ],
+    "answer": "Recently used page-table entries (page to frame translations)",
+    "explanation": "A TLB hit avoids an extra memory access to read the page table. Caching actual data blocks is the job of the CPU data cache, which is a different structure.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A 64-bit process uses only a few small regions of its huge virtual address space. A flat page table per process would be enormous. What is the standard remedy?",
+    "options": [
+     "Use a hierarchical (multi-level) page table",
+     "Make the page size 1 byte",
+     "Keep one flat table and store it only on disk",
+     "Disable virtual memory for that process"
+    ],
+    "answer": "Use a hierarchical (multi-level) page table",
+    "explanation": "A multi-level table only allocates second-level tables for regions actually in use, so unused address space costs almost nothing. A 1-byte page would make the table even larger.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A process touches a valid page that is not currently in RAM. Which sequence describes what happens?",
+    "options": [
+     "The process is killed with a segmentation fault",
+     "The OS ignores it and returns zeros",
+     "The OS loads the page into a frame, updates the page table and restarts the instruction",
+     "The OS copies the whole process to disk and restarts it"
+    ],
+    "answer": "The OS loads the page into a frame, updates the page table and restarts the instruction",
+    "explanation": "This is a page fault: the page is legal but not resident, so the OS fetches it from disk (evicting another page if no frame is free) and retries. A segfault happens only for an illegal access.",
+    "points": 20
+   }
+  ]
+ }
+}

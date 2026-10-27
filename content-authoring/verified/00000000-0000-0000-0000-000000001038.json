@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001038",
+ "battle": {
+  "title": "Lock Picking: Mutex vs Semaphore",
+  "description": "Mutual exclusion, permits and the race conditions they prevent.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is the key conceptual difference between a mutex and a binary semaphore?",
+    "options": [
+     "A mutex has an owner: the thread that locked it is the one that should unlock it",
+     "A mutex can count to 10, a binary semaphore cannot",
+     "A binary semaphore can only be used by one process ever",
+     "There is no difference of any kind"
+    ],
+    "answer": "A mutex has an owner: the thread that locked it is the one that should unlock it",
+    "explanation": "A mutex is for mutual exclusion and has ownership. A binary semaphore is a signaling tool: any thread may release it, even one that never acquired it. Both hold values 0 or 1, which is why they are confused.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this single-threaded program print?",
+    "code": "import java.util.concurrent.Semaphore;\n\npublic class Main {\n    public static void main(String[] args) {\n        Semaphore s = new Semaphore(2);\n        System.out.println(s.tryAcquire());\n        System.out.println(s.tryAcquire());\n        System.out.println(s.tryAcquire());\n        s.release();\n        System.out.println(s.availablePermits());\n    }\n}",
+    "options": [
+     "true / true / true / 0",
+     "true / true / false / 1",
+     "true / false / false / 1",
+     "true / true / false / 2"
+    ],
+    "answer": "true / true / false / 1",
+    "explanation": "The semaphore starts with 2 permits, so two tryAcquire calls succeed and the third fails without blocking. release() returns one permit, so availablePermits() is 1.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A server may hold at most 5 simultaneous database connections. Extra requests should wait their turn. What do you use?",
+    "options": [
+     "A mutex around the whole request",
+     "A boolean flag checked in a loop",
+     "A counting semaphore initialized to 5",
+     "A binary semaphore initialized to 0"
+    ],
+    "answer": "A counting semaphore initialized to 5",
+    "explanation": "Each request acquires a permit and releases it when done, so up to 5 run at once and the rest block. A mutex would allow only one at a time, and a semaphore starting at 0 would block everyone.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Two threads each run count++ one thousand times on a shared int with no synchronization. Why can the final value be less than 2000?",
+    "options": [
+     "Java limits an int to 1000 increments",
+     "The JVM runs only one thread at a time",
+     "count++ is atomic, so the result is always 2000",
+     "count++ is read, add, write; interleaved steps can overwrite each other's updates"
+    ],
+    "answer": "count++ is read, add, write; interleaved steps can overwrite each other's updates",
+    "explanation": "Both threads can read the same old value, each add 1 and write back the same result, losing one increment. This is a race condition. Wrapping the increment in a mutex makes the three steps one critical section.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Thread B must not run step 2 until thread A has finished step 1. Which semaphore setup enforces this?",
+    "options": [
+     "Initial value 1; A acquires it first, B releases it",
+     "Initial value 0; A releases it after step 1, B acquires it before step 2",
+     "Initial value 0; B releases it after step 1, A acquires it",
+     "Initial value 5; both threads acquire it before starting"
+    ],
+    "answer": "Initial value 0; A releases it after step 1, B acquires it before step 2",
+    "explanation": "A semaphore at 0 makes B block on acquire until A signals with release. Starting at 1 or more lets B pass immediately, so the ordering would not be guaranteed.",
+    "points": 20
+   }
+  ]
+ }
+}

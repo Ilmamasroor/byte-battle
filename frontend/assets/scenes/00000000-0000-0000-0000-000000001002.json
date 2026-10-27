@@ -1,0 +1,246 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001002",
+ "title": "Polymorphism: one call, different code",
+ "kind": "computer",
+ "intro": "A variable of type Animal holds a Dog, then a Cat. Same call each time. What happens?",
+ "predict": {
+  "question": "Animal a = new Dog(); a.speak(); Dog overrides speak() to print Woof. What prints?",
+  "options": [
+   "Woof, because the real object is a Dog",
+   "A generic Animal sound, because a is an Animal",
+   "A compile error"
+  ],
+  "answer": 0,
+  "reveal": "Java looks at the real object on the heap, not the variable type. The object is a Dog, so Dog's speak() runs."
+ },
+ "takeaway": "The variable type decides what you can call; the real object decides which version of the method runs.",
+ "code": [
+  "Animal a = new Dog();",
+  "a.speak();",
+  "a = new Cat();",
+  "a.speak();"
+ ],
+ "steps": [
+  {
+   "say": "Dog and Cat are both kinds of Animal, and each writes its own speak(). Let's see which one runs when we only hold an Animal variable.",
+   "cpu": {
+    "doing": "waiting",
+    "regs": {
+     "PC": "line 1"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "heap": [],
+   "console": [],
+   "highlight": [
+    "cpu"
+   ],
+   "at": -1
+  },
+  {
+   "say": "The variable a has type Animal, but new Dog() builds a Dog on the heap. A parent-type variable may point at any child object.",
+   "cpu": {
+    "doing": "execute: Animal a = new Dog()",
+    "regs": {
+     "PC": "line 1"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "a": "-> d1"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "d1",
+     "type": "Dog",
+     "fields": {
+      "name": "Rex"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": 0,
+   "note": "variable type: Animal, real object: Dog"
+  },
+  {
+   "say": "a.speak(): Java follows the arrow to the real object, finds a Dog, and runs Dog's version. It prints Woof.",
+   "cpu": {
+    "doing": "follow a to d1, run Dog.speak()",
+    "regs": {
+     "PC": "line 2"
+    }
+   },
+   "heap": [
+    {
+     "id": "d1",
+     "type": "Dog",
+     "fields": {
+      "name": "Rex"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "Woof"
+   ],
+   "highlight": [
+    "cpu",
+    "heap",
+    "console"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 1
+  },
+  {
+   "say": "Now a = new Cat(). Same variable, new arrow: a points at a Cat object. The Dog still sits on the heap for a moment.",
+   "cpu": {
+    "doing": "execute: a = new Cat()",
+    "regs": {
+     "PC": "line 3"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "a": "-> c1"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "d1",
+     "type": "Dog",
+     "fields": {
+      "name": "Rex"
+     },
+     "state": "live"
+    },
+    {
+     "id": "c1",
+     "type": "Cat",
+     "fields": {
+      "name": "Tom"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "flow": [],
+   "at": 2,
+   "note": "same variable a, different object"
+  },
+  {
+   "say": "The line a.speak() is word for word the same as before. But this time Java finds a Cat at the end of the arrow, so Meow.",
+   "cpu": {
+    "doing": "follow a to c1, run Cat.speak()",
+    "regs": {
+     "PC": "line 4"
+    }
+   },
+   "heap": [
+    {
+     "id": "d1",
+     "type": "Dog",
+     "fields": {
+      "name": "Rex"
+     },
+     "state": "live"
+    },
+    {
+     "id": "c1",
+     "type": "Cat",
+     "fields": {
+      "name": "Tom"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "Woof",
+    "Meow"
+   ],
+   "highlight": [
+    "cpu",
+    "heap",
+    "console"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 3
+  },
+  {
+   "say": "Nothing points at the Dog any more, so it is garbage. The garbage collector can free it.",
+   "cpu": {
+    "doing": "idle",
+    "regs": {
+     "PC": "end"
+    }
+   },
+   "heap": [
+    {
+     "id": "d1",
+     "type": "Dog",
+     "fields": {
+      "name": "Rex"
+     },
+     "state": "garbage"
+    },
+    {
+     "id": "c1",
+     "type": "Cat",
+     "fields": {
+      "name": "Tom"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "flow": [],
+   "at": -1
+  },
+  {
+   "say": "Catch: the variable type decides what you may CALL (a.speak() compiles), the real object decides WHICH code runs. This is decided while running.",
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": -1,
+   "note": "a.fetch() would not compile on an Animal"
+  },
+  {
+   "say": "So one call, a.speak(), gave two behaviours. That is polymorphism: many forms behind one method name.",
+   "highlight": [
+    "console"
+   ],
+   "at": -1
+  }
+ ]
+}

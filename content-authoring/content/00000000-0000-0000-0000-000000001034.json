@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001034",
+ "battle": {
+  "title": "Process or Thread? The Great Divide",
+  "description": "Address spaces, shared memory and context switches: who owns what?",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Two threads belong to the same process. Which of these do they share?",
+    "options": [
+     "Their own private heaps",
+     "The heap and open files of the process",
+     "The same stack",
+     "The same program counter"
+    ],
+    "answer": "The heap and open files of the process",
+    "explanation": "Threads share the process address space (code, globals, heap) and resources like open files. Each thread still has its own stack, registers and program counter, so it can run independently.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which statement about context switching is generally true?",
+    "options": [
+     "Switching threads and switching processes always cost the same",
+     "Switching threads is cheaper than switching between processes",
+     "Switching processes is cheaper because they are isolated",
+     "Threads never need a context switch"
+    ],
+    "answer": "Switching threads is cheaper than switching between processes",
+    "explanation": "A switch between threads of one process keeps the same address space, so no page-table change and fewer TLB and cache penalties. A process switch must swap address spaces, which is why it costs more.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A web browser must ensure that a crash in one tab cannot corrupt memory in other tabs. Which design fits best?",
+    "options": [
+     "Run each tab in its own process",
+     "Run each tab as a thread in one process",
+     "Run all tabs in one thread and take turns",
+     "Share one heap and guard it with comments"
+    ],
+    "answer": "Run each tab in its own process",
+    "explanation": "Processes have separate address spaces, so a faulty tab cannot overwrite another tab's memory. Threads share the heap, so a stray write or crash in one thread can take down the others.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) throws Exception {\n        int[] shared = {2};\n        Thread t = new Thread(() -> {\n            shared[0] = shared[0] * 5;\n        });\n        t.start();\n        t.join();\n        System.out.println(shared[0]);\n    }\n}",
+    "options": [
+     "7",
+     "2",
+     "10",
+     "0"
+    ],
+    "answer": "10",
+    "explanation": "The array lives on the heap, which both threads share, so the worker's change is visible to main. join() guarantees the worker finished before the print: 2 * 5 = 10.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "One thread of a multi-threaded native program dereferences an invalid pointer and triggers a segmentation fault. What typically happens?",
+    "options": [
+     "Only that thread ends and the others carry on",
+     "The OS pauses the thread until it is fixed",
+     "The whole process is terminated, along with all its threads",
+     "Only the main thread is killed"
+    ],
+    "answer": "The whole process is terminated, along with all its threads",
+    "explanation": "A fault is delivered to the process, and the default action kills it entirely. Threads share one address space and have no isolation from each other, which is exactly the trade-off against separate processes.",
+    "points": 15
+   }
+  ]
+ }
+}

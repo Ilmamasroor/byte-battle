@@ -1,0 +1,333 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001012",
+ "title": "Shared resources: private stacks, one shared heap",
+ "kind": "computer",
+ "intro": "Two threads run work(c, n). Each has its own local variables, but they get the very same Counter. What can each one see?",
+ "predict": {
+  "question": "Thread-1 changes c.value and also its own local variable mine. What can Thread-2 see?",
+  "options": [
+   "Both changes",
+   "Only the change to c.value",
+   "Neither change"
+  ],
+  "answer": 1,
+  "reveal": "mine lives on Thread-1's private stack, so nobody else can see it. c.value lives on the shared heap, so every thread sees that change."
+ },
+ "takeaway": "Each thread has a private stack, but all threads share one heap. Objects on the heap are the shared state to protect.",
+ "code": [
+  "Counter c = new Counter();",
+  "new Thread(() -> work(c, 2)).start();",
+  "new Thread(() -> work(c, 3)).start();",
+  "void work(Counter c, int n) {",
+  "  int mine = n * 10;   // private",
+  "  c.value += n;        // shared",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Java memory has two parts. Every thread gets its own stack, but there is only ONE heap. Let's watch what lives where.",
+   "cpu": {
+    "doing": "main thread runs",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "heap": [],
+   "console": [],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": -1
+  },
+  {
+   "say": "main builds a Counter on the heap. The variable c on main's stack only holds a reference (an arrow) to it.",
+   "cpu": {
+    "doing": "execute: new Counter()",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "c": "-> c1"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "0"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "stack"
+   ],
+   "at": 0
+  },
+  {
+   "say": "Thread-1 starts with its own stack frame. Its parameter c is a copy of the arrow, so it points at the SAME Counter. n is 2.",
+   "cpu": {
+    "doing": "Thread-1 enters work()",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     "main",
+     "Thread-1",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "c": "-> c1"
+     }
+    },
+    {
+     "frame": "Thread-1 work()",
+     "vars": {
+      "c": "-> c1",
+      "n": "2"
+     }
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": 1
+  },
+  {
+   "say": "Thread-2 starts too, on another core. It also gets its own frame, with n = 3, and its c arrow points at the same single Counter.",
+   "cpu": {
+    "doing": "Thread-2 enters work()",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     "main",
+     "Thread-1",
+     "Thread-2",
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "c": "-> c1"
+     }
+    },
+    {
+     "frame": "Thread-1 work()",
+     "vars": {
+      "c": "-> c1",
+      "n": "2"
+     }
+    },
+    {
+     "frame": "Thread-2 work()",
+     "vars": {
+      "c": "-> c1",
+      "n": "3"
+     }
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": 2,
+   "note": "two arrows, one object"
+  },
+  {
+   "say": "Both run int mine = n * 10. Each thread gets its own box on its own stack: 20 for Thread-1, 30 for Thread-2. No clash, nothing shared.",
+   "cpu": {
+    "doing": "each thread sets its own mine",
+    "regs": {
+     "PC": "line 5"
+    },
+    "cores": [
+     "main",
+     "Thread-1",
+     "Thread-2",
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "c": "-> c1"
+     }
+    },
+    {
+     "frame": "Thread-1 work()",
+     "vars": {
+      "c": "-> c1",
+      "n": "2",
+      "mine": "20"
+     }
+    },
+    {
+     "frame": "Thread-2 work()",
+     "vars": {
+      "c": "-> c1",
+      "n": "3",
+      "mine": "30"
+     }
+    }
+   ],
+   "highlight": [
+    "stack"
+   ],
+   "at": 4,
+   "note": "mine: private"
+  },
+  {
+   "say": "Thread-1 runs c.value += n. It follows its arrow to the heap and changes the shared Counter from 0 to 2.",
+   "cpu": {
+    "doing": "Thread-1: c.value += 2",
+    "regs": {
+     "PC": "line 6"
+    },
+    "cores": [
+     "main",
+     "Thread-1",
+     "Thread-2",
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "2"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 5,
+   "note": "one possible order"
+  },
+  {
+   "say": "Thread-2 now does c.value += n and sees Thread-1's 2 already there, so it makes 5. Shared state: one thread's change is visible to all.",
+   "cpu": {
+    "doing": "Thread-2: c.value += 3",
+    "regs": {
+     "PC": "line 6"
+    },
+    "cores": [
+     "main",
+     "Thread-1",
+     "Thread-2",
+     null
+    ]
+   },
+   "heap": [
+    {
+     "id": "c1",
+     "type": "Counter",
+     "fields": {
+      "value": "5"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 5,
+   "note": "this time: 0 -> 2 -> 5"
+  },
+  {
+   "say": "Both work() calls return. The private boxes mine = 20 and 30 vanish with their frames, but the Counter on the heap keeps its 5.",
+   "cpu": {
+    "doing": "workers finished",
+    "regs": {
+     "PC": "line 7"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "c": "-> c1"
+     }
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": 6
+  },
+  {
+   "say": "Private: locals on your own stack. Shared: objects on the heap. The danger starts when two threads change shared state at the same moment.",
+   "panels": [
+    {
+     "title": "Private vs shared",
+     "rows": [
+      [
+       "where",
+       "who sees it"
+      ],
+      [
+       "stack: n, mine",
+       "one thread"
+      ],
+      [
+       "heap: Counter",
+       "all threads"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "highlight": [
+    "panel:0"
+   ],
+   "at": -1
+  }
+ ]
+}

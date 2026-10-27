@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001054",
+ "battle": {
+  "title": "The Hot Seat",
+  "description": "Turn behavioural questions into crisp Situation, Task, Action, Result stories.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 180,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What does STAR stand for in behavioural interviews?",
+    "options": [
+      "Skills, Training, Achievements, References",
+      "Situation, Task, Action, Result",
+      "Strategy, Tactics, Analysis, Review",
+      "Story, Timeline, Approach, Reflection"
+    ],
+    "answer": "Situation, Task, Action, Result",
+    "explanation": "STAR is Situation, Task, Action, Result, a structure for telling a concrete past example. The other lists sound professional but are not the method.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "\"Tell me about a time you faced a conflict in a team project.\" Which opening is best?",
+    "options": [
+      "I am a team player and I never really have conflicts",
+      "Teams always have conflicts, and in general I handle them well",
+      "In my final-year project we disagreed on the database a week before demo, and I had to resolve it",
+      "My teammate was lazy and did nothing, so I did everything"
+    ],
+    "answer": "In my final-year project we disagreed on the database a week before demo, and I had to resolve it",
+    "explanation": "It sets a specific situation and your task in two sentences. Generic claims give no evidence, 'never any conflict' sounds evasive, and blaming a teammate is a red flag.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "In a STAR answer, where should most of your time go?",
+    "options": [
+      "The Situation, so the interviewer has full background",
+      "The Action, focusing on what you personally did and why",
+      "The Task, repeating the goal several times",
+      "The Result, only if it was a big success"
+    ],
+    "answer": "The Action, focusing on what you personally did and why",
+    "explanation": "Interviewers are assessing your behaviour, so Action carries the most weight. Long backstory is the classic way to run out of time before the part that matters.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You describe an action in a group project. Which phrasing is strongest?",
+    "options": [
+      "We did the backend and it kind of worked out",
+      "The team decided on the design and things went fine",
+      "Someone fixed the bug eventually",
+      "I wrote the API tests, found the failing endpoint, and fixed the null check, which unblocked the team"
+    ],
+    "answer": "I wrote the API tests, found the failing endpoint, and fixed the null check, which unblocked the team",
+    "explanation": "Saying 'I' with concrete steps shows your own contribution. Constant 'we' or passive phrasing leaves the interviewer unable to tell what you actually did.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "\"Tell me about a time you failed.\" Which ending is best?",
+    "options": [
+      "State what went wrong, own your part, and describe what you changed afterwards, ideally with an outcome",
+      "Say the failure was mostly caused by unclear instructions from others",
+      "Pick a fake weakness like \"I work too hard\" so you look perfect",
+      "Skip the result and move to your next strength"
+    ],
+    "answer": "State what went wrong, own your part, and describe what you changed afterwards, ideally with an outcome",
+    "explanation": "Failure questions test ownership and learning, so the Result should include the lesson and a changed behaviour. Blaming others or giving a disguised strength sounds evasive.",
+    "points": 20
+   }
+  ]
+ }
+}

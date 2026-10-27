@@ -1,0 +1,436 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001006",
+ "title": "Array traversal: walk, add, stop",
+ "kind": "structure",
+ "intro": "A for loop walks an array one box at a time. Where must it stop?",
+ "predict": {
+  "question": "An array has 5 items. What is the index of the LAST item?",
+  "options": [
+   "5",
+   "4",
+   "6"
+  ],
+  "answer": 1,
+  "reveal": "Indexes start at 0, so five items use 0, 1, 2, 3, 4. The last index is always length - 1."
+ },
+ "takeaway": "Visit indexes 0 to length - 1 with i < a.length; each box is read once, so the work grows with n.",
+ "code": [
+  "int[] a = {4, 9, 2, 7, 5};",
+  "int sum = 0;",
+  "for (int i = 0; i < a.length; i++) {",
+  "  sum += a[i];",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "An array is a row of boxes, numbered from 0. Five items means indexes 0 to 4. Let's add them all up by visiting each box.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 0,
+   "note": "a.length = 5"
+  },
+  {
+   "say": "We need somewhere to keep the running total, so sum starts at 0.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "0",
+       "s": "cur"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 1,
+   "note": "sum = 0"
+  },
+  {
+   "say": "The loop variable i is our pointer. It starts at index 0, we read a[0] = 4 and add it.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "cur"
+      },
+      {
+       "v": "9",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 0
+     }
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "4",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "sum = 0 + 4 = 4"
+  },
+  {
+   "say": "i++ moves the pointer one box right. a[1] is 9, so the total grows to 13.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "cur"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 1
+     }
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "13",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "sum = 4 + 9 = 13"
+  },
+  {
+   "say": "i is 2. a[2] is 2, so sum becomes 15.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "7",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "15",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "sum = 13 + 2 = 15"
+  },
+  {
+   "say": "i is 3. a[3] is 7, so sum becomes 22.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "7",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 3
+     }
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "22",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "sum = 15 + 7 = 22"
+  },
+  {
+   "say": "i is 4, the last box. a[4] is 5, so sum becomes 27.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "7",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      }
+     ],
+     "pointers": {
+      "i": 4
+     }
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "27",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "sum = 22 + 5 = 27"
+  },
+  {
+   "say": "i++ makes i equal 5. The test i < a.length asks 5 < 5, which is false, so the loop stops. Every box was visited exactly once.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "7",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      }
+     ],
+     "pointers": {},
+     "caption": "i = 5, and 5 < 5 is false: stop"
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "27",
+       "s": "found"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 2,
+   "note": "sum = 27"
+  },
+  {
+   "say": "That is why the test is i < length and not i <= length. Index 5 does not exist; reading a[5] throws ArrayIndexOutOfBoundsException.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "a",
+     "cells": [
+      {
+       "v": "4",
+       "s": "done"
+      },
+      {
+       "v": "9",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "7",
+       "s": "done"
+      },
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "a[5]",
+       "s": "bad"
+      }
+     ],
+     "pointers": {},
+     "caption": "no box here: out of bounds"
+    },
+    {
+     "kind": "array",
+     "name": "sum",
+     "cells": [
+      {
+       "v": "27",
+       "s": "found"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "valid indexes: 0 to length - 1"
+  }
+ ]
+}

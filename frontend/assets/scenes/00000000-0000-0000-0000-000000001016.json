@@ -1,0 +1,341 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001016",
+ "title": "Stack: last in, first out",
+ "kind": "structure",
+ "intro": "A stack is a pile of plates. Push three numbers, then pop one. Which comes off?",
+ "predict": {
+  "question": "You push 1, then 2, then 3, then pop once. Which value comes off?",
+  "options": [
+   "1",
+   "2",
+   "3"
+  ],
+  "answer": 2,
+  "reveal": "A stack is LIFO: last in, first out. 3 went on last, so 3 comes off first."
+ },
+ "takeaway": "A stack only touches its top: push adds there, pop removes from there, so the last item in is the first out.",
+ "code": [
+  "stack<int> st;",
+  "st.push(1);",
+  "st.push(2);",
+  "st.push(3);",
+  "int x = st.top(); st.pop();",
+  "x = st.top(); st.pop();"
+ ],
+ "steps": [
+  {
+   "say": "An empty stack. You can only add or remove at the TOP, like a pile of plates.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": []
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "push(1) puts 1 on top. It is the only item, so it is also the top.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "1",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 1,
+   "note": "push(1)"
+  },
+  {
+   "say": "push(2) lands on top of 1. The 1 is now buried underneath.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 2,
+   "note": "push(2)"
+  },
+  {
+   "say": "push(3) goes on top. Pushed order was 1, 2, 3, and the top is 3.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "push(3)  top = 3"
+  },
+  {
+   "say": "pop() removes the top, so 3 leaves first even though 1 arrived first. That is LIFO.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 4,
+   "note": "pop() returned 3"
+  },
+  {
+   "say": "Another pop() returns 2. Only the top is ever reachable, 1 must wait its turn.",
+   "structures": [
+    {
+     "kind": "stack",
+     "name": "stack",
+     "items": [
+      {
+       "v": "1",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": 5,
+   "note": "pop() returned 2"
+  },
+  {
+   "say": "A real use: are the brackets in ( [ ] ) balanced? Each opener must be closed by its match, most recent first.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "text",
+     "cells": [
+      {
+       "v": "(",
+       "s": "idle"
+      },
+      {
+       "v": "[",
+       "s": "idle"
+      },
+      {
+       "v": "]",
+       "s": "idle"
+      },
+      {
+       "v": ")",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "stack",
+     "name": "openers",
+     "items": []
+    }
+   ],
+   "at": -1,
+   "note": "scan left to right"
+  },
+  {
+   "say": "( is an opener, so push it. We will need a ) later.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "text",
+     "cells": [
+      {
+       "v": "(",
+       "s": "cur"
+      },
+      {
+       "v": "[",
+       "s": "idle"
+      },
+      {
+       "v": "]",
+       "s": "idle"
+      },
+      {
+       "v": ")",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 0
+     }
+    },
+    {
+     "kind": "stack",
+     "name": "openers",
+     "items": [
+      {
+       "v": "(",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "push ("
+  },
+  {
+   "say": "[ is an opener too. Push it on top of (.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "text",
+     "cells": [
+      {
+       "v": "(",
+       "s": "done"
+      },
+      {
+       "v": "[",
+       "s": "cur"
+      },
+      {
+       "v": "]",
+       "s": "idle"
+      },
+      {
+       "v": ")",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 1
+     }
+    },
+    {
+     "kind": "stack",
+     "name": "openers",
+     "items": [
+      {
+       "v": "(",
+       "s": "idle"
+      },
+      {
+       "v": "[",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "push ["
+  },
+  {
+   "say": "] is a closer. The top is [, a match, so pop it. The most recent opener is exactly the one that must close first.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "text",
+     "cells": [
+      {
+       "v": "(",
+       "s": "done"
+      },
+      {
+       "v": "[",
+       "s": "done"
+      },
+      {
+       "v": "]",
+       "s": "cur"
+      },
+      {
+       "v": ")",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "i": 2
+     }
+    },
+    {
+     "kind": "stack",
+     "name": "openers",
+     "items": [
+      {
+       "v": "(",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "top [ matches ]  -> pop"
+  },
+  {
+   "say": "Last, ) matches the top ( so pop it. Stack empty at the end means balanced.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "text",
+     "cells": [
+      {
+       "v": "(",
+       "s": "done"
+      },
+      {
+       "v": "[",
+       "s": "done"
+      },
+      {
+       "v": "]",
+       "s": "done"
+      },
+      {
+       "v": ")",
+       "s": "found"
+      }
+     ],
+     "pointers": {
+      "i": 3
+     }
+    },
+    {
+     "kind": "stack",
+     "name": "openers",
+     "items": []
+    }
+   ],
+   "at": -1,
+   "note": "stack empty -> balanced"
+  }
+ ]
+}

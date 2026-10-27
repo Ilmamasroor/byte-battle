@@ -1,0 +1,1311 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001024",
+ "title": "Memoization: never solve the same subproblem twice",
+ "kind": "structure",
+ "intro": "Plain recursive fib(5) repeats itself a lot. Watch the waste, then watch a memo remove it.",
+ "predict": {
+  "question": "In the plain fib(5) call tree (15 calls), how many times is fib(2) computed?",
+  "options": [
+   "1",
+   "2",
+   "3"
+  ],
+  "answer": 2,
+  "reveal": "fib(2) is called three times: under fib(4) and under both copies of fib(3). Memoization computes it once."
+ },
+ "takeaway": "Memoization stores each answer in a hash map the first time, so repeated calls return instantly. Exponential work becomes linear.",
+ "code": [
+  "int fib(int n) {",
+  "  if (n <= 1) return n;",
+  "  if (memo.has(n)) return memo[n];",
+  "  int r = fib(n - 1) + fib(n - 2);",
+  "  memo[n] = r; return r;",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "Plain recursion for fib(5). Each circle is one call, and every call spawns two more until it reaches fib(1) or fib(0).",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "idle",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "idle",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "idle",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "idle",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "15 calls for fib(5)"
+  },
+  {
+   "say": "Look: fib(3) appears twice, and each copy rebuilds its whole subtree from scratch. Same question, same answer, worked twice.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "idle",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "idle",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "bad",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "bad",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "dim",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "dim",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "dim"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "fib(3) x 2"
+  },
+  {
+   "say": "fib(2) is computed three times and fib(1) five times. 15 calls, but only 6 different answers (fib(0) to fib(5)).",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "idle",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "idle",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "idle",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "bad",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "bad",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "bad",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "fib(2) x 3"
+  },
+  {
+   "say": "This gets awful fast. fib(40) makes over 330 million calls without memo, and about 80 with it.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "calls for fib(40)",
+     "bars": [
+      {
+       "label": "plain",
+       "value": 1.0,
+       "text": "331,160,281",
+       "s": "swap"
+      },
+      {
+       "label": "memo",
+       "value": 0.01,
+       "text": "~80",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "The fix: keep a hash map memo from n to fib(n). Before computing, look up n. After computing, store it. Start empty.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "idle",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "idle",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "idle",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "idle",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      },
+      {
+       "i": 4,
+       "items": []
+      },
+      {
+       "i": 5,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    2,
+    4
+   ],
+   "note": "memo = {}"
+  },
+  {
+   "say": "Dive down the left side: fib(5), fib(4), fib(3), fib(2). The base cases fib(1) = 1 and fib(0) = 0 return directly.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "cur",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "cur",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "cur",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "cur",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      },
+      {
+       "i": 4,
+       "items": []
+      },
+      {
+       "i": 5,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    1
+   ],
+   "note": "f5 -> f4 -> f3 -> f2 -> f1, f0"
+  },
+  {
+   "say": "fib(2) = 1 + 0 = 1. Before returning, save it: memo[2] = 1.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "cur",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "cur",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "cur",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "done",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "2:1",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      },
+      {
+       "i": 4,
+       "items": []
+      },
+      {
+       "i": 5,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "memo[2] = 1"
+  },
+  {
+   "say": "fib(3) also needs fib(1), a base case. So fib(3) = 1 + 1 = 2. Save memo[3] = 2.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "cur",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "cur",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "done",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "idle",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "done",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "2:1",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "3:2",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 4,
+       "items": []
+      },
+      {
+       "i": 5,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    3,
+    4
+   ],
+   "note": "memo[3] = 2"
+  },
+  {
+   "say": "fib(4) now needs fib(2). Memo has it! The call returns 1 at once and its whole subtree is skipped. memo[4] = 3.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "cur",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "done",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "idle",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "done",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "found",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "idle",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "done",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "idle"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "idle"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "2:1",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "3:2",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 4,
+       "items": [
+        {
+         "v": "4:3",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 5,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    2
+   ],
+   "note": "memo hit: fib(2) = 1"
+  },
+  {
+   "say": "fib(5) needs fib(3). Memo hit again, and a big subtree is skipped. fib(5) = 3 + 2 = 5, and memo[5] = 5.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "done",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "done",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "found",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "done",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "found",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "dim",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "done",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "2:1",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "3:2",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 4,
+       "items": [
+        {
+         "v": "4:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 5,
+       "items": [
+        {
+         "v": "5:5",
+         "s": "cur"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "at": [
+    2,
+    4
+   ],
+   "note": "memo hit: fib(3) = 2"
+  },
+  {
+   "say": "Only 9 of 15 calls ran. Each value is computed once and then reused, so the work grows like n, not like 2 to the n.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "fib(5) call tree",
+     "nodes": [
+      {
+       "id": "a",
+       "v": "f5",
+       "s": "found",
+       "l": "b",
+       "r": "c"
+      },
+      {
+       "id": "b",
+       "v": "f4",
+       "s": "done",
+       "l": "d",
+       "r": "e"
+      },
+      {
+       "id": "c",
+       "v": "f3",
+       "s": "done",
+       "l": "f",
+       "r": "g"
+      },
+      {
+       "id": "d",
+       "v": "f3",
+       "s": "done",
+       "l": "h",
+       "r": "i"
+      },
+      {
+       "id": "e",
+       "v": "f2",
+       "s": "done",
+       "l": "j",
+       "r": "k"
+      },
+      {
+       "id": "f",
+       "v": "f2",
+       "s": "dim",
+       "l": "m",
+       "r": "n"
+      },
+      {
+       "id": "g",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "h",
+       "v": "f2",
+       "s": "done",
+       "l": "o",
+       "r": "p"
+      },
+      {
+       "id": "i",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "j",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "k",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "m",
+       "v": "f1",
+       "s": "dim"
+      },
+      {
+       "id": "n",
+       "v": "f0",
+       "s": "dim"
+      },
+      {
+       "id": "o",
+       "v": "f1",
+       "s": "done"
+      },
+      {
+       "id": "p",
+       "v": "f0",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "hash",
+     "name": "memo: n -> fib(n)",
+     "buckets": [
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "2:1",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "3:2",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 4,
+       "items": [
+        {
+         "v": "4:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 5,
+       "items": [
+        {
+         "v": "5:5",
+         "s": "idle"
+        }
+       ]
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "9 calls instead of 15"
+  }
+ ]
+}

@@ -1,0 +1,163 @@
+{
+ "battle": {
+  "title": "Undo Button: Backtracking Gauntlet",
+  "description": "Base cases, call order and choose-explore-unchoose under pressure.",
+  "battleType": "SURVIVAL",
+  "difficulty": "HARD",
+  "timeLimitSeconds": 360,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "A recursive method has no base case. What happens when it is called?",
+    "options": [
+     "It throws StackOverflowError after the call stack fills up",
+     "It returns the default value 0",
+     "It loops forever using constant memory",
+     "The compiler refuses to compile it"
+    ],
+    "answer": "It throws StackOverflowError after the call stack fills up",
+    "explanation": "Every call adds a stack frame and none ever returns, so the finite stack runs out. Java does not optimise away recursion, so it does not run forever in constant memory, and the compiler cannot detect a missing base case.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static void f(int n) {\n        if (n == 0) return;\n        System.out.println(n);\n        f(n - 1);\n        System.out.println(n * 10);\n    }\n\n    public static void main(String[] args) {\n        f(3);\n    }\n}",
+    "options": [
+     "3 / 2 / 1 / 1 / 2 / 3",
+     "1 / 2 / 3 / 10 / 20 / 30",
+     "3 / 2 / 1 / 10 / 20 / 30",
+     "30 / 20 / 10 / 3 / 2 / 1"
+    ],
+    "answer": "3 / 2 / 1 / 10 / 20 / 30",
+    "explanation": "The first println runs on the way down (3, 2, 1) and the second runs as the calls return, in reverse order of calling: 10, 20, 30. The tempting reversed first half forgets that the call happens after the first print.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must list every possible ordering of 4 distinct items. Which technique is the natural fit?",
+    "options": [
+     "Binary search on the answer",
+     "Backtracking: choose an unused item, recurse, then unchoose it",
+     "A sliding window over the items",
+     "A single for loop that swaps neighbours once"
+    ],
+    "answer": "Backtracking: choose an unused item, recurse, then unchoose it",
+    "explanation": "Permutations are built position by position, so you need to try each unused item, explore, and undo the choice to try the next. A sliding window or one pass of swaps cannot enumerate all orderings, and binary search needs a monotonic answer.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static int[] a = {1, 2, 3, 4, 5};\n\n    static int count(int i, int rem) {\n        if (rem == 0) return 1;\n        if (rem < 0 || i == a.length) return 0;\n        return count(i + 1, rem - a[i]) + count(i + 1, rem);\n    }\n\n    public static void main(String[] args) {\n        System.out.println(count(0, 5));\n    }\n}",
+    "options": [
+     "2",
+     "4",
+     "7",
+     "3"
+    ],
+    "answer": "3",
+    "explanation": "The subsets of {1..5} that sum to 5 are {5}, {1,4} and {2,3}. Choosing 'take or skip' at each index explores them all; 2 forgets the single-element subset {5}.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Roughly how much work does it take to generate all permutations of n distinct items?",
+    "options": [
+     "About n^2 steps",
+     "About 2^n steps",
+     "About n! permutations, each costing about n to build or copy",
+     "About n log n steps"
+    ],
+    "answer": "About n! permutations, each costing about n to build or copy",
+    "explanation": "There are n! permutations and just writing each one out costs n, so the work is on the order of n * n!. 2^n counts subsets, not orderings, and polynomial answers are far too small.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "All Permutations in Order",
+   "description": "Given a string of distinct lowercase letters, print every permutation of its letters, one per line, in lexicographic (alphabetical) order. The input letters may come in any order.",
+   "difficulty": "HARD",
+   "inputDescription": "A single line with the distinct letters.",
+   "outputDescription": "All permutations, one per line, in lexicographic order.",
+   "constraints": "1 <= length <= 6, letters are distinct lowercase a-z",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        char[] c = br.readLine().trim().toCharArray();\n        Arrays.sort(c);\n        // TODO: print every permutation of c, one per line, in lexicographic order (use backtracking)\n        System.out.println(new String(c));\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static char[] c;\n    static boolean[] used;\n    static StringBuilder cur = new StringBuilder();\n    static StringBuilder out = new StringBuilder();\n\n    static void go() {\n        if (cur.length() == c.length) {\n            out.append(cur).append(\"\\n\");\n            return;\n        }\n        for (int i = 0; i < c.length; i++) {\n            if (used[i]) continue;\n            used[i] = true;\n            cur.append(c[i]);\n            go();\n            cur.deleteCharAt(cur.length() - 1);\n            used[i] = false;\n        }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        c = br.readLine().trim().toCharArray();\n        Arrays.sort(c);\n        used = new boolean[c.length];\n        go();\n        System.out.print(out);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "abc\n",
+     "hidden": false
+    },
+    {
+     "input": "a\n",
+     "hidden": false
+    },
+    {
+     "input": "ab\n",
+     "hidden": true
+    },
+    {
+     "input": "cab\n",
+     "hidden": true
+    },
+    {
+     "input": "dcba\n",
+     "hidden": true
+    },
+    {
+     "input": "abcde\n",
+     "hidden": true
+    },
+    {
+     "input": "zx\n",
+     "hidden": true
+    },
+    {
+     "input": "bca\n",
+     "hidden": true
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "The Subset That Never Undid Itself",
+   "description": "Given distinct positive integers in ascending order and a target, print every subset (in ascending order, one per line, elements separated by spaces) whose sum equals the target, in depth-first order. Print none if there is no such subset. The output contains wrong or extra subsets. Input: line 1 'n target', line 2 the n integers.",
+   "difficulty": "HARD",
+   "bugCategory": "STATE_MUTATION",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    static int[] a;\n    static List<Integer> cur = new ArrayList<>();\n    static boolean found = false;\n\n    static void go(int idx, int remaining) {\n        if (remaining == 0) {\n            found = true;\n            StringBuilder sb = new StringBuilder();\n            for (int i = 0; i < cur.size(); i++) sb.append(i > 0 ? \" \" : \"\").append(cur.get(i));\n            System.out.println(sb);\n            return;\n        }\n        for (int i = idx; i < a.length; i++) {\n            if (a[i] > remaining) break;\n            cur.add(a[i]);\n            go(i + 1, remaining - a[i]);\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt(), target = in.nextInt();\n        a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        go(0, target);\n        if (!found) System.out.println(\"none\");\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    static int[] a;\n    static List<Integer> cur = new ArrayList<>();\n    static boolean found = false;\n\n    static void go(int idx, int remaining) {\n        if (remaining == 0) {\n            found = true;\n            StringBuilder sb = new StringBuilder();\n            for (int i = 0; i < cur.size(); i++) sb.append(i > 0 ? \" \" : \"\").append(cur.get(i));\n            System.out.println(sb);\n            return;\n        }\n        for (int i = idx; i < a.length; i++) {\n            if (a[i] > remaining) break;\n            cur.add(a[i]);\n            go(i + 1, remaining - a[i]);\n            cur.remove(cur.size() - 1);\n        }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt(), target = in.nextInt();\n        a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        go(0, target);\n        if (!found) System.out.println(\"none\");\n    }\n}\n",
+   "tests": [
+    {
+     "input": "5 5\n1 2 3 4 5\n",
+     "hidden": false
+    },
+    {
+     "input": "3 10\n1 2 3\n",
+     "hidden": false
+    },
+    {
+     "input": "4 7\n1 2 4 6\n",
+     "hidden": true
+    },
+    {
+     "input": "6 9\n1 2 3 4 5 6\n",
+     "hidden": true
+    },
+    {
+     "input": "1 4\n4\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Try 5 5 with 1 2 3 4 5. Expected: 1 4, then 2 3, then 5. What is printed instead? Do the subsets contain numbers they should not?",
+    "Look at how cur changes inside the loop in go(). After the recursive call returns, what is cur?",
+    "cur.add(...) is never matched by a removal, so choices from earlier branches leak into later ones.",
+    "After the recursive call, remove the last element (cur.remove(cur.size() - 1)) to undo the choice before trying the next value."
+   ]
+  }
+ ],
+ "conceptId": "00000000-0000-0000-0000-000000001058"
+}

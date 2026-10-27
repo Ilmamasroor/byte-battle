@@ -1,0 +1,93 @@
+# Judge0 CE 1.13.1 for Byte Battle code execution.
+# Secrets are NOT stored here or in judge0.conf: they come from a local, git-ignored .env file
+# (copy .env.example to .env). See README.md.
+
+x-logging: &default-logging
+  logging:
+    driver: json-file
+    options:
+      max-size: 100M
+
+x-judge0-secrets: &judge0-secrets
+  AUTHN_TOKEN: ${JUDGE0_AUTHN_TOKEN:?set JUDGE0_AUTHN_TOKEN in .env}
+  POSTGRES_PASSWORD: ${JUDGE0_DB_PASSWORD:?set JUDGE0_DB_PASSWORD in .env}
+  REDIS_PASSWORD: ${JUDGE0_REDIS_PASSWORD:?set JUDGE0_REDIS_PASSWORD in .env}
+  SECRET_KEY_BASE: ${JUDGE0_SECRET_KEY_BASE:?set JUDGE0_SECRET_KEY_BASE in .env}
+
+services:
+  server:
+    image: judge0/judge0:1.13.1
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      <<: *judge0-secrets
+    ports:
+      # Loopback only: the Spring backend runs on the same host. Put a reverse proxy in front for anything else.
+      - "127.0.0.1:2358:2358"
+    privileged: true # required by Judge0's isolate sandbox
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    mem_limit: 1g
+    cpus: 2.0
+    <<: *default-logging
+    restart: always
+
+  workers:
+    image: judge0/judge0:1.13.1
+    command: ["./scripts/workers"]
+    volumes:
+      - ./judge0.conf:/judge0.conf:ro
+    environment:
+      <<: *judge0-secrets
+    privileged: true # required by Judge0's isolate sandbox
+    depends_on:
+      db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Judge0 compiles once per test case, in parallel (COUNT workers): give the workers real CPU or javac hits
+    # Judge0's compile time limit. Must not exceed the host's core count (set JUDGE0_WORKER_CPUS in .env).
+    mem_limit: ${JUDGE0_WORKER_MEMORY:-4g}
+    cpus: ${JUDGE0_WORKER_CPUS:-4.0}
+    <<: *default-logging
+    restart: always
+
+  db:
+    image: postgres:16.2
+    # No host port mapping: only the other services on the compose network can reach the database.
+    environment:
+      POSTGRES_DB: judge0
+      POSTGRES_USER: judge0
+      POSTGRES_PASSWORD: ${JUDGE0_DB_PASSWORD:?set JUDGE0_DB_PASSWORD in .env}
+    volumes:
+      - data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U judge0 -d judge0"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 512m
+    cpus: 1.0
+    restart: always
+    <<: *default-logging
+
+  redis:
+    image: redis:7.2.4
+    command: ["bash", "-c", 'docker-entrypoint.sh --appendonly no --requirepass "$$REDIS_PASSWORD"']
+    environment:
+      REDIS_PASSWORD: ${JUDGE0_REDIS_PASSWORD:?set JUDGE0_REDIS_PASSWORD in .env}
+    healthcheck:
+      test: ["CMD-SHELL", 'redis-cli -a "$$REDIS_PASSWORD" --no-auth-warning ping | grep -q PONG']
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    mem_limit: 256m
+    cpus: 0.5
+    restart: always
+    <<: *default-logging
+
+volumes:
+  data:

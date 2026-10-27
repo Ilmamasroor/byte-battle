@@ -1,0 +1,561 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001036",
+ "title": "Paging: virtual pages meet physical frames",
+ "kind": "computer",
+ "intro": "Your program thinks it has one tidy block of memory. The OS secretly scatters it. What if a piece is missing?",
+ "predict": {
+  "question": "P1 touches page 2, which is NOT in RAM. What happens?",
+  "options": [
+   "The program crashes",
+   "The OS loads the page from disk, then retries",
+   "The CPU guesses a value"
+  ],
+  "answer": 1,
+  "reveal": "A page fault traps to the OS, which copies the page from disk into a free frame, fixes the page table and retries."
+ },
+ "takeaway": "The page table maps virtual pages to physical frames; a page fault means the OS fetches the page from disk and retries.",
+ "steps": [
+  {
+   "say": "Program P1 sees pages 0 to 3 in a neat row. Real RAM is split into frames. The page table records where each page really lives.",
+   "cpu": {
+    "doing": "waiting for P1 to access memory",
+    "regs": {
+     "page size": "4 KB"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Page table (P1)",
+     "rows": [
+      [
+       "page",
+       "frame",
+       "valid"
+      ],
+      [
+       "0",
+       "2",
+       "1"
+      ],
+      [
+       "1",
+       "4",
+       "1"
+      ],
+      [
+       "2",
+       "-",
+       "0"
+      ],
+      [
+       "3",
+       "-",
+       "0"
+      ]
+     ]
+    }
+   ],
+   "disk": [
+    "P1 page 2",
+    "P1 page 3"
+   ],
+   "highlight": [
+    "panel:0"
+   ]
+  },
+  {
+   "say": "P1 reads an address in page 1. The CPU looks at the page table: page 1 is in frame 4, valid. Same offset inside the frame, done.",
+   "cpu": {
+    "doing": "translate page 1 + offset 0x10",
+    "regs": {
+     "virtual": "page 1 + 0x10",
+     "physical": "F4 + 0x10"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     },
+     {
+      "label": "P1:1",
+      "s": "hot"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Page table (P1)",
+     "rows": [
+      [
+       "page",
+       "frame",
+       "valid"
+      ],
+      [
+       "0",
+       "2",
+       "1"
+      ],
+      [
+       "1",
+       "4",
+       "1"
+      ],
+      [
+       "2",
+       "-",
+       "0"
+      ],
+      [
+       "3",
+       "-",
+       "0"
+      ]
+     ],
+     "hl": [
+      1
+     ]
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "panel:0",
+    "ram"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ]
+  },
+  {
+   "say": "Pages 0 and 1 sit in frames 2 and 4, not side by side, but P1 never notices. That scattering is the whole trick of paging.",
+   "cpu": {
+    "doing": "translate page 0 -> F2",
+    "regs": {
+     "virtual": "page 0 + 0x08",
+     "physical": "F2 + 0x08"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "hot"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Page table (P1)",
+     "rows": [
+      [
+       "page",
+       "frame",
+       "valid"
+      ],
+      [
+       "0",
+       "2",
+       "1"
+      ],
+      [
+       "1",
+       "4",
+       "1"
+      ],
+      [
+       "2",
+       "-",
+       "0"
+      ],
+      [
+       "3",
+       "-",
+       "0"
+      ]
+     ],
+     "hl": [
+      0
+     ]
+    }
+   ],
+   "highlight": [
+    "panel:0",
+    "ram"
+   ],
+   "flow": []
+  },
+  {
+   "say": "Now P1 touches page 2. The page table says valid = 0: it is not in RAM. The CPU cannot translate, so it raises a page fault.",
+   "cpu": {
+    "doing": "PAGE FAULT on page 2: trap to OS",
+    "regs": {
+     "virtual": "page 2 + 0x04",
+     "physical": "???"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Page table (P1)",
+     "rows": [
+      [
+       "page",
+       "frame",
+       "valid"
+      ],
+      [
+       "0",
+       "2",
+       "1"
+      ],
+      [
+       "1",
+       "4",
+       "1"
+      ],
+      [
+       "2",
+       "-",
+       "0"
+      ],
+      [
+       "3",
+       "-",
+       "0"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ],
+   "flow": []
+  },
+  {
+   "say": "The OS takes over. It finds free frame F3 and asks the disk for P1's page 2. Disk is thousands of times slower than RAM.",
+   "cpu": {
+    "doing": "OS: read page 2 from disk into F3",
+    "regs": {
+     "free frame": "F3"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "P1:2",
+      "s": "hot"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "highlight": [
+    "disk",
+    "ram"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ]
+  },
+  {
+   "say": "The page arrives in F3. The OS updates the table: page 2 -> frame 3, valid = 1.",
+   "cpu": {
+    "doing": "OS: update page table",
+    "regs": {
+     "free frame": "F3"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "P1:2",
+      "s": "used"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Page table (P1)",
+     "rows": [
+      [
+       "page",
+       "frame",
+       "valid"
+      ],
+      [
+       "0",
+       "2",
+       "1"
+      ],
+      [
+       "1",
+       "4",
+       "1"
+      ],
+      [
+       "2",
+       "3",
+       "1"
+      ],
+      [
+       "3",
+       "-",
+       "0"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "disk": [
+    "P1 page 2",
+    "P1 page 3"
+   ],
+   "highlight": [
+    "panel:0",
+    "ram"
+   ],
+   "flow": []
+  },
+  {
+   "say": "The OS restarts the instruction that faulted. This time the lookup works: page 2 is in F3. P1 never knew anything happened.",
+   "cpu": {
+    "doing": "retry: page 2 -> F3",
+    "regs": {
+     "virtual": "page 2 + 0x04",
+     "physical": "F3 + 0x04"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "P1:2",
+      "s": "hot"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "highlight": [
+    "cpu",
+    "ram"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ]
+  },
+  {
+   "say": "Pages are only loaded when needed, so programs can be bigger than RAM. When no frame is free, the OS must evict a page: next lesson.",
+   "cpu": {
+    "doing": "P1 runs normally",
+    "regs": {
+     "page 3": "still on disk"
+    }
+   },
+   "grid": {
+    "title": "Physical memory (frames F0-F5)",
+    "cells": [
+     {
+      "label": "OS",
+      "s": "used"
+     },
+     {
+      "label": "P2:7",
+      "s": "used"
+     },
+     {
+      "label": "P1:0",
+      "s": "used"
+     },
+     {
+      "label": "P1:2",
+      "s": "used"
+     },
+     {
+      "label": "P1:1",
+      "s": "used"
+     },
+     {
+      "label": "free",
+      "s": "free"
+     }
+    ]
+   },
+   "highlight": [
+    "panel:0",
+    "disk"
+   ],
+   "flow": []
+  }
+ ]
+}

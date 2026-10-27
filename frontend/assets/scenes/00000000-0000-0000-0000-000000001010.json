@@ -1,0 +1,684 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001010",
+ "title": "Tree traversal: inorder, node by node",
+ "kind": "structure",
+ "intro": "We walk a small tree and write down each node as we visit it. What order comes out?",
+ "predict": {
+  "question": "Inorder (left, node, right) on this binary search tree prints the values in what order?",
+  "options": [
+   "8 3 1 6 10 14",
+   "1 3 6 8 10 14",
+   "14 10 8 6 3 1"
+  ],
+  "answer": 1,
+  "reveal": "Left subtree, then the node, then the right subtree. On a binary search tree that comes out in sorted order."
+ },
+ "takeaway": "Traversal is recursion: handle left, the node, and right in some order. Inorder on a BST gives sorted values.",
+ "code": [
+  "void inorder(Node n) {",
+  "  if (n == null) return;",
+  "  inorder(n.left);",
+  "  visit(n);",
+  "  inorder(n.right);",
+  "}"
+ ],
+ "steps": [
+  {
+   "say": "A binary tree: each node has up to two children. Inorder traversal means: left subtree first, then the node itself, then the right subtree.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "idle",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "idle",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": []
+    }
+   ],
+   "at": 0
+  },
+  {
+   "say": "Start at 8 but do not visit it yet. Inorder says go left first: to 3, then to 1. The nodes 8 and 3 wait while we dive.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "compare",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "compare",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": []
+    }
+   ],
+   "at": 2,
+   "note": "waiting: 8, 3   now at: 1"
+  },
+  {
+   "say": "1 has no left child, so the left part is finished. Now visit 1: it is the first item in our visit order.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "compare",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "compare",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 1"
+  },
+  {
+   "say": "1 has no right child either, so we return to 3. Its left side is done, so visit 3.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "compare",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "done",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 3"
+  },
+  {
+   "say": "Now 3's right side: go to 6. It has no children, so visit 6 straight away.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "compare",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "done",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 6"
+  },
+  {
+   "say": "The whole left subtree of 8 is finished, so we climb back to 8 and visit it.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "done",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "done",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "v": "8",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 8"
+  },
+  {
+   "say": "Next 8's right side: node 10. It has no left child, so visit 10 now. Then its right child 14 is next.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "done",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "done",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "done",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "v": "8",
+       "s": "done"
+      },
+      {
+       "v": "10",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 10"
+  },
+  {
+   "say": "14 has no children, so visit it. Every node has been visited exactly once.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "done",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "done",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "done",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "done"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "done"
+      },
+      {
+       "v": "3",
+       "s": "done"
+      },
+      {
+       "v": "6",
+       "s": "done"
+      },
+      {
+       "v": "8",
+       "s": "done"
+      },
+      {
+       "v": "10",
+       "s": "done"
+      },
+      {
+       "v": "14",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": 3,
+   "note": "visit 14"
+  },
+  {
+   "say": "Look at the order: 1, 3, 6, 8, 10, 14. Sorted! In a binary search tree, inorder always gives the values in ascending order.",
+   "structures": [
+    {
+     "kind": "tree",
+     "name": "binary search tree",
+     "nodes": [
+      {
+       "id": "n8",
+       "v": "8",
+       "s": "idle",
+       "l": "n3",
+       "r": "n10"
+      },
+      {
+       "id": "n3",
+       "v": "3",
+       "s": "idle",
+       "l": "n1",
+       "r": "n6"
+      },
+      {
+       "id": "n10",
+       "v": "10",
+       "s": "idle",
+       "r": "n14"
+      },
+      {
+       "id": "n1",
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "id": "n6",
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "id": "n14",
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "visit order",
+     "items": [
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "3",
+       "s": "found"
+      },
+      {
+       "v": "6",
+       "s": "found"
+      },
+      {
+       "v": "8",
+       "s": "found"
+      },
+      {
+       "v": "10",
+       "s": "found"
+      },
+      {
+       "v": "14",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "inorder of a BST = sorted"
+  },
+  {
+   "say": "Move the visit line and you get other orders. Preorder visits the node first, postorder visits it last. Same tree, different stories.",
+   "structures": [
+    {
+     "kind": "queue",
+     "name": "preorder: node, left, right",
+     "items": [
+      {
+       "v": "8",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "14",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "queue",
+     "name": "postorder: left, right, node",
+     "items": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "6",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "14",
+       "s": "idle"
+      },
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "8",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  }
+ ]
+}

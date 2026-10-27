@@ -1,0 +1,45 @@
+name: byte_battle
+
+description: Byte Battle, the learn-it, see-it, battle-it, code-it study companion.
+
+publish_to: "none"
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.8
+
+  # --- Auth API integration ---
+  dio: ^5.9.0                     # HTTP client used by ApiClient/AuthInterceptor
+  flutter_secure_storage: ^11.0.0 # encrypted token/user storage
+  shared_preferences: ^2.5.5
+  image_picker: ^1.2.3
+  flutter_launcher_icons: ^0.14.4
+  flutter_tts: ^4.2.5
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
+    - assets/scenes/
+
+  fonts:
+    - family: PlusJakartaSans
+      fonts:
+        - asset: assets/fonts/PlusJakartaSans.ttf
+    - family: Fraunces
+      fonts:
+        - asset: assets/fonts/Fraunces.ttf
+    - family: JetBrainsMono
+      fonts:
+        - asset: assets/fonts/JetBrainsMono.ttf

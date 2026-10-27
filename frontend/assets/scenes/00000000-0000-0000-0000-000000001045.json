@@ -1,0 +1,142 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001045",
+ "title": "Load balancer: share the work, skip the dead",
+ "kind": "sequence",
+ "intro": "Three servers sit behind one balancer. Watch where each request goes, and what happens when one server dies.",
+ "predict": {
+  "question": "Server 2 has crashed. Where does the next request, which would normally go to Server 2, get sent?",
+  "options": [
+   "Server 2, and the user sees an error",
+   "Server 3, because the balancer skips the dead server",
+   "Server 1, and the balancer restarts the rotation"
+  ],
+  "answer": 1,
+  "reveal": "The health check found Server 2 dead, so the balancer removes it from rotation and the turn passes to the next healthy server, Server 3."
+ },
+ "takeaway": "A load balancer spreads requests across servers and uses health checks to stop sending traffic to any server that fails.",
+ "steps": [
+  {
+   "say": "Your food app is busy. One balancer stands in front of three identical servers and hands out incoming requests.",
+   "actors": [
+    "Balancer",
+    "Server 1",
+    "Server 2",
+    "Server 3"
+   ],
+   "actorState": {
+    "0": "round robin",
+    "1": "UP",
+    "2": "UP",
+    "3": "UP"
+   }
+  },
+  {
+   "say": "Request 1 arrives. Round robin means taking turns in order, so it goes to Server 1.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "request 1",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Request 2 goes to Server 2. Nobody is overloaded yet.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "request 2",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Request 3 goes to Server 3. Everyone has done one job.",
+   "msg": {
+    "from": 0,
+    "to": 3,
+    "label": "request 3",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Request 4 wraps back to Server 1. The load is shared evenly with no clever math.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "request 4",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Uh-oh: Server 2 crashes. The balancer has not noticed yet.",
+   "msg": {
+    "from": 2,
+    "to": 2,
+    "label": "crashed!",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "round robin",
+    "1": "UP",
+    "2": "DOWN",
+    "3": "UP"
+   }
+  },
+  {
+   "say": "The balancer sends a health check, a tiny 'are you alive?' ping, every few seconds. Server 2 stays silent.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "ping S2: no answer",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "S2 removed",
+    "1": "UP",
+    "2": "DOWN",
+    "3": "UP"
+   }
+  },
+  {
+   "say": "Request 5 would have been Server 2's turn. The balancer skips it and sends it to Server 3 instead.",
+   "msg": {
+    "from": 0,
+    "to": 3,
+    "label": "request 5",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Request 6 goes to Server 1. Users never see an error, just two servers sharing the work.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "request 6",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Server 2 is repaired and answers the next ping, so the balancer adds it back into rotation.",
+   "msg": {
+    "from": 2,
+    "to": 0,
+    "label": "ping ok, I am back",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "round robin",
+    "1": "UP",
+    "2": "UP",
+    "3": "UP"
+   }
+  },
+  {
+   "say": "Health checks make failures invisible to users: traffic simply flows around the dead server.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "failures are invisible",
+    "kind": "note"
+   }
+  }
+ ]
+}

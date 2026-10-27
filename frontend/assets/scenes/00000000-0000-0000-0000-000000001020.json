@@ -1,0 +1,367 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001020",
+ "title": "Collisions: two keys, one bucket",
+ "kind": "structure",
+ "intro": "Only a few buckets exist, so two keys will sometimes want the same one. What then?",
+ "predict": {
+  "question": "dog and sun both hash to bucket 2. With chaining, what happens when you put sun?",
+  "options": [
+   "sun overwrites dog",
+   "sun is linked after dog in the same bucket",
+   "The put fails with an error"
+  ],
+  "answer": 1,
+  "reveal": "Chaining keeps a small list per bucket. sun joins dog in bucket 2, and both stay findable."
+ },
+ "takeaway": "A collision is two keys in one bucket. Chaining keeps a small list per bucket (probing uses the next free slot), and good hashing keeps lists short.",
+ "code": [
+  "i = hash(key) % size;",
+  "if bucket[i] is empty:",
+  "  bucket[i] = [key]",
+  "else:",
+  "  bucket[i].append(key)   // chaining"
+ ],
+ "steps": [
+  {
+   "say": "Same hash as before: letter sum % 4. We will store cat, dog and sun. Watch what happens to bucket 2.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "cat -> 0, dog -> 2, sun -> 54 % 4 = 2"
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "put cat: 24 % 4 = 0. Bucket 0 is empty, so cat goes straight in.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": 1,
+   "note": "cat -> bucket 0"
+  },
+  {
+   "say": "put dog: 26 % 4 = 2. Bucket 2 is empty, so dog goes in.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": 1,
+   "note": "dog -> bucket 2"
+  },
+  {
+   "say": "put sun: s + u + n = 19 + 21 + 14 = 54, and 54 % 4 = 2. Bucket 2 is taken by dog. That clash is a collision.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "bad"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "sun wants bucket 2 too"
+    }
+   ],
+   "at": 1,
+   "note": "sun -> 54 -> bucket 2 (taken)"
+  },
+  {
+   "say": "Chaining fix: each bucket holds a small list. sun is linked after dog, so both live in bucket 2.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "idle"
+        },
+        {
+         "v": "sun:7",
+         "s": "cur"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "bucket 2 is now a chain"
+    }
+   ],
+   "at": 4,
+   "note": "bucket 2: dog -> sun"
+  },
+  {
+   "say": "get sun: hash gives bucket 2. Walk the chain and compare keys. First entry is dog, which is not sun.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "compare"
+        },
+        {
+         "v": "sun:7",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "dog == sun? no"
+  },
+  {
+   "say": "Next entry is sun. Keys match, so the value is 7. Only two entries were checked, not the whole table.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "hash table (4 buckets)",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "dim"
+        },
+        {
+         "v": "sun:7",
+         "s": "found"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "sun == sun? yes -> 7"
+  },
+  {
+   "say": "Alternative: open addressing with linear probing. Table keeps one item per slot. sun finds slot 2 full and tries slot 3.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "probing table",
+     "buckets": [
+      {
+       "i": 0,
+       "items": [
+        {
+         "v": "cat:3",
+         "s": "idle"
+        }
+       ]
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "dog:5",
+         "s": "compare"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": [
+        {
+         "v": "sun:7",
+         "s": "cur"
+        }
+       ]
+      }
+     ],
+     "caption": "probe: 2 full, move to 3"
+    }
+   ],
+   "at": -1,
+   "note": "slot 2 full -> try slot 3"
+  },
+  {
+   "say": "Chains stay short if keys spread out evenly. If they all collide, one bucket holds everything and lookups become O(n).",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "average entries checked",
+     "bars": [
+      {
+       "label": "good spread",
+       "value": 0.05,
+       "text": "~1",
+       "s": "done"
+      },
+      {
+       "label": "all collide",
+       "value": 1.0,
+       "text": "n",
+       "s": "bad"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  }
+ ]
+}

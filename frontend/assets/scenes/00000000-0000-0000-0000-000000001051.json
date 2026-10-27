@@ -1,0 +1,251 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001051",
+ "title": "Clarify first: turn a vague prompt into a precise one",
+ "kind": "flow",
+ "intro": "Strong candidates ask before they code. Watch a vague prompt get sharper with each question.",
+ "predict": {
+  "question": "The interviewer gives a short, vague problem. What is the best first move?",
+  "options": [
+   "Start coding the first idea you have",
+   "Ask about input size, edge cases and expected output",
+   "Stay silent and think for ten minutes"
+  ],
+  "answer": 1,
+  "reveal": "Asking. Size, edge cases and output change which solution is right, and it shows the interviewer how you think."
+ },
+ "takeaway": "Before coding, ask about input size and range, edge cases and expected output, then restate the problem.",
+ "steps": [
+  {
+   "say": "The interviewer says: 'Find the duplicates in a list.' It sounds easy, but it is vague. Do not start coding. Ask first.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "active"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Size and range: unknown.",
+     "s": "todo"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Ask about input: 'How many items, and what values?' The answer: up to 100,000 integers, each from 1 to 1,000.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "active"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "That answer shapes the plan. 100,000 items rules out checking every pair, and a small value range even allows a counting array.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "active"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Ask about edge cases: 'What if the list is empty, has one item, or every value is the same?' Edge cases are where bugs hide.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Empty list? One item? All the same value?",
+     "s": "active"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Agree on the answers out loud: an empty list or a single item has no duplicates, and a value repeated many times is reported once.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Empty or one item: return nothing. All same: report once.",
+     "s": "active"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Unknown. Ask!",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Ask about output: 'Should I return each duplicate once or every copy? A list, or just true or false?' Answer: each once, any order.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Find the duplicates in a list.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Empty or one item: return nothing. All same: report once.",
+     "s": "done"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Each repeated value once, in any order, as a list.",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "Now restate it: the vague prompt has become a precise one. Saying it back lets the interviewer correct you before you write a line.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Return each repeated value once, any order, from up to 100,000 ints.",
+     "s": "active"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Empty or one item: return nothing. All same: report once.",
+     "s": "done"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Each repeated value once, in any order, as a list.",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "Two minutes of questions kept you from solving the wrong problem. Now a hash set that counts repeats is a confident choice.",
+   "cards": [
+    {
+     "icon": "chat",
+     "title": "Prompt",
+     "text": "Return each repeated value once, any order, from up to 100,000 ints.",
+     "s": "done"
+    },
+    {
+     "icon": "search",
+     "title": "Input",
+     "text": "Up to 100,000 integers, values 1 to 1,000.",
+     "s": "done"
+    },
+    {
+     "icon": "warning",
+     "title": "Edge cases",
+     "text": "Empty or one item: return nothing. All same: report once.",
+     "s": "done"
+    },
+    {
+     "icon": "check",
+     "title": "Output",
+     "text": "Each repeated value once, in any order, as a list.",
+     "s": "done"
+    }
+   ]
+  }
+ ]
+}

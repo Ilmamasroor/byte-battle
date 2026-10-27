@@ -1,0 +1,407 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001034",
+ "title": "Processes vs threads: who shares memory?",
+ "kind": "computer",
+ "intro": "Two programs running, or one program doing two jobs? Let's look at which memory is private and which is shared.",
+ "predict": {
+  "question": "Thread 1 sets n = 5 on the heap. Thread 2 of the SAME process reads n. What does it get?",
+  "options": [
+   "0, it has its own copy",
+   "5, the heap is shared",
+   "An error, threads cannot read each other"
+  ],
+  "answer": 1,
+  "reveal": "Threads of one process share the heap, so Thread 2 sees 5. Separate processes would each have their own n."
+ },
+ "takeaway": "Processes are isolated with private memory; threads share their process's heap but keep private stacks, so switching threads is cheaper.",
+ "steps": [
+  {
+   "say": "Two programs running means two processes. The OS gives each one its own private memory: code, heap and stack.",
+   "cpu": {
+    "doing": "run A on core 1, B on core 2",
+    "regs": {
+     "A": "running",
+     "B": "running"
+    },
+    "cores": [
+     "A",
+     "B"
+    ]
+   },
+   "grid": {
+    "title": "Physical memory",
+    "cells": [
+     {
+      "label": "A:code",
+      "s": "used"
+     },
+     {
+      "label": "A:heap",
+      "s": "used"
+     },
+     {
+      "label": "A:stack",
+      "s": "used"
+     },
+     {
+      "label": "B:code",
+      "s": "used"
+     },
+     {
+      "label": "B:heap",
+      "s": "used"
+     },
+     {
+      "label": "B:stack",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Process A memory",
+     "rows": [
+      [
+       "part",
+       "contents"
+      ],
+      [
+       "code",
+       "app.exe"
+      ],
+      [
+       "heap",
+       "n = 0"
+      ],
+      [
+       "stack",
+       "i = 0"
+      ]
+     ]
+    },
+    {
+     "title": "Process B memory",
+     "rows": [
+      [
+       "part",
+       "contents"
+      ],
+      [
+       "code",
+       "game.exe"
+      ],
+      [
+       "heap",
+       "n = 0"
+      ],
+      [
+       "stack",
+       "i = 0"
+      ]
+     ]
+    }
+   ],
+   "highlight": [
+    "ram"
+   ]
+  },
+  {
+   "say": "Process A sets n = 5 in its heap. Process B has its own n, still 0. Neither can even see the other's memory.",
+   "cpu": {
+    "doing": "A: n = 5",
+    "regs": {
+     "A": "running",
+     "B": "running"
+    },
+    "cores": [
+     "A",
+     "B"
+    ]
+   },
+   "grid": {
+    "title": "Physical memory",
+    "cells": [
+     {
+      "label": "A:code",
+      "s": "used"
+     },
+     {
+      "label": "A:heap",
+      "s": "hot"
+     },
+     {
+      "label": "A:stack",
+      "s": "used"
+     },
+     {
+      "label": "B:code",
+      "s": "used"
+     },
+     {
+      "label": "B:heap",
+      "s": "used"
+     },
+     {
+      "label": "B:stack",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Process A memory",
+     "rows": [
+      [
+       "part",
+       "contents"
+      ],
+      [
+       "code",
+       "app.exe"
+      ],
+      [
+       "heap",
+       "n = 5"
+      ],
+      [
+       "stack",
+       "i = 0"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    },
+    {
+     "title": "Process B memory",
+     "rows": [
+      [
+       "part",
+       "contents"
+      ],
+      [
+       "code",
+       "game.exe"
+      ],
+      [
+       "heap",
+       "n = 0"
+      ],
+      [
+       "stack",
+       "i = 0"
+      ]
+     ]
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "With only one core left the OS must switch: save A's registers, swap in B's page table, lose cached data. Switching processes is expensive.",
+   "cpu": {
+    "doing": "context switch A -> B",
+    "regs": {
+     "A regs": "saved",
+     "page table": "swap to B"
+    },
+    "cores": [
+     "B",
+     null
+    ]
+   },
+   "highlight": [
+    "cpu",
+    "ram"
+   ]
+  },
+  {
+   "say": "Now ONE process with two threads. The threads share the code and the heap, but each thread gets its own stack.",
+   "cpu": {
+    "doing": "run T1 and T2 of process A",
+    "regs": {
+     "page table": "A (shared)"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "grid": {
+    "title": "Process A memory",
+    "cells": [
+     {
+      "label": "code",
+      "s": "used"
+     },
+     {
+      "label": "heap",
+      "s": "used"
+     },
+     {
+      "label": "T1 stack",
+      "s": "used"
+     },
+     {
+      "label": "T2 stack",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Shared vs private",
+     "rows": [
+      [
+       "shared",
+       "code, heap"
+      ],
+      [
+       "private",
+       "T1 stack"
+      ],
+      [
+       "private",
+       "T2 stack"
+      ]
+     ],
+     "hl": [
+      0
+     ]
+    }
+   ],
+   "heap": [
+    {
+     "id": "n",
+     "type": "int n",
+     "fields": {
+      "value": "0"
+     },
+     "state": "live"
+    }
+   ],
+   "stack": [
+    {
+     "frame": "T1 stack",
+     "vars": {
+      "i": "0"
+     }
+    },
+    {
+     "frame": "T2 stack",
+     "vars": {
+      "i": "0"
+     }
+    }
+   ],
+   "highlight": [
+    "ram",
+    "heap",
+    "stack"
+   ]
+  },
+  {
+   "say": "T1 writes n = 5 on the heap. T2 reads n and sees 5 straight away. Sharing memory makes threads great at teamwork.",
+   "cpu": {
+    "doing": "T1: n = 5   T2: read n -> 5",
+    "regs": {
+     "page table": "A (shared)"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "heap": [
+    {
+     "id": "n",
+     "type": "int n",
+     "fields": {
+      "value": "5"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "heap"
+   ]
+  },
+  {
+   "say": "But each thread's local variable i lives on its own stack. T1 has i = 3 while T2 has i = 8. Stacks are never shared.",
+   "stack": [
+    {
+     "frame": "T1 stack",
+     "vars": {
+      "i": "3"
+     }
+    },
+    {
+     "frame": "T2 stack",
+     "vars": {
+      "i": "8"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "n",
+     "type": "int n",
+     "fields": {
+      "value": "5"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "stack"
+   ]
+  },
+  {
+   "say": "Switching T1 to T2 only saves a few registers and the stack pointer. Same page table, same cached memory, so it is cheap.",
+   "cpu": {
+    "doing": "switch T1 -> T2 (registers only)",
+    "regs": {
+     "SP": "T2 stack",
+     "page table": "unchanged"
+    },
+    "cores": [
+     "T2",
+     null
+    ]
+   },
+   "highlight": [
+    "cpu"
+   ]
+  },
+  {
+   "say": "The catch: if both threads write n at the same time they can corrupt it. Shared memory needs locks. That is the next lesson.",
+   "cpu": {
+    "doing": "T1 and T2 both write n",
+    "regs": {
+     "page table": "A (shared)"
+    },
+    "cores": [
+     "T1",
+     "T2"
+    ]
+   },
+   "heap": [
+    {
+     "id": "n",
+     "type": "int n",
+     "fields": {
+      "value": "?"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "heap"
+   ]
+  }
+ ]
+}

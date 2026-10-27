@@ -1,0 +1,923 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001021",
+ "title": "Graph representation: list or matrix",
+ "kind": "structure",
+ "intro": "One small graph, three ways to see it: a drawing, an adjacency list, and an adjacency matrix.",
+ "predict": {
+  "question": "Which representation lists a node's neighbors without scanning a whole row of n cells?",
+  "options": [
+   "Adjacency list",
+   "Adjacency matrix",
+   "Both the same"
+  ],
+  "answer": 0,
+  "reveal": "A list stores only real neighbors. A matrix row has n cells, mostly 0 in a sparse graph, so you scan them all."
+ },
+ "takeaway": "An adjacency list stores only the real neighbors (great for sparse graphs). A matrix uses n by n cells and checks any edge in O(1).",
+ "steps": [
+  {
+   "say": "Our graph has 4 nodes and 4 edges: A-B, A-C, B-C and C-D. Same graph, two ways to store it in memory.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "Adjacency list: for each node, keep a list of its neighbors. A touches B and C, so A -> B, C.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "cur"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "compare"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "compare"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "cur"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "cur"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "A ->",
+     "nodes": [
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "A: [B, C]"
+  },
+  {
+   "say": "Do that for every node. Each edge shows up twice, once at each end, because the graph is undirected.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "A ->",
+     "nodes": [
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "B ->",
+     "nodes": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "C ->",
+     "nodes": [
+      {
+       "v": "A",
+       "s": "idle"
+      },
+      {
+       "v": "B",
+       "s": "idle"
+      },
+      {
+       "v": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "D ->",
+     "nodes": [
+      {
+       "v": "C",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "A:[B,C] B:[A,C] C:[A,B,D] D:[C]"
+  },
+  {
+   "say": "Neighbors of C? Read C's list and you get A, B, D immediately. No need to look at other nodes.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "found"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "found"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "cur"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "found"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "C ->",
+     "nodes": [
+      {
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "v": "B",
+       "s": "found"
+      },
+      {
+       "v": "D",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "at": -1,
+   "note": "C: [A, B, D]"
+  },
+  {
+   "say": "Adjacency matrix: an n by n grid. Cell [row][col] is 1 if that edge exists, else 0. Row A has 1 under B and C.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "cur"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "compare"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "compare"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "row A",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {},
+     "caption": "cols: A B C D"
+    },
+    {
+     "kind": "array",
+     "name": "row B",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row C",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row D",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "row A = 0 1 1 0"
+  },
+  {
+   "say": "The whole matrix for our graph. It is symmetric: [A][B] and [B][A] are both 1.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "row A",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {},
+     "caption": "cols: A B C D"
+    },
+    {
+     "kind": "array",
+     "name": "row B",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row C",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row D",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "4 x 4 = 16 cells"
+  },
+  {
+   "say": "Is there an edge B-D? Look at row B, column D: 0. One cell, instant. A list would scan B's neighbors.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "compare"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "compare"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "row A",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {},
+     "caption": "cols: A B C D"
+    },
+    {
+     "kind": "array",
+     "name": "row B",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "bad"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row C",
+     "cells": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "array",
+     "name": "row D",
+     "cells": [
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": -1,
+   "note": "matrix[B][D] = 0  -> no edge"
+  },
+  {
+   "say": "Cost: 1,000 nodes with 2,000 edges. A list stores about 4,000 entries, a matrix needs 1,000,000 cells.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "memory for 1,000 nodes, 2,000 edges",
+     "bars": [
+      {
+       "label": "list",
+       "value": 0.004,
+       "text": "~4,000",
+       "s": "done"
+      },
+      {
+       "label": "matrix",
+       "value": 1.0,
+       "text": "1,000,000",
+       "s": "swap"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  },
+  {
+   "say": "Pick list for sparse graphs and walking neighbors. Pick matrix for dense graphs or constant-time edge checks.",
+   "structures": [
+    {
+     "kind": "graph",
+     "name": "graph",
+     "nodes": [
+      {
+       "id": "A",
+       "x": 0.15,
+       "y": 0.2,
+       "s": "idle"
+      },
+      {
+       "id": "B",
+       "x": 0.15,
+       "y": 0.8,
+       "s": "idle"
+      },
+      {
+       "id": "C",
+       "x": 0.55,
+       "y": 0.5,
+       "s": "idle"
+      },
+      {
+       "id": "D",
+       "x": 0.9,
+       "y": 0.5,
+       "s": "idle"
+      }
+     ],
+     "edges": [
+      {
+       "a": "A",
+       "b": "B",
+       "s": "idle"
+      },
+      {
+       "a": "A",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "B",
+       "b": "C",
+       "s": "idle"
+      },
+      {
+       "a": "C",
+       "b": "D",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "list",
+     "name": "C ->",
+     "nodes": [
+      {
+       "v": "A",
+       "s": "found"
+      },
+      {
+       "v": "B",
+       "s": "found"
+      },
+      {
+       "v": "D",
+       "s": "found"
+      }
+     ]
+    },
+    {
+     "kind": "array",
+     "name": "row C",
+     "cells": [
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "found"
+      },
+      {
+       "v": "0",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "found"
+      }
+     ],
+     "pointers": {},
+     "caption": "cols: A B C D"
+    }
+   ],
+   "at": -1,
+   "note": "same facts, two shapes"
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001033",
+ "battle": {
+  "title": "Isolation Gauntlet",
+  "description": "Dirty, non-repeatable and phantom reads across isolation levels.",
+  "battleType": "SURVIVAL",
+  "difficulty": "HARD",
+  "timeLimitSeconds": 360,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is a dirty read?",
+    "options": [
+     "Reading data written by another transaction that has not yet committed",
+     "Reading the same row twice and getting different committed values",
+     "Seeing new rows appear in a repeated range query",
+     "Reading a row that was deleted long ago"
+    ],
+    "answer": "Reading data written by another transaction that has not yet committed",
+    "explanation": "A dirty read sees uncommitted changes, which may later be rolled back. The second option describes a non-repeatable read and the third a phantom read.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Within one transaction you read a row twice and get different values because another transaction committed an UPDATE in between. What is this anomaly called?",
+    "options": [
+     "Dirty read",
+     "Phantom read",
+     "Non-repeatable read",
+     "Lost update"
+    ],
+    "answer": "Non-repeatable read",
+    "explanation": "A non-repeatable read means the same row returns different committed values within one transaction. A phantom read is about a repeated query returning a different set of rows, and a dirty read involves uncommitted data.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Transaction T1 runs SELECT COUNT(*) FROM orders WHERE status = 'open' and gets 5. Transaction T2 inserts a new open order and commits. T1 runs the same count again and gets 6. Which anomaly is this?",
+    "options": [
+     "Dirty read",
+     "Phantom read",
+     "Non-repeatable read",
+     "Write skew"
+    ],
+    "answer": "Phantom read",
+    "explanation": "A phantom read is when a repeated query over a predicate returns extra or missing rows because of another committed insert or delete. No existing row changed value and nothing uncommitted was seen, so it is not a non-repeatable or dirty read.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "acct(id, bal): (1, 100). Under READ COMMITTED on PostgreSQL or MySQL: T1 BEGIN; T1 SELECT bal -> 100. T2 UPDATE acct SET bal = 150 WHERE id = 1; T2 COMMIT. T1 runs SELECT bal again. What does the second SELECT return?",
+    "options": [
+     "100",
+     "250",
+     "150",
+     "An error because the row changed"
+    ],
+    "answer": "150",
+    "explanation": "READ COMMITTED takes a fresh view for each statement, so T1 sees T2's committed value 150, which is a non-repeatable read. Only REPEATABLE READ would keep returning 100.",
+    "points": 20
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "An audit job runs several queries and, by the SQL standard guarantees alone, must never see dirty, non-repeatable or phantom reads. Which is the weakest level that promises this?",
+    "options": [
+     "READ UNCOMMITTED",
+     "READ COMMITTED",
+     "REPEATABLE READ",
+     "SERIALIZABLE"
+    ],
+    "answer": "SERIALIZABLE",
+    "explanation": "Per the standard, only SERIALIZABLE forbids all three anomalies. REPEATABLE READ is allowed to permit phantoms, even though some engines such as PostgreSQL go further and also prevent them.",
+    "points": 20
+   }
+  ]
+ }
+}

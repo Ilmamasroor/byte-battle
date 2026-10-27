@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001044",
+ "battle": {
+  "title": "Where Is That Domain?",
+  "description": "Chase a domain name from your laptop to the authoritative server.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What does a recursive DNS resolver do for a client?",
+    "options": [
+     "Stores the master copy of every zone it is asked about",
+     "Only returns a referral and leaves the client to follow it",
+     "Encrypts the connection between the client and the website",
+     "Performs the full lookup on its behalf and caches the answer"
+    ],
+    "answer": "Performs the full lookup on its behalf and caches the answer",
+    "explanation": "The recursive resolver (often run by the ISP or a public DNS service) chases the answer through root, TLD and authoritative servers, then caches it. Authoritative servers hold the master records.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which DNS record type maps a hostname to an IPv4 address?",
+    "options": [
+     "A",
+     "AAAA",
+     "MX",
+     "CNAME"
+    ],
+    "answer": "A",
+    "explanation": "An A record holds an IPv4 address. AAAA holds IPv6, MX names the mail server and CNAME is an alias to another name.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "For an uncached name, which sequence matches how a recursive resolver finds the answer?",
+    "options": [
+     "Authoritative server -> TLD server -> root server",
+     "TLD server -> root server -> authoritative server",
+     "Root server -> TLD server -> authoritative server",
+     "Root server -> authoritative server -> TLD server"
+    ],
+    "answer": "Root server -> TLD server -> authoritative server",
+    "explanation": "The root points to the TLD servers (such as .com), the TLD servers point to the domain's authoritative servers, and those return the final record. Each step narrows the search.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You will move your site to a new server IP next week. How do you minimise visitors hitting the old IP afterwards?",
+    "options": [
+     "Raise the TTL so resolvers keep the record longer",
+     "Lower the record's TTL a few days before the move",
+     "Delete the A record on migration day and wait",
+     "Ask every user to flush their DNS cache"
+    ],
+    "answer": "Lower the record's TTL a few days before the move",
+    "explanation": "Resolvers cache a record for its TTL, so a low TTL set in advance means stale copies expire quickly after you switch. A higher TTL prolongs the problem and you cannot flush other people's caches.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A resolver follows CNAME aliases until it finds an address. What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Map<String, String> cname = new HashMap<>();\n        cname.put(\"www.shop.test\", \"cdn.shop.test\");\n        cname.put(\"cdn.shop.test\", \"edge7.net.test\");\n        Map<String, String> a = new HashMap<>();\n        a.put(\"edge7.net.test\", \"10.0.0.7\");\n        a.put(\"shop.test\", \"10.1.1.1\");\n        String name = \"www.shop.test\";\n        int hops = 0;\n        while (cname.containsKey(name)) {\n            name = cname.get(name);\n            hops++;\n        }\n        System.out.println(name + \" \" + hops + \" \" + a.get(name));\n    }\n}",
+    "options": [
+     "cdn.shop.test 1 10.1.1.1",
+     "www.shop.test 0 10.0.0.7",
+     "edge7.net.test 2 10.0.0.7",
+     "edge7.net.test 1 10.0.0.7"
+    ],
+    "answer": "edge7.net.test 2 10.0.0.7",
+    "explanation": "The name www.shop.test is an alias of cdn.shop.test, which is an alias of edge7.net.test: two hops. Only then does an A record exist, giving 10.0.0.7. Resolvers restart the lookup on the target name, they do not stop at the alias.",
+    "points": 20
+   }
+  ]
+ }
+}

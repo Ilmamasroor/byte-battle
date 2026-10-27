@@ -1,0 +1,216 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001054",
+ "title": "STAR: tell a story interviewers remember",
+ "kind": "flow",
+ "intro": "Behavioural questions are really 'tell me a story'. Here is the shape that works.",
+ "predict": {
+  "question": "Which part of a STAR answer should get the MOST airtime?",
+  "options": [
+   "Situation",
+   "Action",
+   "Result"
+  ],
+  "answer": 1,
+  "reveal": "Action. Interviewers hire the person who did the work, so spend most of your time on what YOU did and why."
+ },
+ "takeaway": "Keep Situation and Task brief, spend your time on Action, and land a concrete Result.",
+ "steps": [
+  {
+   "say": "Question: 'Tell me about a time you fixed a hard bug.' Use STAR: Situation, Task, Action, Result.",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "todo"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "todo"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "todo"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Situation: set the scene fast. 'In our final-year project, the app crashed whenever two users saved at once.'",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "active"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "todo"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "todo"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Task: say what YOU owned. 'I was responsible for finding the cause before the demo on Friday.'",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "done"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "active"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "todo"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Action: the heart of the answer. Say what you did, in order: reproduced it, read the logs, found a race, added a lock.",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "done"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "done"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "active"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "todo"
+    }
+   ]
+  },
+  {
+   "say": "Result: close with an outcome. 'Crashes dropped to zero and the demo ran clean.' Numbers beat adjectives.",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "done"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "done"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "done"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "active"
+    }
+   ]
+  },
+  {
+   "say": "That is a whole answer in about two minutes. Short setup, detailed action, concrete result.",
+   "cards": [
+    {
+     "icon": "people",
+     "title": "Situation",
+     "text": "Set the scene in one or two sentences.",
+     "s": "done"
+    },
+    {
+     "icon": "flag",
+     "title": "Task",
+     "text": "What was YOUR responsibility?",
+     "s": "done"
+    },
+    {
+     "icon": "build",
+     "title": "Action",
+     "text": "What did YOU do, step by step?",
+     "s": "done"
+    },
+    {
+     "icon": "star",
+     "title": "Result",
+     "text": "What changed? Use a number if you can.",
+     "s": "done"
+    }
+   ]
+  },
+  {
+   "say": "Prepare three stories now (a bug, a team conflict, a deadline) and you can bend them to almost any question.",
+   "cards": [
+    {
+     "icon": "list",
+     "title": "Story 1: a hard bug",
+     "text": "Debugging and persistence.",
+     "s": "done"
+    },
+    {
+     "icon": "people",
+     "title": "Story 2: a team conflict",
+     "text": "Communication.",
+     "s": "done"
+    },
+    {
+     "icon": "timer",
+     "title": "Story 3: a tight deadline",
+     "text": "Prioritising under pressure.",
+     "s": "done"
+    }
+   ]
+  }
+ ]
+}

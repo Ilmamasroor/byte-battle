@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001026",
+ "battle": {
+  "title": "Filter Frenzy",
+  "description": "SELECT, WHERE, ORDER BY and the NULL trap in five quick rounds.",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which clause removes individual rows that do not satisfy a condition?",
+    "options": [
+     "ORDER BY",
+     "WHERE",
+     "DISTINCT",
+     "LIMIT"
+    ],
+    "answer": "WHERE",
+    "explanation": "WHERE tests each row and keeps only those where the condition is true. ORDER BY only sorts, DISTINCT removes duplicate result rows and LIMIT caps how many rows come back, none of them test a condition.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Table employees(id, name, salary): (1, 'Ann', 50), (2, 'Bo', 70), (3, 'Cy', NULL), (4, 'Di', 90). Query: SELECT id FROM employees WHERE salary <> 70; Which ids are returned?",
+    "options": [
+     "1, 3, 4",
+     "1, 2, 4",
+     "1, 4",
+     "4"
+    ],
+    "answer": "1, 4",
+    "explanation": "A row is kept only when the condition is TRUE. For Cy, NULL <> 70 evaluates to UNKNOWN, so Cy is dropped along with Bo, leaving ids 1 and 4. The tempting 1, 3, 4 forgets that comparisons with NULL are never true.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You need all customers whose city is Paris, Rome or Oslo. Which filter is the cleanest and correct?",
+    "options": [
+     "WHERE city IN ('Paris', 'Rome', 'Oslo')",
+     "WHERE city = 'Paris' AND city = 'Rome' AND city = 'Oslo'",
+     "WHERE city LIKE 'Paris, Rome, Oslo'",
+     "WHERE city BETWEEN 'Paris' AND 'Oslo'"
+    ],
+    "answer": "WHERE city IN ('Paris', 'Rome', 'Oslo')",
+    "explanation": "IN tests membership in a list of values. Joining the equalities with AND can never be true because one city cannot equal three values at once, LIKE matches a single pattern string, and BETWEEN is an alphabetical range, not a list (and since 'Oslo' sorts before 'Paris' it would match nothing).",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Table products(id, name, price): (1, 'pen', 5), (2, 'ink', 12), (3, 'pad', 8), (4, 'cap', 12). Query: SELECT name FROM products WHERE price >= 8 ORDER BY price DESC, name ASC; What is the result, in row order?",
+    "options": [
+     "ink, cap, pad",
+     "pad, cap, ink",
+     "pen, pad, cap, ink",
+     "cap, ink, pad"
+    ],
+    "answer": "cap, ink, pad",
+    "explanation": "WHERE keeps ink (12), pad (8) and cap (12). Sorting by price descending puts the two 12s first, and the name ASC tie-break puts cap before ink, then pad last.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A table has 4 rows and exactly one of them has NULL in the column email. What does SELECT * FROM t WHERE email = NULL return?",
+    "options": [
+     "The row with the NULL email",
+     "All 4 rows",
+     "No rows",
+     "An error"
+    ],
+    "answer": "No rows",
+    "explanation": "Comparing anything to NULL with = gives UNKNOWN, never TRUE, so no row passes the filter and no error is raised. To find the NULL row you must write WHERE email IS NULL.",
+    "points": 20
+   }
+  ]
+ }
+}

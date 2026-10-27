@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001042",
+ "battle": {
+  "title": "Handshake or Hurl",
+  "description": "TCP's careful promises against UDP's fire-and-forget speed.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which statement about UDP is correct?",
+    "options": [
+     "It retransmits lost datagrams automatically",
+     "It delivers datagrams in the order they were sent",
+     "It is connectionless and does not guarantee delivery or order",
+     "It opens a connection with a three-way handshake"
+    ],
+    "answer": "It is connectionless and does not guarantee delivery or order",
+    "explanation": "UDP just sends datagrams: no connection setup, no retransmission, no ordering. Those guarantees are exactly what TCP adds, at the cost of extra latency and overhead.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "What is the correct order of the TCP three-way handshake?",
+    "options": [
+     "SYN, SYN-ACK, ACK",
+     "SYN, ACK, SYN-ACK",
+     "ACK, SYN, SYN-ACK",
+     "SYN-ACK, SYN, ACK"
+    ],
+    "answer": "SYN, SYN-ACK, ACK",
+    "explanation": "The client sends SYN, the server answers SYN-ACK (acknowledging and sending its own SYN), and the client confirms with ACK. Only then is the connection established and data can flow.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You are building a live video call where an occasional glitch is fine but delay is not. Which transport fits best?",
+    "options": [
+     "TCP, because reliability matters most in real time",
+     "UDP, because a late retransmitted packet is useless",
+     "TCP with a larger window to hide latency",
+     "TCP, because UDP cannot carry video"
+    ],
+    "answer": "UDP, because a late retransmitted packet is useless",
+    "explanation": "A retransmitted video frame arrives too late to be shown, and TCP's in-order delivery would stall newer frames behind a lost one (head-of-line blocking). UDP lets the app skip lost data and keep going.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A TCP segment is lost in transit. What does TCP do?",
+    "options": [
+     "Closes the connection and reports an error at once",
+     "Ignores it because the checksum already protects the data",
+     "Leaves the application to detect the gap and resend",
+     "Retransmits it after missing an ACK and slows its sending rate"
+    ],
+    "answer": "Retransmits it after missing an ACK and slows its sending rate",
+    "explanation": "TCP notices the missing acknowledgement (timeout or duplicate ACKs), retransmits, and treats the loss as a congestion signal by shrinking its congestion window. The application never sees the gap.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What is the TCP receive window (flow control) designed to prevent?",
+    "options": [
+     "A fast sender overflowing the receiver's buffer",
+     "Routers on the path becoming congested",
+     "Packets being corrupted on the wire",
+     "Two apps using the same port number"
+    ],
+    "answer": "A fast sender overflowing the receiver's buffer",
+    "explanation": "Flow control is about the receiver: it advertises how much buffer space is left. Router congestion is the job of congestion control, a separate mechanism that is the tempting wrong answer here.",
+    "points": 20
+   }
+  ]
+ }
+}

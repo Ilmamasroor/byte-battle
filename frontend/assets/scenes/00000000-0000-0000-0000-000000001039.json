@@ -1,0 +1,565 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001039",
+ "title": "Producer and consumer with a bounded buffer",
+ "kind": "computer",
+ "intro": "One thread makes items, another uses them, and a small shelf sits between. What if the shelf fills up?",
+ "predict": {
+  "question": "The 3-slot buffer is full and the producer has another item. What should happen?",
+  "options": [
+   "It overwrites the oldest item",
+   "It waits until the consumer takes one",
+   "It throws the new item away"
+  ],
+  "answer": 1,
+  "reveal": "The producer blocks on wait(empty) until the consumer frees a slot. Nothing is lost and no CPU is wasted."
+ },
+ "takeaway": "Two semaphores count empty and full slots: producers sleep when the buffer is full, consumers sleep when it is empty.",
+ "code": [
+  "P: wait(empty);",
+  "P: put(item);",
+  "P: signal(full);",
+  "C: wait(full);",
+  "C: take(item);",
+  "C: signal(empty);"
+ ],
+ "steps": [
+  {
+   "say": "A producer drops items into a shared buffer with 3 slots. A consumer takes them out. Two counters track empty and full slots.",
+   "cpu": {
+    "doing": "producer and consumer ready",
+    "regs": {
+     "in": "slot 0",
+     "out": "slot 0"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "empty",
+      "s": "free"
+     },
+     {
+      "label": "empty",
+      "s": "free"
+     },
+     {
+      "label": "empty",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "3"
+      ],
+      [
+       "full slots",
+       "0"
+      ],
+      [
+       "in slot",
+       "0"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ]
+    }
+   ],
+   "at": -1,
+   "highlight": [
+    "ram",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The consumer arrives first and calls wait(full). Full is 0, so there is nothing to take. It sleeps. Consumer blocked on an empty buffer.",
+   "cpu": {
+    "doing": "Cons: wait(full) blocks",
+    "regs": {
+     "in": "slot 0",
+     "out": "slot 0"
+    },
+    "cores": [
+     "Prod",
+     null
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "3"
+      ],
+      [
+       "full slots",
+       "0"
+      ],
+      [
+       "in slot",
+       "0"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "at": 3,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The producer puts item A in slot 0. Empty drops to 2, full rises to 1, and signal(full) wakes the consumer.",
+   "cpu": {
+    "doing": "Prod: put A in slot 0, signal(full)",
+    "regs": {
+     "in": "slot 1",
+     "out": "slot 0"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "A",
+      "s": "hot"
+     },
+     {
+      "label": "empty",
+      "s": "free"
+     },
+     {
+      "label": "empty",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "2"
+      ],
+      [
+       "full slots",
+       "1"
+      ],
+      [
+       "in slot",
+       "1"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ]
+    }
+   ],
+   "at": 2,
+   "highlight": [
+    "ram",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The consumer has not run yet, so the producer adds B. Empty 1, full 2.",
+   "cpu": {
+    "doing": "Prod: put B in slot 1",
+    "regs": {
+     "in": "slot 2",
+     "out": "slot 0"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "A",
+      "s": "used"
+     },
+     {
+      "label": "B",
+      "s": "hot"
+     },
+     {
+      "label": "empty",
+      "s": "free"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "1"
+      ],
+      [
+       "full slots",
+       "2"
+      ],
+      [
+       "in slot",
+       "2"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ]
+    }
+   ],
+   "at": 1,
+   "highlight": [
+    "ram"
+   ]
+  },
+  {
+   "say": "It adds C. Empty hits 0 and full is 3: the buffer is full. The in pointer wraps back to slot 0, like a ring.",
+   "cpu": {
+    "doing": "Prod: put C in slot 2",
+    "regs": {
+     "in": "slot 0 (wrapped)",
+     "out": "slot 0"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "A",
+      "s": "used"
+     },
+     {
+      "label": "B",
+      "s": "used"
+     },
+     {
+      "label": "C",
+      "s": "hot"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "0"
+      ],
+      [
+       "full slots",
+       "3"
+      ],
+      [
+       "in slot",
+       "0"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ]
+    }
+   ],
+   "at": 1,
+   "highlight": [
+    "ram",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The producer has item D but wait(empty) sees 0 free slots. It sleeps. Producer blocked on a full buffer, burning no CPU.",
+   "cpu": {
+    "doing": "Prod: wait(empty) blocks",
+    "regs": {
+     "in": "slot 0",
+     "out": "slot 0"
+    },
+    "cores": [
+     null,
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "A",
+      "s": "used"
+     },
+     {
+      "label": "B",
+      "s": "used"
+     },
+     {
+      "label": "C",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "0"
+      ],
+      [
+       "full slots",
+       "3"
+      ],
+      [
+       "in slot",
+       "0"
+      ],
+      [
+       "out slot",
+       "0"
+      ]
+     ],
+     "hl": [
+      1
+     ]
+    }
+   ],
+   "at": 0,
+   "highlight": [
+    "cpu",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The consumer takes A from slot 0. Empty becomes 1, full becomes 2, and signal(empty) wakes the producer.",
+   "cpu": {
+    "doing": "Cons: take A, signal(empty)",
+    "regs": {
+     "in": "slot 0",
+     "out": "slot 1"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "empty",
+      "s": "hot"
+     },
+     {
+      "label": "B",
+      "s": "used"
+     },
+     {
+      "label": "C",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "1"
+      ],
+      [
+       "full slots",
+       "2"
+      ],
+      [
+       "in slot",
+       "0"
+      ],
+      [
+       "out slot",
+       "1"
+      ]
+     ]
+    }
+   ],
+   "at": 5,
+   "highlight": [
+    "cpu",
+    "ram",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The producer wakes and puts D into the freed slot 0. Full again, but nothing was lost or overwritten.",
+   "cpu": {
+    "doing": "Prod: put D in slot 0",
+    "regs": {
+     "in": "slot 1",
+     "out": "slot 1"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "grid": {
+    "title": "Bounded buffer (3 slots)",
+    "cells": [
+     {
+      "label": "D",
+      "s": "hot"
+     },
+     {
+      "label": "B",
+      "s": "used"
+     },
+     {
+      "label": "C",
+      "s": "used"
+     }
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "0"
+      ],
+      [
+       "full slots",
+       "3"
+      ],
+      [
+       "in slot",
+       "1"
+      ],
+      [
+       "out slot",
+       "1"
+      ]
+     ]
+    }
+   ],
+   "at": 1,
+   "highlight": [
+    "ram",
+    "panel:0"
+   ]
+  },
+  {
+   "say": "The rule: empty + full always equals 3. Producers wait when empty is 0, consumers wait when full is 0. A mutex also guards the put and take.",
+   "cpu": {
+    "doing": "empty + full = 3 always",
+    "regs": {
+     "in": "slot 1",
+     "out": "slot 1"
+    },
+    "cores": [
+     "Prod",
+     "Cons"
+    ]
+   },
+   "panels": [
+    {
+     "title": "Counters",
+     "rows": [
+      [
+       "name",
+       "value"
+      ],
+      [
+       "empty slots",
+       "0"
+      ],
+      [
+       "full slots",
+       "3"
+      ],
+      [
+       "in slot",
+       "1"
+      ],
+      [
+       "out slot",
+       "1"
+      ]
+     ]
+    }
+   ],
+   "at": -1,
+   "highlight": [
+    "panel:0"
+   ]
+  }
+ ]
+}

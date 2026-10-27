@@ -1,0 +1,271 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001005",
+ "title": "Exceptions: throw, unwind, catch, finally",
+ "kind": "computer",
+ "intro": "Two methods deep, something divides by zero. Where does the program go next?",
+ "predict": {
+  "question": "level2 divides by zero. Which lines get printed?",
+  "options": [
+   "caught, done",
+   "skipped, caught, done",
+   "Nothing: the program crashes"
+  ],
+  "answer": 0,
+  "reveal": "The throw skips the rest of level2 and level1 (so skipped never prints), main's catch prints caught, and finally always prints done."
+ },
+ "takeaway": "A thrown exception unwinds the call stack until a matching catch; finally runs no matter what.",
+ "code": [
+  "static void main(String[] a) {",
+  "  try {",
+  "    level1();",
+  "  } catch (ArithmeticException e) {",
+  "    System.out.println(\"caught\");",
+  "  } finally {",
+  "    System.out.println(\"done\");",
+  "  }",
+  "}",
+  "static void level1() {",
+  "  level2();",
+  "  System.out.println(\"skipped\");",
+  "}",
+  "static void level2() { int x = 5 / 0; }"
+ ],
+ "steps": [
+  {
+   "say": "main() opens a try block. Anything that goes wrong inside it can be caught below. Watch the call stack: it tracks who called whom.",
+   "cpu": {
+    "doing": "enter try block",
+    "regs": {
+     "PC": "line 2"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "heap": [],
+   "console": [],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "at": 1
+  },
+  {
+   "say": "main calls level1(). A new frame is pushed on top of the stack.",
+   "cpu": {
+    "doing": "call level1()",
+    "regs": {
+     "PC": "line 3"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    },
+    {
+     "frame": "level1()",
+     "vars": {}
+    }
+   ],
+   "highlight": [
+    "stack"
+   ],
+   "at": 2
+  },
+  {
+   "say": "level1 calls level2(). Another frame goes on top. Three frames deep now.",
+   "cpu": {
+    "doing": "call level2()",
+    "regs": {
+     "PC": "line 11"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    },
+    {
+     "frame": "level1()",
+     "vars": {}
+    },
+    {
+     "frame": "level2()",
+     "vars": {}
+    }
+   ],
+   "at": 10
+  },
+  {
+   "say": "Trouble: 5 / 0. Integer division by zero is impossible, so Java throws an ArithmeticException object and normal running stops.",
+   "cpu": {
+    "doing": "5 / 0 -> THROW",
+    "regs": {
+     "PC": "line 14"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    },
+    {
+     "frame": "level1()",
+     "vars": {}
+    },
+    {
+     "frame": "level2()",
+     "vars": {
+      "x": "?"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "ex1",
+     "type": "ArithmeticException",
+     "fields": {
+      "message": "/ by zero"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "heap"
+   ],
+   "at": 13,
+   "note": "exception thrown: / by zero"
+  },
+  {
+   "say": "level2 has no catch, so its frame is thrown away and Java asks the caller. The stack unwinds one frame.",
+   "cpu": {
+    "doing": "no catch here: pop level2",
+    "regs": {
+     "PC": "unwinding"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    },
+    {
+     "frame": "level1()",
+     "vars": {}
+    }
+   ],
+   "heap": [
+    {
+     "id": "ex1",
+     "type": "ArithmeticException",
+     "fields": {
+      "message": "/ by zero"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "at": 10
+  },
+  {
+   "say": "level1 has no catch either, so it is popped too. Its println(\"skipped\") never runs: the exception jumped right over it.",
+   "cpu": {
+    "doing": "no catch here: pop level1",
+    "regs": {
+     "PC": "unwinding"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "at": -1,
+   "note": "\"skipped\" is never printed"
+  },
+  {
+   "say": "Back in main, the catch matches ArithmeticException. The exception is handed to e and the program carries on instead of crashing.",
+   "cpu": {
+    "doing": "catch: e = ex1",
+    "regs": {
+     "PC": "line 5"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "e": "-> ex1"
+     }
+    }
+   ],
+   "console": [
+    "caught"
+   ],
+   "highlight": [
+    "cpu",
+    "stack",
+    "console"
+   ],
+   "at": [
+    3,
+    4
+   ]
+  },
+  {
+   "say": "Now finally runs. It always does: after a normal finish, after a catch, even if nothing caught the exception. Good for cleanup.",
+   "cpu": {
+    "doing": "finally block",
+    "regs": {
+     "PC": "line 7"
+    }
+   },
+   "console": [
+    "caught",
+    "done"
+   ],
+   "highlight": [
+    "cpu",
+    "console"
+   ],
+   "at": [
+    5,
+    6
+   ]
+  },
+  {
+   "say": "main ends and its frame is gone. The exception object is garbage now. Only caught and done were printed.",
+   "cpu": {
+    "doing": "main() returned",
+    "regs": {
+     "PC": "end"
+    }
+   },
+   "stack": [],
+   "heap": [
+    {
+     "id": "ex1",
+     "type": "ArithmeticException",
+     "fields": {
+      "message": "/ by zero"
+     },
+     "state": "garbage"
+    }
+   ],
+   "highlight": [
+    "heap",
+    "console"
+   ],
+   "at": -1
+  }
+ ]
+}

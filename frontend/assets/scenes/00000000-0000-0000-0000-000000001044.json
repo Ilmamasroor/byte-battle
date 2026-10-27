@@ -1,0 +1,124 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001044",
+ "title": "DNS: finding an IP address, step by step",
+ "kind": "sequence",
+ "intro": "Computers need numbers, not names. Follow the chain of servers that turns www.example.com into an IP address.",
+ "predict": {
+  "question": "The resolver asks a ROOT server for www.example.com. What does the root answer?",
+  "options": [
+   "The IP address of www.example.com",
+   "The address of the .com TLD servers",
+   "Not found"
+  ],
+  "answer": 1,
+  "reveal": "Root servers only know who runs each top-level domain. It points to the .com servers, which point onward to example.com's own server."
+ },
+ "takeaway": "DNS is a chain of referrals: root, TLD, authoritative. The resolver follows it once and caches the answer for next time.",
+ "steps": [
+  {
+   "say": "Your browser needs the IP of www.example.com. It asks the resolver, a helper run by your ISP. Cache is empty, so the resolver does the legwork.",
+   "actors": [
+    "Resolver",
+    "Root",
+    "TLD .com",
+    "Auth server"
+   ],
+   "actorState": {
+    "0": "cache empty"
+   },
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "Asked: www.example.com?",
+    "kind": "note"
+   }
+  },
+  {
+   "say": "First stop: a root server. Every resolver knows the root addresses by heart.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "www.example.com ?",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The root does not know the IP. It only knows who runs each ending, and sends the resolver to the .com servers.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "Ask the .com servers",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "Second stop: the .com TLD (top-level domain) servers.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "www.example.com ?",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The TLD server knows every .com domain and who looks after each. It points to example.com's own name server.",
+   "msg": {
+    "from": 2,
+    "to": 0,
+    "label": "Ask ns1.example.com",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "Third stop: the authoritative server, the one that owns the records for example.com.",
+   "msg": {
+    "from": 0,
+    "to": 3,
+    "label": "www.example.com ?",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "At last a real answer: the IP address, plus a TTL (time to live) saying how long it may be remembered.",
+   "msg": {
+    "from": 3,
+    "to": 0,
+    "label": "93.184.216.34, TTL 300s",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "The resolver hands the IP to your browser and keeps a copy in its cache for 300 seconds. The browser can now connect.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "Cached 300s, IP sent",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "cached"
+   }
+  },
+  {
+   "say": "A moment later someone asks for www.example.com again. The resolver answers from cache: no root, TLD or authoritative trips.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "Cache hit: instant",
+    "kind": "note"
+   }
+  },
+  {
+   "say": "After the TTL runs out the entry is dropped and the chain starts again, so changed IPs spread. Referrals once, cache after.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "TTL over: cache cleared",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "cache empty"
+   }
+  }
+ ]
+}

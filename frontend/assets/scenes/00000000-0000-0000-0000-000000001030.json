@@ -1,0 +1,687 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001030",
+ "title": "Keys and constraints: the database says no",
+ "kind": "table",
+ "intro": "Constraints are rules the database enforces for you. Let's try to break them and see what happens.",
+ "predict": {
+  "question": "We INSERT an order with user_id 9, but no user 9 exists. What happens?",
+  "options": [
+   "It is inserted with user_id 9",
+   "It is inserted with user_id NULL",
+   "The database rejects it"
+  ],
+  "answer": 2,
+  "reveal": "A FOREIGN KEY must point at a real row. user 9 does not exist, so the INSERT fails with an error and nothing is saved."
+ },
+ "takeaway": "PRIMARY KEY and UNIQUE stop duplicates, NOT NULL stops blanks, FOREIGN KEY stops links to rows that do not exist.",
+ "steps": [
+  {
+   "say": "Two tables. users has a PRIMARY KEY, id: unique and never empty. orders.user_id is a FOREIGN KEY pointing at users.id.",
+   "query": {
+    "text": "-- users.email is UNIQUE and NOT NULL",
+    "focus": ""
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Try to add a user with id 1. Ann already owns that id, and a primary key must be unique.",
+   "query": {
+    "text": "INSERT INTO users VALUES (1, 'cy@x.io', 'Cy')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "ERROR: duplicate key, id=1 exists"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "Rejected, and the table is unchanged. With a fresh id 3, the same insert is fine.",
+   "query": {
+    "text": "INSERT INTO users VALUES (3, 'cy@x.io', 'Cy')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      2
+     ],
+     "dim": [],
+     "hlCols": []
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "INSERT 0 1"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "UNIQUE on email: a new user with ann@x.io would make two people share one email. The database refuses.",
+   "query": {
+    "text": "INSERT INTO users VALUES (4, 'ann@x.io', 'Anne')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "ERROR: duplicate key, email ann@x.io"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "NOT NULL: this user has no email at all. A required column cannot be left blank, so this fails too.",
+   "query": {
+    "text": "INSERT INTO users VALUES (4, NULL, 'Dee')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "ERROR: email must not be NULL"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "FOREIGN KEY: an order for user 9, but our users are 1, 2 and 3. There is nobody to link to, so it is rejected.",
+   "query": {
+    "text": "INSERT INTO orders VALUES (12, 9, 'Lamp')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "ERROR: user_id 9 not in users"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "Point it at Cy, user 3, and it works. The link is real, so the order row is saved.",
+   "query": {
+    "text": "INSERT INTO orders VALUES (12, 3, 'Lamp')",
+    "focus": "INSERT"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      2
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [
+      2
+     ],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "INSERT 0 1"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "Keys protect deletes too. Removing Ann would leave order 10 pointing at nobody, so the database blocks it.",
+   "query": {
+    "text": "DELETE FROM users WHERE id = 1",
+    "focus": "DELETE"
+   },
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "result"
+    ],
+    "rows": [
+     [
+      "ERROR: order 10 still references id 1"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "So the rules live in the database itself. Bad data is stopped at the door, no matter which app tries to write it.",
+   "tables": [
+    {
+     "name": "users (PK id)",
+     "cols": [
+      "id",
+      "email",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "ann@x.io",
+       "Ann"
+      ],
+      [
+       "2",
+       "ben@x.io",
+       "Ben"
+      ],
+      [
+       "3",
+       "cy@x.io",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    },
+    {
+     "name": "orders (FK user_id)",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "2",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ]
+  }
+ ]
+}

@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001043",
+ "battle": {
+  "title": "Status Code Roulette",
+  "description": "Methods, status codes and the padlock: spin the HTTP wheel.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 150,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What does the HTTP status code 404 mean?",
+    "options": [
+     "The server crashed while handling the request",
+     "The requested resource was not found",
+     "The client must log in first",
+     "The resource has moved permanently"
+    ],
+    "answer": "The requested resource was not found",
+    "explanation": "404 is a client error (4xx) saying the server could not find the resource. A crash is 500, a missing login is 401, and a permanent move is 301.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which class of HTTP status codes signals a server-side error?",
+    "options": [
+     "4xx",
+     "3xx",
+     "5xx",
+     "2xx"
+    ],
+    "answer": "5xx",
+    "explanation": "5xx means the server failed on a valid request (500, 502, 503). 4xx means the client sent something wrong, 3xx are redirections and 2xx are successes.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A web form must submit a new order that creates a record on the server. Which method is appropriate?",
+    "options": [
+     "POST",
+     "GET",
+     "HEAD",
+     "OPTIONS"
+    ],
+    "answer": "POST",
+    "explanation": "POST sends data in the body to create or process something. GET is for safe reads and puts parameters in the URL, so it must not change server state.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What does HTTPS add on top of plain HTTP?",
+    "options": [
+     "Faster page loads through compression",
+     "Hiding the client and server IP addresses from the network",
+     "Protection against bugs in the server application",
+     "TLS encryption, integrity checks and server authentication"
+    ],
+    "answer": "TLS encryption, integrity checks and server authentication",
+    "explanation": "HTTPS is HTTP over TLS: it encrypts the traffic, detects tampering and proves the server's identity via a certificate. IP addresses remain visible and the server code is as vulnerable as before.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Which request is idempotent, meaning that sending it twice leaves the server in the same state as sending it once?",
+    "options": [
+     "PUT /users/7 with a full replacement body",
+     "POST /orders to create an order",
+     "POST /comments to add a comment",
+     "PATCH /counter that adds 1"
+    ],
+    "answer": "PUT /users/7 with a full replacement body",
+    "explanation": "Replacing a resource with the same full body twice gives the same result. Each POST creates another record, and a PATCH that increments changes state every time.",
+    "points": 20
+   }
+  ]
+ }
+}

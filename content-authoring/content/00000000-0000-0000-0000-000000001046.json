@@ -1,0 +1,124 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001046",
+ "battle": {
+  "title": "Cache Me If You Can",
+  "description": "Hit ratios, TTLs, cache-aside and the least recently used victim.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "A cache hit ratio rises from 90% to 99%. What happens to the load on the backing database?",
+    "options": [
+     "DB load falls by only 9%",
+     "Misses fall from 10% to 1%, so DB load drops about tenfold",
+     "DB load falls by 1%",
+     "Nothing changes because the cache sits in front of the DB"
+    ],
+    "answer": "Misses fall from 10% to 1%, so DB load drops about tenfold",
+    "explanation": "Only misses reach the database: 10% of requests before, 1% after, a tenfold reduction. Comparing hit ratios (a 9 point gain) hides how large the effect is on the backend.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which entry does an LRU (least recently used) cache evict when it is full?",
+    "options": [
+     "The entry that was inserted first",
+     "The entry that has been read the fewest times",
+     "The entry that was used most recently",
+     "The entry that has gone unused for the longest time"
+    ],
+    "answer": "The entry that has gone unused for the longest time",
+    "explanation": "LRU looks at recency of use, not insertion order. Evicting the oldest insert is FIFO and evicting the least often used is LFU; a hot but old entry survives under LRU.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Product prices change a few times a day, and showing a price up to a minute old is acceptable. Which caching policy fits?",
+    "options": [
+     "Cache each price with a TTL of about 60 seconds",
+     "Cache prices forever and never refresh them",
+     "Do not cache; query the database every time",
+     "Cache on each client with no expiry"
+    ],
+    "answer": "Cache each price with a TTL of about 60 seconds",
+    "explanation": "A short TTL bounds staleness to what the business accepts while still absorbing most reads. Caching forever shows wrong prices indefinitely and skipping the cache wastes the chance to offload the database.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "In the cache-aside pattern, who loads data into the cache after a miss?",
+    "options": [
+     "The cache itself, automatically fetching from the database",
+     "The database, pushing every change to the cache",
+     "The application code, which reads the database and then fills the cache",
+     "The client browser, writing straight into the cache"
+    ],
+    "answer": "The application code, which reads the database and then fills the cache",
+    "explanation": "In cache-aside the app checks the cache, on a miss reads the source of truth and stores the result. A cache that loads data itself is the read-through pattern, a different design.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A LinkedHashMap in access order acts as an LRU cache of capacity 2. What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        LinkedHashMap<String, Integer> cache = new LinkedHashMap<>(16, 0.75f, true) {\n            protected boolean removeEldestEntry(Map.Entry<String, Integer> e) {\n                return size() > 2;\n            }\n        };\n        cache.put(\"a\", 1);\n        cache.put(\"b\", 2);\n        cache.get(\"a\");\n        cache.put(\"c\", 3);\n        System.out.println(cache.keySet());\n    }\n}",
+    "options": [
+     "[a, c]",
+     "[b, c]",
+     "[a, b]",
+     "[c, a]"
+    ],
+    "answer": "[a, c]",
+    "explanation": "After put a, put b, the get of a makes a the most recent, so order is b, a. Putting c overflows capacity and removes the eldest, which is b, leaving [a, c]. Without the get, a would have been evicted.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "LRU Cache Simulator",
+   "description": "Simulate an LRU cache with a given capacity. PUT k v stores the value (a new key, or an update of an existing key) and marks k as most recently used; if the cache then holds more than capacity keys, the least recently used key is evicted. GET k prints the value if k is cached (and marks it most recently used), or -1 if it is missing. PUT prints nothing.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: capacity C. Line 2: number of commands n. Then n lines, each either GET k or PUT k v.",
+   "outputDescription": "One line per GET command, in order: the value or -1.",
+   "constraints": "1 <= C <= 100, 1 <= n <= 1000, integer keys and values, at least one GET",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int cap = Integer.parseInt(br.readLine().trim());\n        int n = Integer.parseInt(br.readLine().trim());\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            String cmd = st.nextToken();\n            int k = Integer.parseInt(st.nextToken());\n            if (cmd.equals(\"PUT\")) {\n                int v = Integer.parseInt(st.nextToken());\n                // TODO: store k -> v, mark it most recently used, evict the LRU key if over capacity\n            } else {\n                // TODO: print the value if k is cached (and mark it recently used), otherwise -1\n                sb.append(-1).append(\"\\n\");\n            }\n        }\n        System.out.print(sb);\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        final int cap = Integer.parseInt(br.readLine().trim());\n        int n = Integer.parseInt(br.readLine().trim());\n        LinkedHashMap<Integer, Integer> cache = new LinkedHashMap<>(16, 0.75f, true) {\n            protected boolean removeEldestEntry(Map.Entry<Integer, Integer> e) {\n                return size() > cap;\n            }\n        };\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < n; i++) {\n            StringTokenizer st = new StringTokenizer(br.readLine());\n            String cmd = st.nextToken();\n            int k = Integer.parseInt(st.nextToken());\n            if (cmd.equals(\"PUT\")) {\n                cache.put(k, Integer.parseInt(st.nextToken()));\n            } else {\n                Integer v = cache.get(k);\n                sb.append(v == null ? -1 : v).append(\"\\n\");\n            }\n        }\n        System.out.print(sb);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "2\n9\nPUT 1 1\nPUT 2 2\nGET 1\nPUT 3 3\nGET 2\nPUT 4 4\nGET 1\nGET 3\nGET 4\n",
+     "hidden": false
+    },
+    {
+     "input": "1\n5\nPUT 5 50\nGET 5\nPUT 6 60\nGET 5\nGET 6\n",
+     "hidden": false
+    },
+    {
+     "input": "3\n10\nPUT 1 10\nPUT 2 20\nPUT 3 30\nPUT 1 11\nPUT 4 40\nGET 2\nGET 1\nGET 3\nGET 4\nGET 9\n",
+     "hidden": true
+    },
+    {
+     "input": "2\n2\nGET 1\nGET 2\n",
+     "hidden": true
+    },
+    {
+     "input": "2\n6\nPUT 1 1\nPUT 2 2\nPUT 2 22\nPUT 1 11\nGET 1\nGET 2\n",
+     "hidden": true
+    },
+    {
+     "input": "2\n6\nPUT 1 -5\nPUT 2 0\nGET 1\nPUT 3 7\nGET 2\nGET 3\n",
+     "hidden": true
+    },
+    {
+     "input": "3\n14\nPUT 1 100\nPUT 2 200\nPUT 3 300\nGET 1\nPUT 4 400\nGET 2\nGET 3\nPUT 5 500\nGET 1\nGET 4\nGET 5\nPUT 3 301\nGET 3\nGET 4\n",
+     "hidden": true
+    },
+    {
+     "input": "4\n13\nPUT 10 1\nPUT 20 2\nPUT 30 3\nPUT 40 4\nGET 10\nGET 20\nPUT 50 5\nPUT 60 6\nGET 30\nGET 40\nGET 10\nGET 50\nGET 60\n",
+     "hidden": true
+    }
+   ]
+  }
+ ]
+}

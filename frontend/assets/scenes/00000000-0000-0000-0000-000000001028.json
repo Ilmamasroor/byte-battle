@@ -1,0 +1,504 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001028",
+ "title": "GROUP BY: collapse rows into groups",
+ "kind": "table",
+ "intro": "Six orders, three customers. GROUP BY turns many rows into one row per customer.",
+ "predict": {
+  "question": "How many rows does this query return?",
+  "options": [
+   "1",
+   "2",
+   "3"
+  ],
+  "answer": 1,
+  "reveal": "Ann totals 90 and Ben 75, both over 50. Cy totals only 10, so HAVING removes his group. Two rows."
+ },
+ "takeaway": "GROUP BY makes one row per group, aggregates like COUNT and SUM summarise each group, and HAVING filters groups.",
+ "steps": [
+  {
+   "say": "Six orders from three customers. We want one summary line per customer, not one line per order.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "FROM"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ]
+  },
+  {
+   "say": "GROUP BY cust gathers rows with the same cust together. Ann has three rows, Ben two, Cy one. That makes three groups.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "GROUP BY"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Take Ann's group. COUNT(*) counts its rows: 3. SUM(amt) adds 20 + 30 + 40 = 90. The whole group becomes one row.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "COUNT"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ]
+     ],
+     "hl": [
+      0,
+      1,
+      2
+     ],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ]
+    ],
+    "hl": [
+     0
+    ]
+   }
+  },
+  {
+   "say": "Ben's group has two rows: 50 + 25 = 75. Another group collapses into one row.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "SUM"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ]
+     ],
+     "hl": [
+      3,
+      4
+     ],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ],
+     [
+      "Ben",
+      "2",
+      "75"
+     ]
+    ],
+    "hl": [
+     1
+    ]
+   }
+  },
+  {
+   "say": "Cy has just one order of 10, so his group is a single row with n = 1 and total = 10.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "SUM"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ]
+     ],
+     "hl": [
+      5
+     ],
+     "dim": [],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ],
+     [
+      "Ben",
+      "2",
+      "75"
+     ],
+     [
+      "Cy",
+      "1",
+      "10"
+     ]
+    ],
+    "hl": [
+     2
+    ]
+   }
+  },
+  {
+   "say": "Now HAVING. It tests each GROUP, after the sums exist. Is the total over 50? Ann yes, Ben yes, Cy no.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "HAVING"
+   },
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ],
+     [
+      "Ben",
+      "2",
+      "75"
+     ],
+     [
+      "Cy",
+      "1",
+      "10"
+     ]
+    ],
+    "hl": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "say": "Cy's group is thrown away. Two rows remain. WHERE could not do this, because it runs before groups and totals exist.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": "HAVING"
+   },
+   "tables": [
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "cust",
+      "amt"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "20"
+      ],
+      [
+       "3",
+       "Ann",
+       "30"
+      ],
+      [
+       "6",
+       "Ann",
+       "40"
+      ],
+      [
+       "2",
+       "Ben",
+       "50"
+      ],
+      [
+       "5",
+       "Ben",
+       "25"
+      ],
+      [
+       "4",
+       "Cy",
+       "10"
+      ]
+     ],
+     "hl": [],
+     "dim": [
+      5
+     ],
+     "hlCols": [
+      1,
+      2
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ],
+     [
+      "Ben",
+      "2",
+      "75"
+     ]
+    ],
+    "hl": []
+   }
+  },
+  {
+   "say": "Order of events: WHERE filters rows, GROUP BY forms groups, aggregates summarise them, HAVING filters groups.",
+   "query": {
+    "text": "SELECT cust, COUNT(*) AS n, SUM(amt) AS total FROM orders GROUP BY cust HAVING SUM(amt) > 50",
+    "focus": ""
+   },
+   "result": {
+    "cols": [
+     "cust",
+     "n",
+     "total"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "3",
+      "90"
+     ],
+     [
+      "Ben",
+      "2",
+      "75"
+     ]
+    ],
+    "hl": []
+   }
+  }
+ ]
+}

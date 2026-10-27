@@ -1,0 +1,585 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001032",
+ "title": "Indexes: skip the full table scan",
+ "kind": "structure",
+ "intro": "Finding one name among a million rows. Checking every row would take forever, so what does an index do instead?",
+ "predict": {
+  "question": "With an index, about how many steps to find one name among 1,000,000 rows?",
+  "options": [
+   "About 20",
+   "About 1,000",
+   "About 500,000"
+  ],
+  "answer": 0,
+  "reveal": "An index is a sorted tree. Each step cuts the search space in half, so a million rows need only about 20 steps."
+ },
+ "takeaway": "Without an index the database reads every row. A sorted index lets it jump straight to the match, at the cost of extra space and slower writes.",
+ "code": [
+  "CREATE INDEX idx_name ON users(name);",
+  "SELECT * FROM users WHERE name = 'Gus';"
+ ],
+ "steps": [
+  {
+   "say": "A users table, rows in the order they were added. We want the row where name is Gus. There is no index yet.",
+   "at": 1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "idle"
+      },
+      {
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "v": "Gus",
+       "s": "idle"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Full table scan: the database reads row by row. Fay, Cy and Eli are not Gus, so they are skipped.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "dim"
+      },
+      {
+       "v": "Cy",
+       "s": "dim"
+      },
+      {
+       "v": "Eli",
+       "s": "dim"
+      },
+      {
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "v": "Gus",
+       "s": "idle"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Ann is not Gus. Row 5 is Gus, found! But names are not guaranteed unique, so it cannot stop yet.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "dim"
+      },
+      {
+       "v": "Cy",
+       "s": "dim"
+      },
+      {
+       "v": "Eli",
+       "s": "dim"
+      },
+      {
+       "v": "Ann",
+       "s": "dim"
+      },
+      {
+       "v": "Gus",
+       "s": "found"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "It must keep reading Ben and Di too. Total: 7 rows read to find one. With a million rows, that is a million reads.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "dim"
+      },
+      {
+       "v": "Cy",
+       "s": "dim"
+      },
+      {
+       "v": "Eli",
+       "s": "dim"
+      },
+      {
+       "v": "Ann",
+       "s": "dim"
+      },
+      {
+       "v": "Gus",
+       "s": "found"
+      },
+      {
+       "v": "Ben",
+       "s": "dim"
+      },
+      {
+       "v": "Di",
+       "s": "dim"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Now create an index: a separate, sorted tree of names, each pointing to its row. Alphabetical order is what makes it fast.",
+   "at": 0,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "idle"
+      },
+      {
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "v": "Gus",
+       "s": "idle"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "tree",
+     "name": "index on name (sorted)",
+     "nodes": [
+      {
+       "id": "di",
+       "v": "Di",
+       "s": "idle",
+       "l": "be",
+       "r": "fa"
+      },
+      {
+       "id": "be",
+       "v": "Ben",
+       "s": "idle",
+       "l": "an",
+       "r": "cy"
+      },
+      {
+       "id": "fa",
+       "v": "Fay",
+       "s": "idle",
+       "l": "el",
+       "r": "gu"
+      },
+      {
+       "id": "an",
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "id": "cy",
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "id": "el",
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "id": "gu",
+       "v": "Gus",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Look up Gus. Start at the root, Di. Gus comes after Di alphabetically, so go right and ignore the whole left half.",
+   "at": 1,
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "idle"
+      },
+      {
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "v": "Gus",
+       "s": "idle"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "tree",
+     "name": "index on name (sorted)",
+     "nodes": [
+      {
+       "id": "di",
+       "v": "Di",
+       "s": "compare",
+       "l": "be",
+       "r": "fa"
+      },
+      {
+       "id": "be",
+       "v": "Ben",
+       "s": "idle",
+       "l": "an",
+       "r": "cy"
+      },
+      {
+       "id": "fa",
+       "v": "Fay",
+       "s": "idle",
+       "l": "el",
+       "r": "gu"
+      },
+      {
+       "id": "an",
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "id": "cy",
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "id": "el",
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "id": "gu",
+       "v": "Gus",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "At Fay: Gus comes after Fay too, so go right again. Another half of the remaining names is ignored.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "idle"
+      },
+      {
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "v": "Gus",
+       "s": "idle"
+      },
+      {
+       "v": "Ben",
+       "s": "idle"
+      },
+      {
+       "v": "Di",
+       "s": "idle"
+      }
+     ]
+    },
+    {
+     "kind": "tree",
+     "name": "index on name (sorted)",
+     "nodes": [
+      {
+       "id": "di",
+       "v": "Di",
+       "s": "done",
+       "l": "be",
+       "r": "fa"
+      },
+      {
+       "id": "be",
+       "v": "Ben",
+       "s": "idle",
+       "l": "an",
+       "r": "cy"
+      },
+      {
+       "id": "fa",
+       "v": "Fay",
+       "s": "compare",
+       "l": "el",
+       "r": "gu"
+      },
+      {
+       "id": "an",
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "id": "cy",
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "id": "el",
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "id": "gu",
+       "v": "Gus",
+       "s": "idle"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Gus found after 3 steps. The index entry points straight to the row, so the database reads just that one row.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "users table (disk order)",
+     "caption": "WHERE name = 'Gus'",
+     "cells": [
+      {
+       "v": "Fay",
+       "s": "dim"
+      },
+      {
+       "v": "Cy",
+       "s": "dim"
+      },
+      {
+       "v": "Eli",
+       "s": "dim"
+      },
+      {
+       "v": "Ann",
+       "s": "dim"
+      },
+      {
+       "v": "Gus",
+       "s": "found"
+      },
+      {
+       "v": "Ben",
+       "s": "dim"
+      },
+      {
+       "v": "Di",
+       "s": "dim"
+      }
+     ]
+    },
+    {
+     "kind": "tree",
+     "name": "index on name (sorted)",
+     "nodes": [
+      {
+       "id": "di",
+       "v": "Di",
+       "s": "done",
+       "l": "be",
+       "r": "fa"
+      },
+      {
+       "id": "be",
+       "v": "Ben",
+       "s": "idle",
+       "l": "an",
+       "r": "cy"
+      },
+      {
+       "id": "fa",
+       "v": "Fay",
+       "s": "done",
+       "l": "el",
+       "r": "gu"
+      },
+      {
+       "id": "an",
+       "v": "Ann",
+       "s": "idle"
+      },
+      {
+       "id": "cy",
+       "v": "Cy",
+       "s": "idle"
+      },
+      {
+       "id": "el",
+       "v": "Eli",
+       "s": "idle"
+      },
+      {
+       "id": "gu",
+       "v": "Gus",
+       "s": "found"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Cost on 7 rows: scan reads 7, the index needs 3 steps. A small gap here, but watch what happens when the table grows.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "cost to find one name",
+     "bars": [
+      {
+       "label": "Full scan",
+       "value": 1.0,
+       "text": "7 rows",
+       "s": "bad"
+      },
+      {
+       "label": "Index",
+       "value": 0.43,
+       "text": "3 steps",
+       "s": "found"
+      }
+     ]
+    }
+   ]
+  },
+  {
+   "say": "At 1,000,000 rows a scan reads them all, while the index needs about 20 steps. The tree only grows one level when rows double.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "cost to find one name",
+     "bars": [
+      {
+       "label": "Full scan",
+       "value": 1.0,
+       "text": "1,000,000",
+       "s": "bad"
+      },
+      {
+       "label": "Index",
+       "value": 0.03,
+       "text": "about 20",
+       "s": "found"
+      }
+     ]
+    }
+   ],
+   "note": "EXPLAIN: Index Scan"
+  },
+  {
+   "say": "Nothing is free: every INSERT must also update the index, and it takes space. Index the columns you search or join on often.",
+   "note": "faster reads, slower writes"
+  }
+ ]
+}

@@ -1,0 +1,37 @@
+{
+ "debug": [
+  {
+   "title": "The Impatient Main Thread",
+   "description": "A worker thread adds up 1..n and stores the total in a shared field, and main should print it. The program prints Sum: 0 instead of the real total. Input: one integer n. Output: 'Sum: ' followed by the total.",
+   "difficulty": "EASY",
+   "bugCategory": "RACE_CONDITION",
+   "buggyCode": "public class Main {\n    static long result = 0;\n\n    public static void main(String[] args) throws Exception {\n        int n = new java.util.Scanner(System.in).nextInt();\n        Thread worker = new Thread(() -> {\n            try { Thread.sleep(50); } catch (InterruptedException e) { }\n            long sum = 0;\n            for (int i = 1; i <= n; i++) sum += i;\n            result = sum;\n        });\n        worker.start();\n        System.out.println(\"Sum: \" + result);\n    }\n}\n",
+   "solutionCode": "public class Main {\n    static long result = 0;\n\n    public static void main(String[] args) throws Exception {\n        int n = new java.util.Scanner(System.in).nextInt();\n        Thread worker = new Thread(() -> {\n            try { Thread.sleep(50); } catch (InterruptedException e) { }\n            long sum = 0;\n            for (int i = 1; i <= n; i++) sum += i;\n            result = sum;\n        });\n        worker.start();\n        worker.join();\n        System.out.println(\"Sum: \" + result);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "3\n",
+     "hidden": false
+    },
+    {
+     "input": "10\n",
+     "hidden": false
+    },
+    {
+     "input": "1\n",
+     "hidden": true
+    },
+    {
+     "input": "100\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Run it with n = 3. The answer should be 6. What does main print, and does it print before or after the worker could have finished?",
+    "Look at what main does between worker.start() and the println. Does it wait for anything?",
+    "start() only launches the thread; main keeps running at once and reads result while the worker is still sleeping.",
+    "Call worker.join() after worker.start() so main waits for the worker to finish before reading result."
+   ]
+  }
+ ],
+ "conceptId": "00000000-0000-0000-0000-000000001011"
+}

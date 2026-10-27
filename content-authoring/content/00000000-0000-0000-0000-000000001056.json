@@ -1,0 +1,163 @@
+{
+ "battle": {
+  "title": "Pointer Duel: Left vs Right",
+  "description": "Squeeze, sweep and compact: prove you can steer two pointers.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "The classic two-pointer search for a pair with a given sum starts one pointer at each end. What must be true about the array?",
+    "options": [
+     "It must contain no duplicates",
+     "It must be sorted",
+     "It must have an even length",
+     "It must contain only positive numbers"
+    ],
+    "answer": "It must be sorted",
+    "explanation": "Sortedness is what lets you decide which pointer to move: a sum that is too small needs a larger left value, a sum that is too large needs a smaller right value. Duplicates, even length and positivity do not matter to that logic.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {1, 3, 4, 7, 9};\n        int l = 0, r = a.length - 1, steps = 0;\n        while (l < r) {\n            steps++;\n            int s = a[l] + a[r];\n            if (s == 11) break;\n            if (s < 11) l++; else r--;\n        }\n        System.out.println(l + \" \" + r);\n        System.out.println(steps);\n    }\n}",
+    "options": [
+     "2 3 / 4",
+     "1 3 / 3",
+     "2 3 / 3",
+     "3 3 / 4"
+    ],
+    "answer": "2 3 / 4",
+    "explanation": "The pointers visit (1,9)=10 too small, (3,9)=12 too big, (3,7)=10 too small, then (4,7)=11 which matches, so l=2, r=3 after 4 steps. The tempting 1 3 forgets that l moves right on a small sum and stays put on a big one.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must decide whether a char array reads the same forwards and backwards, using only O(1) extra memory. Which approach fits?",
+    "options": [
+     "Copy the array reversed into a new array and compare",
+     "Push every char on a stack, then pop and compare",
+     "Recursively compare substrings that are copied each call",
+     "Walk two pointers inward from both ends, comparing as you go"
+    ],
+    "answer": "Walk two pointers inward from both ends, comparing as you go",
+    "explanation": "Two pointers compare mirrored positions in place, so no extra storage is needed. The reversed copy and the stack both use O(n) memory, and copying substrings in recursion is even worse.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {1, 1, 2, 2, 2, 3, 4, 4};\n        int w = 1;\n        for (int i = 1; i < a.length; i++) {\n            if (a[i] != a[w - 1]) a[w++] = a[i];\n        }\n        StringBuilder sb = new StringBuilder();\n        for (int i = 0; i < w; i++) sb.append(i > 0 ? \" \" : \"\").append(a[i]);\n        System.out.println(w);\n        System.out.println(sb);\n    }\n}",
+    "options": [
+     "8 / 1 1 2 2 2 3 4 4",
+     "3 / 1 2 3",
+     "4 / 1 2 3 4",
+     "5 / 1 2 3 4 4"
+    ],
+    "answer": "4 / 1 2 3 4",
+    "explanation": "Pointer w marks the next write slot and only advances when a new value differs from the last kept one, so the distinct values 1 2 3 4 are packed to the front and w ends at 4. Printing the whole array would show leftovers, but the loop only prints the first w items.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "An UNSORTED array needs a pair-sum check using sorting plus two pointers. What is the overall time complexity?",
+    "options": [
+     "O(n)",
+     "O(n log n)",
+     "O(n^2)",
+     "O(log n)"
+    ],
+    "answer": "O(n log n)",
+    "explanation": "The two-pointer sweep is O(n), but sorting costs O(n log n) and dominates. Thinking the whole thing is O(n) forgets the sort that makes the sweep valid.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Container With Most Water",
+   "description": "You are given n vertical walls with the given heights, standing at positions 0 to n-1. Choose two walls so that the container they form holds the most water: the area is the smaller height times the distance between the walls. Print the largest possible area.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: n. Line 2: n non-negative integers, the heights.",
+   "outputDescription": "A single integer: the maximum area.",
+   "constraints": "2 <= n <= 100000, 0 <= h[i] <= 10000",
+   "starterCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        long[] h = new long[n];\n        for (int i = 0; i < n; i++) h[i] = in.nextLong();\n        long best = 0;\n        // TODO: use two pointers l and r; area = min(h[l], h[r]) * (r - l); move the pointer at the shorter wall\n        System.out.println(best);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        long[] h = new long[n];\n        for (int i = 0; i < n; i++) h[i] = in.nextLong();\n        int l = 0, r = n - 1;\n        long best = 0;\n        while (l < r) {\n            best = Math.max(best, Math.min(h[l], h[r]) * (r - l));\n            if (h[l] < h[r]) l++; else r--;\n        }\n        System.out.println(best);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "9\n1 8 6 2 5 4 8 3 7\n",
+     "hidden": false
+    },
+    {
+     "input": "2\n1 1\n",
+     "hidden": false
+    },
+    {
+     "input": "2\n0 5\n",
+     "hidden": true
+    },
+    {
+     "input": "5\n5 5 5 5 5\n",
+     "hidden": true
+    },
+    {
+     "input": "6\n2 3 4 5 18 17\n",
+     "hidden": true
+    },
+    {
+     "input": "3\n1 2 1\n",
+     "hidden": true
+    },
+    {
+     "input": "4\n4 3 2 1\n",
+     "hidden": true
+    },
+    {
+     "input": "12\n9 1 8 2 7 3 6 4 5 5 4 6\n",
+     "hidden": true
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "The Pair That Used One Number Twice",
+   "description": "The array is sorted ascending. Find two different positions whose values add up to the target and print them 1-based as 'i j' (i < j), or -1 if no such pair exists. Sometimes the program reports a pair even though it is the same element used twice. Input: line 1 'n target', line 2 the n sorted integers. Tests have at most one valid pair.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "WRONG_CONDITION",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int target = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int l = 0, r = n - 1;\n        while (l <= r) {\n            int s = a[l] + a[r];\n            if (s == target) {\n                System.out.println((l + 1) + \" \" + (r + 1));\n                return;\n            }\n            if (s < target) l++; else r--;\n        }\n        System.out.println(-1);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int target = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int l = 0, r = n - 1;\n        while (l < r) {\n            int s = a[l] + a[r];\n            if (s == target) {\n                System.out.println((l + 1) + \" \" + (r + 1));\n                return;\n            }\n            if (s < target) l++; else r--;\n        }\n        System.out.println(-1);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "5 9\n1 2 4 7 11\n",
+     "hidden": false
+    },
+    {
+     "input": "3 6\n3 5 9\n",
+     "hidden": false
+    },
+    {
+     "input": "3 8\n1 4 9\n",
+     "hidden": true
+    },
+    {
+     "input": "2 7\n3 4\n",
+     "hidden": true
+    },
+    {
+     "input": "4 10\n1 2 3 4\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Try n=3, target=6, array 3 5 9. There is no valid pair, yet something is printed. Which index pair does it print?",
+    "Look at the loop condition. What are l and r when it prints, and can the loop still run when they are equal?",
+    "When l == r the loop adds a[l] to itself, so a single element can 'pair' with itself.",
+    "Use while (l < r) so the two pointers always refer to different elements."
+   ]
+  }
+ ],
+ "conceptId": "00000000-0000-0000-0000-000000001056"
+}

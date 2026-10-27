@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001031",
+ "battle": {
+  "title": "ACID Test",
+  "description": "Atomicity, consistency, isolation and durability under pressure.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "A transfer debits account A, then the server crashes before crediting account B. Which ACID property makes the database undo the debit?",
+    "options": [
+     "Consistency",
+     "Isolation",
+     "Atomicity",
+     "Durability"
+    ],
+    "answer": "Atomicity",
+    "explanation": "Atomicity means all-or-nothing: a transaction that did not complete is rolled back entirely. Durability concerns surviving crashes after commit, not undoing unfinished work.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "What does Durability guarantee?",
+    "options": [
+     "Concurrent transactions never see each other's changes",
+     "Once a transaction commits, its changes survive crashes and power loss",
+     "A transaction either fully applies or not at all",
+     "Data is always held in memory for speed"
+    ],
+    "answer": "Once a transaction commits, its changes survive crashes and power loss",
+    "explanation": "Durability means committed data is persisted, typically through a write-ahead log, and is still there after a restart. Hiding concurrent changes is Isolation and all-or-nothing is Atomicity.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must move money between two accounts with two UPDATE statements. Which approach keeps the data correct?",
+    "options": [
+     "Run the two UPDATEs as separate autocommit statements",
+     "Run the credit now and the debit in a nightly job",
+     "Use two connections, one per UPDATE",
+     "Run both UPDATEs in one transaction and COMMIT only if both succeed"
+    ],
+    "answer": "Run both UPDATEs in one transaction and COMMIT only if both succeed",
+    "explanation": "One transaction makes the pair atomic: on any error you ROLLBACK and neither change persists. Separate autocommit statements can leave money debited but never credited.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "In ACID, what does Consistency mean?",
+    "options": [
+     "A committed transaction moves the database from one valid state to another, respecting its constraints",
+     "All replicas hold the same data at the same moment",
+     "Transactions run strictly one at a time",
+     "Every read returns the most recent write"
+    ],
+    "answer": "A committed transaction moves the database from one valid state to another, respecting its constraints",
+    "explanation": "ACID consistency means integrity rules such as keys, CHECKs and foreign keys hold after each committed transaction. The replica agreement in the second option is the different consistency used in distributed systems (CAP).",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A transaction runs two UPDATEs. The second violates CHECK (balance >= 0), so the database rolls back the whole transaction, including the first UPDATE. Which two properties are at work?",
+    "options": [
+     "Isolation and Durability",
+     "Durability and Atomicity",
+     "Atomicity and Consistency",
+     "Isolation and Consistency"
+    ],
+    "answer": "Atomicity and Consistency",
+    "explanation": "Enforcing the CHECK is Consistency, and undoing the first UPDATE as well is Atomicity. Isolation is about concurrent transactions and Durability is about surviving failures after commit, neither was involved here.",
+    "points": 20
+   }
+  ]
+ }
+}

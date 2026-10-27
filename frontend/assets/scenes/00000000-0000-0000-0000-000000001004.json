@@ -1,0 +1,441 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001004",
+ "title": "Collections: List, Set and Map",
+ "kind": "structure",
+ "intro": "We add A, B, A to an ArrayList and to a HashSet. Do they end up the same size?",
+ "predict": {
+  "question": "You add \"A\", \"B\", \"A\" to an ArrayList and to a HashSet. What are the sizes?",
+  "options": [
+   "3 and 3",
+   "3 and 2",
+   "2 and 2"
+  ],
+  "answer": 1,
+  "reveal": "The list keeps every add, so 3. The set refuses the second A, so it holds only A and B: 2."
+ },
+ "takeaway": "ArrayList keeps order and repeats, HashSet keeps only unique items, HashMap finds a value fast from its key.",
+ "code": [
+  "List<String> l = new ArrayList<>();",
+  "l.add(\"A\");",
+  "l.add(\"B\");",
+  "l.add(\"A\");",
+  "Set<String> s = new HashSet<>();",
+  "s.add(\"A\");",
+  "s.add(\"B\");",
+  "s.add(\"A\");   // returns false",
+  "Map<String,Integer> m = new HashMap<>();",
+  "m.put(\"A\", 1);",
+  "m.put(\"B\", 2);",
+  "m.get(\"B\");"
+ ],
+ "steps": [
+  {
+   "say": "Three collections, one story. First the ArrayList: a growable row of items that remembers order.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "-",
+       "s": "dim"
+      }
+     ],
+     "pointers": {},
+     "caption": "empty, size 0"
+    }
+   ],
+   "at": 0,
+   "note": "size = 0"
+  },
+  {
+   "say": "add(\"A\") and add(\"B\") put items at the end, in the order you add them. The list grows by itself when it runs out of room.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": [
+    1,
+    2
+   ],
+   "note": "l = [A, B]"
+  },
+  {
+   "say": "add(\"A\") again: an ArrayList does not mind. Duplicates are fine, so the size is now 3.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "A",
+       "s": "swap"
+      }
+     ],
+     "pointers": {}
+    }
+   ],
+   "at": 3,
+   "note": "l = [A, B, A], size 3"
+  },
+  {
+   "say": "Now a HashSet. It stores items in buckets chosen from each item's hash code, and it promises no duplicates.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "dim"
+      },
+      {
+       "v": "B",
+       "s": "dim"
+      },
+      {
+       "v": "A",
+       "s": "dim"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "hash",
+     "name": "HashSet s",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": 4,
+   "note": "s = {}"
+  },
+  {
+   "say": "Adding A and B: each goes into the bucket its hash code points to. Both are new, so both are stored.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "dim"
+      },
+      {
+       "v": "B",
+       "s": "dim"
+      },
+      {
+       "v": "A",
+       "s": "dim"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "hash",
+     "name": "HashSet s",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "A",
+         "s": "swap"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "B",
+         "s": "swap"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    5,
+    6
+   ],
+   "note": "s = {A, B}"
+  },
+  {
+   "say": "add(\"A\") again: the set looks in A's bucket, finds an equal A already there, and refuses. add returns false and the size stays 2.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "dim"
+      },
+      {
+       "v": "B",
+       "s": "dim"
+      },
+      {
+       "v": "A",
+       "s": "dim"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "hash",
+     "name": "HashSet s",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "A",
+         "s": "bad"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "B",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "A is already here: rejected"
+    }
+   ],
+   "at": 7,
+   "note": "s.add(\"A\") -> false"
+  },
+  {
+   "say": "Last, a HashMap: it stores key and value pairs. We create an empty one and then put two entries.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "HashMap m",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": []
+      },
+      {
+       "i": 2,
+       "items": []
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": 8,
+   "note": "m = {}"
+  },
+  {
+   "say": "put(\"A\", 1) and put(\"B\", 2): the key picks the bucket, and the value rides along with it.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "HashMap m",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "A:1",
+         "s": "swap"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "B:2",
+         "s": "swap"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": [
+    9,
+    10
+   ],
+   "note": "m = {A=1, B=2}"
+  },
+  {
+   "say": "get(\"B\") hashes the key B, jumps straight to its bucket, and returns 2. No searching through everything.",
+   "structures": [
+    {
+     "kind": "hash",
+     "name": "HashMap m",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "A:1",
+         "s": "dim"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "B:2",
+         "s": "found"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ]
+    }
+   ],
+   "at": 11,
+   "note": "m.get(\"B\") -> 2"
+  },
+  {
+   "say": "Pick by need: ArrayList for an ordered list with repeats, HashSet for uniqueness, HashMap to look things up by key.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "ArrayList l",
+     "cells": [
+      {
+       "v": "A",
+       "s": "done"
+      },
+      {
+       "v": "B",
+       "s": "done"
+      },
+      {
+       "v": "A",
+       "s": "done"
+      }
+     ],
+     "pointers": {},
+     "caption": "ordered, repeats ok"
+    },
+    {
+     "kind": "hash",
+     "name": "HashSet s",
+     "buckets": [
+      {
+       "i": 0,
+       "items": []
+      },
+      {
+       "i": 1,
+       "items": [
+        {
+         "v": "A",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 2,
+       "items": [
+        {
+         "v": "B",
+         "s": "done"
+        }
+       ]
+      },
+      {
+       "i": 3,
+       "items": []
+      }
+     ],
+     "caption": "unique items only"
+    }
+   ],
+   "at": -1,
+   "note": "List = order, Set = unique, Map = lookup"
+  }
+ ]
+}

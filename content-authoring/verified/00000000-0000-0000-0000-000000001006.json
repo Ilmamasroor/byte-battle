@@ -1,0 +1,118 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001006",
+ "battle": {
+  "title": "Array Traversal Trial",
+  "description": "Walk the arrays without falling off the end.",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "For  int[] a = new int[5];  which index is the LAST valid one?",
+    "options": [
+     "a[5]",
+     "a[4]",
+     "a[6]",
+     "a[-1]"
+    ],
+    "answer": "a[4]",
+    "explanation": "Indexes run from 0 to length - 1, so a 5-element array ends at a[4]. a[5] is the classic off-by-one and throws ArrayIndexOutOfBoundsException.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {3, 1, 4, 1, 5};\n        int sum = 0;\n        for (int i = 0; i < a.length; i += 2) {\n            sum += a[i];\n        }\n        System.out.println(sum);\n    }\n}",
+    "options": [
+     "9",
+     "8",
+     "14",
+     "12"
+    ],
+    "answer": "12",
+    "explanation": "The loop steps by 2 starting at index 0, so it visits indexes 0, 2 and 4: 3 + 4 + 5 = 12. Adding every element would give 14, and starting at index 1 would visit indexes 1 and 3 for just 1 + 1 = 2.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {1, 2, 3};\n        for (int i = a.length - 1; i > 0; i--) {\n            System.out.println(a[i]);\n        }\n    }\n}",
+    "options": [
+     "3 / 2 / 1",
+     "2 / 1",
+     "3 / 2",
+     "1 / 2 / 3"
+    ],
+    "answer": "3 / 2",
+    "explanation": "The reverse loop condition is i > 0, so it stops before index 0 and never prints 1. To include the first element it must be i >= 0.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must double every element of an int array in place. Which traversal works?",
+    "options": [
+     "Enhanced for loop assigning to the loop variable",
+     "Enhanced for loop followed by a.length++",
+     "Clone the array and double only the copy",
+     "Indexed for loop assigning to a[i]"
+    ],
+    "answer": "Indexed for loop assigning to a[i]",
+    "explanation": "The enhanced for variable is only a copy of each element, so assigning to it never changes the array. Writing through the index changes the real element.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {2, 4, 6};\n        for (int x : a) {\n            x *= 10;\n        }\n        System.out.println(a[0] + a[1] + a[2]);\n    }\n}",
+    "options": [
+     "12",
+     "120",
+     "60",
+     "0"
+    ],
+    "answer": "12",
+    "explanation": "In an enhanced for loop x is a copy of each primitive element, so x *= 10 changes only the copy. The array stays {2, 4, 6} and the sum is 12, not 120.",
+    "points": 15
+   }
+  ]
+ },
+ "debug": [
+  {
+   "title": "The Missing Maximum",
+   "description": "The program reads n integers and should print the largest one. It works on some inputs but prints a wrong answer on others. Input: n, then n integers (they may be negative). Output: the maximum.",
+   "difficulty": "EASY",
+   "bugCategory": "WRONG_INITIAL_VALUE",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int max = 0;\n        for (int i = 0; i < n; i++) {\n            if (a[i] > max) max = a[i];\n        }\n        System.out.println(max);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int max = a[0];\n        for (int i = 0; i < n; i++) {\n            if (a[i] > max) max = a[i];\n        }\n        System.out.println(max);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "5\n3 9 2 7 1\n",
+     "hidden": false,
+     "expectedOutput": "9\n"
+    },
+    {
+     "input": "1\n4\n",
+     "hidden": false,
+     "expectedOutput": "4\n"
+    },
+    {
+     "input": "3\n-5 -2 -9\n",
+     "hidden": true,
+     "expectedOutput": "-2\n"
+    },
+    {
+     "input": "4\n-1 -1 -1 -1\n",
+     "hidden": true,
+     "expectedOutput": "-1\n"
+    }
+   ],
+   "hints": [
+    "Try the input '3' then '-5 -2 -9'. What should the maximum be?",
+    "Everything in the loop looks fine. Look at the value max has before the loop starts.",
+    "Starting at 0 means a number can only win if it beats 0. What if every number is negative?",
+    "Start max at the first element, int max = a[0], so it always begins as a real array value."
+   ]
+  }
+ ]
+}

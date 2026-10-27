@@ -1,0 +1,268 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001007",
+ "title": "Linked list: rewire the pointers",
+ "kind": "structure",
+ "intro": "Insert at the front, then delete from the middle, and watch which pointers move.",
+ "predict": {
+  "question": "To delete the middle node of a linked list, what actually changes?",
+  "options": [
+   "Every later node shifts left by one",
+   "One next pointer is rewired to skip the node",
+   "The node's value is set to null"
+  ],
+  "answer": 1,
+  "reveal": "The node before it gets next set to the node after it. Nothing shifts; the skipped node just becomes unreachable."
+ },
+ "takeaway": "Linked list edits are pointer rewiring: insert at the head and delete after a known node are O(1).",
+ "code": [
+  "Node n = new Node(5);",
+  "n.next = head;",
+  "head = n;",
+  "Node p = head.next;",
+  "p.next = p.next.next;"
+ ],
+ "steps": [
+  {
+   "say": "A linked list is nodes chained by pointers. Each node holds a value and a pointer to the next node. head points at the first one.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "20",
+       "s": "idle"
+      },
+      {
+       "v": "30",
+       "s": "idle"
+      }
+     ],
+     "head": "head"
+    }
+   ],
+   "at": -1,
+   "note": "head -> 10 -> 20 -> 30"
+  },
+  {
+   "say": "Insert 5 at the front. First make a brand new node n. It is not part of the list yet.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "20",
+       "s": "idle"
+      },
+      {
+       "v": "30",
+       "s": "idle"
+      }
+     ],
+     "head": "head"
+    },
+    {
+     "kind": "list",
+     "name": "new node",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "cur"
+      }
+     ],
+     "head": "n"
+    }
+   ],
+   "at": 0,
+   "note": "n = 5 (floating)"
+  },
+  {
+   "say": "n.next = head: the new node points at the old first node. Nobody had to shift anywhere, just one pointer was set.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "chain from n",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "20",
+       "s": "idle"
+      },
+      {
+       "v": "30",
+       "s": "idle"
+      }
+     ],
+     "head": "n",
+     "caption": "head still points at 10"
+    }
+   ],
+   "at": 1,
+   "note": "n.next -> 10"
+  },
+  {
+   "say": "head = n: now head points at the new node. 5 is the first item. Two pointer changes and the insert is done.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "10",
+       "s": "idle"
+      },
+      {
+       "v": "20",
+       "s": "idle"
+      },
+      {
+       "v": "30",
+       "s": "idle"
+      }
+     ],
+     "head": "head"
+    }
+   ],
+   "at": 2,
+   "note": "head -> 5 -> 10 -> 20 -> 30"
+  },
+  {
+   "say": "Now delete 20, the middle node. We need the node BEFORE it, so p walks to 10 (head.next).",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "10",
+       "s": "cur"
+      },
+      {
+       "v": "20",
+       "s": "compare"
+      },
+      {
+       "v": "30",
+       "s": "idle"
+      }
+     ],
+     "head": "head",
+     "caption": "p is at 10; 20 is the target"
+    }
+   ],
+   "at": 3,
+   "note": "p = 10, p.next = 20"
+  },
+  {
+   "say": "p.next = p.next.next: 10 now points straight at 30, hopping over 20. The list is just rewired, nothing is copied or shifted.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "10",
+       "s": "swap"
+      },
+      {
+       "v": "30",
+       "s": "compare"
+      }
+     ],
+     "head": "head"
+    },
+    {
+     "kind": "list",
+     "name": "unlinked",
+     "nodes": [
+      {
+       "v": "20",
+       "s": "dim"
+      }
+     ],
+     "caption": "still points at 30, but nobody points at it"
+    }
+   ],
+   "at": 4,
+   "note": "10.next = 30"
+  },
+  {
+   "say": "With no pointer leading to it, node 20 is unreachable. Java's garbage collector will free it. The list is 5, 10, 30.",
+   "structures": [
+    {
+     "kind": "list",
+     "name": "list",
+     "nodes": [
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "10",
+       "s": "done"
+      },
+      {
+       "v": "30",
+       "s": "done"
+      }
+     ],
+     "head": "head"
+    }
+   ],
+   "at": -1,
+   "note": "head -> 5 -> 10 -> 30"
+  },
+  {
+   "say": "Compare with an array: inserting at the front of an array shifts every item. A linked list changes two pointers, however long it is.",
+   "structures": [
+    {
+     "kind": "bars",
+     "name": "work to insert at the front",
+     "bars": [
+      {
+       "label": "array",
+       "value": 1.0,
+       "text": "n shifts",
+       "s": "swap"
+      },
+      {
+       "label": "list",
+       "value": 0.08,
+       "text": "2 links",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "at": -1
+  }
+ ]
+}

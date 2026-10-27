@@ -1,0 +1,171 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001031",
+ "title": "ACID: a money transfer that cannot go wrong",
+ "kind": "sequence",
+ "intro": "Move 100 from Alice to Bob. That is two updates. What if the app dies between them?",
+ "predict": {
+  "question": "The app crashes after taking 100 from Alice but before giving it to Bob. What is Alice's balance after recovery?",
+  "options": [
+   "400, the money vanished",
+   "500, as if nothing happened",
+   "Nobody can know"
+  ],
+  "answer": 1,
+  "reveal": "Atomicity: the transaction is all or nothing. The half-done debit is rolled back, so Alice is back at 500."
+ },
+ "takeaway": "ACID: Atomic (all or nothing), Consistent (rules hold), Isolated (no peeking mid-way), Durable (committed stays saved).",
+ "steps": [
+  {
+   "say": "Alice has 500 and Bob has 200, 700 in total. We want to move 100 from Alice to Bob safely.",
+   "actors": [
+    "App",
+    "Database",
+    "Disk"
+   ],
+   "actorState": {
+    "0": "idle",
+    "1": "A=500 B=200",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "The app opens a transaction. Think of it as a bubble: everything inside happens together or not at all.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "BEGIN",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "txn open",
+    "1": "txn open",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "First update: take 100 from Alice. Right now the money has left Alice but not yet reached Bob.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "A = A - 100",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "txn open",
+    "1": "A=400 B=200",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "Disaster: the app crashes before it can credit Bob. 100 has gone missing from the books.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "App crashes!",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "CRASHED",
+    "1": "A=400 B=200",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "Atomicity: the database sees the transaction never committed and undoes it. Alice is back to 500.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "ROLLBACK to A=500",
+    "kind": "note"
+   },
+   "actorState": {
+    "0": "CRASHED",
+    "1": "A=500 B=200",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "The app restarts and retries, this time sending both updates inside one transaction.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "BEGIN; A-100; B+100",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "txn open",
+    "1": "A=400 B=300",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "Consistency: the database checks its rules. Balances are not negative and the total is still 700. The rules hold.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "check: total = 700",
+    "kind": "note"
+   }
+  },
+  {
+   "say": "Isolation: until this transaction commits, other sessions still see A=500 and B=200. Nobody sees the money half-moved.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "others see 500 / 200",
+    "kind": "note"
+   }
+  },
+  {
+   "say": "The app says COMMIT. This is the point of no return, where the changes become official.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "COMMIT",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Durability: before answering, the database writes the change to the log on disk.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "log: A=400 B=300",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "txn open",
+    "1": "committing",
+    "2": "saved"
+   }
+  },
+  {
+   "say": "Only now does the database confirm to the app. The transfer is complete.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "COMMIT OK",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "done",
+    "1": "A=400 B=300",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "Even if the power dies right now, on restart the database replays the disk log and shows A=400 B=300.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "restart: replay log",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "done",
+    "1": "A=400 B=300",
+    "2": "saved"
+   }
+  }
+ ]
+}

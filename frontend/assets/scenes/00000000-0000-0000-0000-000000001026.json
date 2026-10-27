@@ -1,0 +1,478 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001026",
+ "title": "SELECT and filtering: narrow rows, pick columns",
+ "kind": "table",
+ "intro": "One query, four clauses. Watch each one shrink the table a little more.",
+ "predict": {
+  "question": "Which two names does this query return?",
+  "options": [
+   "Ann and Cy",
+   "Ann and Eli",
+   "Ann and Ben"
+  ],
+  "answer": 1,
+  "reveal": "WHERE keeps Ann, Cy and Eli (Dev). Sorted by pay high to low: Ann 90, Eli 80, Cy 75. LIMIT 2 keeps Ann and Eli."
+ },
+ "takeaway": "WHERE filters rows, SELECT picks columns, ORDER BY sorts what is left, LIMIT cuts the list short.",
+ "steps": [
+  {
+   "say": "Here is a staff table with six rows. Our query will filter, pick columns, sort and trim. Let's go one clause at a time.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "FROM"
+   },
+   "tables": [
+    {
+     "name": "staff",
+     "cols": [
+      "id",
+      "name",
+      "dept",
+      "pay"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Dev",
+       "90"
+      ],
+      [
+       "2",
+       "Ben",
+       "Ops",
+       "60"
+      ],
+      [
+       "3",
+       "Cy",
+       "Dev",
+       "75"
+      ],
+      [
+       "4",
+       "Di",
+       "HR",
+       "55"
+      ],
+      [
+       "5",
+       "Eli",
+       "Dev",
+       "80"
+      ],
+      [
+       "6",
+       "Fay",
+       "Ops",
+       "70"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": []
+    }
+   ]
+  },
+  {
+   "say": "WHERE looks at each row and asks: is dept equal to Dev? Ann, Cy and Eli say yes.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "WHERE"
+   },
+   "tables": [
+    {
+     "name": "staff",
+     "cols": [
+      "id",
+      "name",
+      "dept",
+      "pay"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Dev",
+       "90"
+      ],
+      [
+       "2",
+       "Ben",
+       "Ops",
+       "60"
+      ],
+      [
+       "3",
+       "Cy",
+       "Dev",
+       "75"
+      ],
+      [
+       "4",
+       "Di",
+       "HR",
+       "55"
+      ],
+      [
+       "5",
+       "Eli",
+       "Dev",
+       "80"
+      ],
+      [
+       "6",
+       "Fay",
+       "Ops",
+       "70"
+      ]
+     ],
+     "hl": [
+      0,
+      2,
+      4
+     ],
+     "dim": [],
+     "hlCols": [
+      2
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Rows that fail the test are dropped. Ben, Di and Fay fade out. Three rows survive.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "WHERE"
+   },
+   "tables": [
+    {
+     "name": "staff",
+     "cols": [
+      "id",
+      "name",
+      "dept",
+      "pay"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Dev",
+       "90"
+      ],
+      [
+       "2",
+       "Ben",
+       "Ops",
+       "60"
+      ],
+      [
+       "3",
+       "Cy",
+       "Dev",
+       "75"
+      ],
+      [
+       "4",
+       "Di",
+       "HR",
+       "55"
+      ],
+      [
+       "5",
+       "Eli",
+       "Dev",
+       "80"
+      ],
+      [
+       "6",
+       "Fay",
+       "Ops",
+       "70"
+      ]
+     ],
+     "hl": [
+      0,
+      2,
+      4
+     ],
+     "dim": [
+      1,
+      3,
+      5
+     ],
+     "hlCols": [
+      2
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "id",
+     "name",
+     "dept",
+     "pay"
+    ],
+    "rows": [
+     [
+      "1",
+      "Ann",
+      "Dev",
+      "90"
+     ],
+     [
+      "3",
+      "Cy",
+      "Dev",
+      "75"
+     ],
+     [
+      "5",
+      "Eli",
+      "Dev",
+      "80"
+     ]
+    ],
+    "hl": []
+   }
+  },
+  {
+   "say": "SELECT name, pay keeps only two columns. id and dept are thrown away from the result.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "SELECT"
+   },
+   "tables": [
+    {
+     "name": "staff",
+     "cols": [
+      "id",
+      "name",
+      "dept",
+      "pay"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Dev",
+       "90"
+      ],
+      [
+       "2",
+       "Ben",
+       "Ops",
+       "60"
+      ],
+      [
+       "3",
+       "Cy",
+       "Dev",
+       "75"
+      ],
+      [
+       "4",
+       "Di",
+       "HR",
+       "55"
+      ],
+      [
+       "5",
+       "Eli",
+       "Dev",
+       "80"
+      ],
+      [
+       "6",
+       "Fay",
+       "Ops",
+       "70"
+      ]
+     ],
+     "hl": [
+      0,
+      2,
+      4
+     ],
+     "dim": [
+      1,
+      3,
+      5
+     ],
+     "hlCols": [
+      1,
+      3
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "pay"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "90"
+     ],
+     [
+      "Cy",
+      "75"
+     ],
+     [
+      "Eli",
+      "80"
+     ]
+    ],
+    "hl": []
+   }
+  },
+  {
+   "say": "ORDER BY pay DESC sorts what is left, biggest pay first: Ann 90, Eli 80, Cy 75.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "ORDER BY"
+   },
+   "result": {
+    "cols": [
+     "name",
+     "pay"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "90"
+     ],
+     [
+      "Eli",
+      "80"
+     ],
+     [
+      "Cy",
+      "75"
+     ]
+    ],
+    "hl": [
+     0,
+     1,
+     2
+    ]
+   }
+  },
+  {
+   "say": "LIMIT 2 keeps only the first two rows of the sorted list. Cy is cut, even though he is a Dev.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": "LIMIT"
+   },
+   "tables": [
+    {
+     "name": "staff",
+     "cols": [
+      "id",
+      "name",
+      "dept",
+      "pay"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann",
+       "Dev",
+       "90"
+      ],
+      [
+       "2",
+       "Ben",
+       "Ops",
+       "60"
+      ],
+      [
+       "3",
+       "Cy",
+       "Dev",
+       "75"
+      ],
+      [
+       "4",
+       "Di",
+       "HR",
+       "55"
+      ],
+      [
+       "5",
+       "Eli",
+       "Dev",
+       "80"
+      ],
+      [
+       "6",
+       "Fay",
+       "Ops",
+       "70"
+      ]
+     ],
+     "hl": [
+      0,
+      4
+     ],
+     "dim": [
+      1,
+      2,
+      3,
+      5
+     ],
+     "hlCols": [
+      1,
+      3
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "pay"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "90"
+     ],
+     [
+      "Eli",
+      "80"
+     ]
+    ],
+    "hl": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "say": "Final answer: Ann 90 and Eli 80. Filter rows, pick columns, sort, trim. Each clause works on the output of the one before.",
+   "query": {
+    "text": "SELECT name, pay FROM staff WHERE dept = 'Dev' ORDER BY pay DESC LIMIT 2",
+    "focus": ""
+   },
+   "result": {
+    "cols": [
+     "name",
+     "pay"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "90"
+     ],
+     [
+      "Eli",
+      "80"
+     ]
+    ],
+    "hl": []
+   }
+  }
+ ]
+}

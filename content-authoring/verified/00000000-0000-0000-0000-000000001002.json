@@ -1,0 +1,162 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001002",
+ "battle": {
+  "title": "Polymorphism Playground",
+  "description": "Same call, many behaviours: overriding, dispatch and overload traps.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "With  Animal a = new Dog();  a.speak();  what decides which version of speak() runs?",
+    "options": [
+     "The declared type Animal, fixed at compile time",
+     "The actual object type Dog, decided at runtime",
+     "Whichever class appears first in the source file",
+     "The order in which the methods are written in Animal"
+    ],
+    "answer": "The actual object type Dog, decided at runtime",
+    "explanation": "Overridden instance methods are dispatched on the real object at runtime. The declared type only decides which methods may be called, so thinking Animal's version always runs is the common mistake.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "class Animal { String sound() { return \"...\"; } }\nclass Dog extends Animal { String sound() { return \"Woof\"; } }\nclass Cat extends Animal { }\npublic class Main {\n    public static void main(String[] args) {\n        Animal[] zoo = { new Dog(), new Cat(), new Animal() };\n        for (Animal a : zoo) System.out.println(a.sound());\n    }\n}",
+    "options": [
+     "... / ... / ...",
+     "Woof / Woof / ...",
+     "Woof / ... / ...",
+     "Woof / Meow / ..."
+    ],
+    "answer": "Woof / ... / ...",
+    "explanation": "Dog overrides sound(), while Cat does not, so it inherits Animal's version and prints '...'. The base Animal object also prints '...'.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "class P {\n    String name = \"parent\";\n    String who() { return \"P.who\"; }\n}\nclass C extends P {\n    String name = \"child\";\n    String who() { return \"C.who\"; }\n}\npublic class Main {\n    public static void main(String[] args) {\n        P p = new C();\n        System.out.println(p.name);\n        System.out.println(p.who());\n    }\n}",
+    "options": [
+     "parent / C.who",
+     "child / C.who",
+     "parent / P.who",
+     "child / P.who"
+    ],
+    "answer": "parent / C.who",
+    "explanation": "Methods are overridden and dispatched on the real object (C.who), but fields are not polymorphic: p.name uses the declared type P, so it is 'parent'. Expecting 'child' treats the field like a method.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Your app must process Card, Cash and Wallet payments, and new payment types will be added later. Which design uses polymorphism best?",
+    "options": [
+     "One pay() method with a long if-else chain on a type string",
+     "A Payment interface with pay(), one class per type, called through the interface",
+     "Separate unrelated classes and a separate loop for each type",
+     "A static method per type, chosen by a switch in main"
+    ],
+    "answer": "A Payment interface with pay(), one class per type, called through the interface",
+    "explanation": "Callers just invoke pay() on a Payment and the right code runs, so a new type needs no change to existing code. The if-else or switch versions must be edited every time a type is added.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static String f(Object o) { return \"Object\"; }\n    static String f(String s) { return \"String\"; }\n    public static void main(String[] args) {\n        Object o = \"hi\";\n        System.out.println(f(o));\n        System.out.println(f(\"hi\"));\n    }\n}",
+    "options": [
+     "String / String",
+     "Object / Object",
+     "String / Object",
+     "Object / String"
+    ],
+    "answer": "Object / String",
+    "explanation": "Overloads are chosen at compile time from the declared argument type. The variable o is declared Object, so f(Object) runs even though it holds a String; the literal \"hi\" is a String. Overloading is not runtime polymorphism.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Payroll Polymorphism",
+   "description": "Read n employees, one per line. Kinds: FULL s (pay = s + s/10), PART h r (pay = h*r, plus ((h-40)*r)/2 extra if h > 40), CONTRACT d r (pay = d*r), INTERN (pay = 500). All divisions are integer divisions. Model them with an abstract class and subclasses, print each employee's pay on its own line, then a final line TOTAL followed by the sum.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: n. Next n lines: an employee record as described.",
+   "outputDescription": "n lines with each pay, then one line 'TOTAL x'.",
+   "constraints": "1 <= n <= 1000, all numbers are non-negative and at most 100000",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    // TODO: design an abstract class Employee with an abstract long pay(),\n    // and one subclass per employee kind (FULL, PART, CONTRACT, INTERN).\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        for (int i = 0; i < n; i++) {\n            String[] p = br.readLine().trim().split(\"\\\\s+\");\n            // TODO: create the right Employee, store it, then print each pay() through the base type\n        }\n        System.out.println(\"TOTAL 0\");\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static abstract class Employee { abstract long pay(); }\n    static class Full extends Employee {\n        long s; Full(long s) { this.s = s; }\n        long pay() { return s + s / 10; }\n    }\n    static class Part extends Employee {\n        long h, r; Part(long h, long r) { this.h = h; this.r = r; }\n        long pay() { return h * r + (h > 40 ? (h - 40) * r / 2 : 0); }\n    }\n    static class Contract extends Employee {\n        long d, r; Contract(long d, long r) { this.d = d; this.r = r; }\n        long pay() { return d * r; }\n    }\n    static class Intern extends Employee { long pay() { return 500; } }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        List<Employee> list = new ArrayList<>();\n        for (int i = 0; i < n; i++) {\n            String[] p = br.readLine().trim().split(\"\\\\s+\");\n            if (p[0].equals(\"FULL\")) list.add(new Full(Long.parseLong(p[1])));\n            else if (p[0].equals(\"PART\")) list.add(new Part(Long.parseLong(p[1]), Long.parseLong(p[2])));\n            else if (p[0].equals(\"CONTRACT\")) list.add(new Contract(Long.parseLong(p[1]), Long.parseLong(p[2])));\n            else list.add(new Intern());\n        }\n        long total = 0;\n        for (Employee e : list) { System.out.println(e.pay()); total += e.pay(); }\n        System.out.println(\"TOTAL \" + total);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "4\nFULL 5000\nPART 45 20\nCONTRACT 3 400\nINTERN\n",
+     "hidden": false,
+     "expectedOutput": "5500\n950\n1200\n500\nTOTAL 8150\n"
+    },
+    {
+     "input": "1\nINTERN\n",
+     "hidden": false,
+     "expectedOutput": "500\nTOTAL 500\n"
+    },
+    {
+     "input": "2\nPART 40 15\nPART 41 15\n",
+     "hidden": true,
+     "expectedOutput": "600\n622\nTOTAL 1222\n"
+    },
+    {
+     "input": "3\nFULL 1\nFULL 9\nFULL 12345\n",
+     "hidden": true,
+     "expectedOutput": "1\n9\n13579\nTOTAL 13589\n"
+    },
+    {
+     "input": "5\nCONTRACT 0 100\nPART 0 50\nFULL 0\nINTERN\nINTERN\n",
+     "hidden": true,
+     "expectedOutput": "0\n0\n0\n500\n500\nTOTAL 1000\n"
+    },
+    {
+     "input": "6\nPART 100 99\nCONTRACT 30 1000\nFULL 100000\nINTERN\nPART 41 1\nFULL 7\n",
+     "hidden": true,
+     "expectedOutput": "12870\n30000\n110000\n500\n41\n7\nTOTAL 153418\n"
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "The Ticket That Never Upgrades",
+   "description": "Each order is a type (B for basic, P for premium) and a quantity. Basic tickets cost 10 each and premium tickets cost 15 each. The program should print the total cost, but premium orders are charged the basic price. Input: n, then n lines 'type qty'. Output: the total.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "WRONG_METHOD_SIGNATURE",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    static class Ticket {\n        int cost(int qty) { return 10 * qty; }\n    }\n    static class Premium extends Ticket {\n        int cost(long qty) { return (int) (15 * qty); }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int total = 0;\n        for (int i = 0; i < n; i++) {\n            String type = in.next();\n            int qty = in.nextInt();\n            Ticket t = type.equals(\"P\") ? new Premium() : new Ticket();\n            total += t.cost(qty);\n        }\n        System.out.println(total);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    static class Ticket {\n        int cost(int qty) { return 10 * qty; }\n    }\n    static class Premium extends Ticket {\n        @Override\n        int cost(int qty) { return 15 * qty; }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int total = 0;\n        for (int i = 0; i < n; i++) {\n            String type = in.next();\n            int qty = in.nextInt();\n            Ticket t = type.equals(\"P\") ? new Premium() : new Ticket();\n            total += t.cost(qty);\n        }\n        System.out.println(total);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "2\nB 3\nP 2\n",
+     "hidden": false,
+     "expectedOutput": "60\n"
+    },
+    {
+     "input": "1\nB 5\n",
+     "hidden": false,
+     "expectedOutput": "50\n"
+    },
+    {
+     "input": "3\nP 1\nP 1\nP 4\n",
+     "hidden": true,
+     "expectedOutput": "90\n"
+    },
+    {
+     "input": "2\nP 10\nB 1\n",
+     "hidden": true,
+     "expectedOutput": "160\n"
+    }
+   ],
+   "hints": [
+    "Try a single premium order, P 1. What total do you expect and what do you get?",
+    "Premium has its own cost method, yet the basic price is being used. Compare the two cost method headers.",
+    "One method takes int and the other takes long. Are they really the same method signature?",
+    "A method only overrides when its signature matches exactly. Change Premium.cost to take int qty (and add @Override so the compiler checks it)."
+   ]
+  }
+ ]
+}

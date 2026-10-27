@@ -1,0 +1,636 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001037",
+ "title": "Page replacement: FIFO with 3 frames",
+ "kind": "structure",
+ "intro": "RAM is full and a new page is needed, so one must go. Which one? Let's try FIFO and count the faults.",
+ "predict": {
+  "question": "With 3 frames and FIFO, how many page faults for the requests 2 3 2 1 5 2 4 5?",
+  "options": [
+   "4",
+   "6",
+   "8"
+  ],
+  "answer": 1,
+  "reveal": "Faults on 2, 3, 1, 5, 2 and 4 make 6. Only the repeat 2 and the final 5 are hits."
+ },
+ "takeaway": "A page fault happens when the page is not in a frame. FIFO evicts the oldest page, even if it is still being used, so LRU often does better.",
+ "steps": [
+  {
+   "say": "Memory has only 3 frames. We feed in page requests 2 3 2 1 5 2 4 5 and count page faults. FIFO evicts whichever page arrived first.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": []
+    }
+   ],
+   "note": "faults = 0"
+  },
+  {
+   "say": "Page 2 is not in memory: fault. A free frame exists, so just load it. Faults so far: 1.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 0
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "2",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: load 2"
+  },
+  {
+   "say": "Page 3: fault again, still a free frame. Faults so far: 2.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "cur"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 1
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: load 3"
+  },
+  {
+   "say": "Page 2 is already in a frame: a HIT! No disk trip needed. Faults stay at 2.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 2
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "note": "hit: 2 is in memory"
+  },
+  {
+   "say": "Page 1: fault. This fills the last free frame, all 3 are used now. Faults so far: 3.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 3
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: load 1, frames full"
+  },
+  {
+   "say": "Page 5: fault and memory is full. FIFO evicts the OLDEST page, 2, who arrived first. Faults so far: 4.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 4
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "3",
+       "s": "idle"
+      },
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: evict 2, load 5"
+  },
+  {
+   "say": "Page 2 again: fault! FIFO just threw it out. It evicts 3, the oldest now. Faults so far: 5.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 5
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "1",
+       "s": "idle"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: evict 3, load 2"
+  },
+  {
+   "say": "Page 4: fault. Oldest is 1, so 1 goes out. Frames hold 5, 2, 4. Faults so far: 6.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      },
+      {
+       "v": "5",
+       "s": "idle"
+      }
+     ],
+     "pointers": {
+      "now": 6
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "5",
+       "s": "idle"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "cur"
+      }
+     ]
+    }
+   ],
+   "note": "fault: evict 1, load 4"
+  },
+  {
+   "say": "Page 5 is still resident: a hit. That ends the string.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "4",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "cur"
+      }
+     ],
+     "pointers": {
+      "now": 7
+     }
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "5",
+       "s": "found"
+      },
+      {
+       "v": "2",
+       "s": "idle"
+      },
+      {
+       "v": "4",
+       "s": "idle"
+      }
+     ]
+    }
+   ],
+   "note": "hit: 5 is in memory"
+  },
+  {
+   "say": "Final count: 6 page faults and 2 hits for 8 requests. LRU, which evicts the least recently USED page, would have only 5 faults here.",
+   "structures": [
+    {
+     "kind": "array",
+     "name": "Reference string",
+     "cells": [
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "3",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "found"
+      },
+      {
+       "v": "1",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "bad"
+      },
+      {
+       "v": "2",
+       "s": "bad"
+      },
+      {
+       "v": "4",
+       "s": "bad"
+      },
+      {
+       "v": "5",
+       "s": "found"
+      }
+     ],
+     "pointers": {}
+    },
+    {
+     "kind": "queue",
+     "name": "Frames (oldest first, 3 max)",
+     "items": [
+      {
+       "v": "5",
+       "s": "done"
+      },
+      {
+       "v": "2",
+       "s": "done"
+      },
+      {
+       "v": "4",
+       "s": "done"
+      }
+     ]
+    }
+   ],
+   "note": "FIFO: 6 faults, 2 hits"
+  }
+ ]
+}

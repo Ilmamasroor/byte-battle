@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001030",
+ "battle": {
+  "title": "Key Master",
+  "description": "Primary, foreign and unique keys plus constraint behaviour.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which statement about a PRIMARY KEY is true?",
+    "options": [
+     "A table may have several primary keys",
+     "It uniquely identifies each row and cannot contain NULL",
+     "It may contain duplicates if the other columns differ",
+     "It is always a single auto-increment number"
+    ],
+    "answer": "It uniquely identifies each row and cannot contain NULL",
+    "explanation": "A primary key must be unique and non-NULL, and a table has exactly one, though it can span several columns. It is not necessarily numeric or auto-generated.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must guarantee that every orders.customer_id refers to a customer that really exists. Which constraint do you add?",
+    "options": [
+     "CHECK (customer_id > 0)",
+     "UNIQUE on customer_id",
+     "FOREIGN KEY (customer_id) REFERENCES customers(id)",
+     "NOT NULL on customer_id"
+    ],
+    "answer": "FOREIGN KEY (customer_id) REFERENCES customers(id)",
+    "explanation": "A foreign key makes the database reject values that have no matching parent row. CHECK > 0 only tests a number's range, UNIQUE would forbid a customer having two orders, and NOT NULL only forbids missing values.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "users(id PRIMARY KEY, email UNIQUE) holds (1, 'a@x'). Then three separate statements run on PostgreSQL or MySQL InnoDB: INSERT (2, 'a@x'); INSERT (3, NULL); INSERT (4, NULL). A failed statement changes nothing. What does the table hold at the end?",
+    "options": [
+     "3 rows: ids 1, 3, 4",
+     "2 rows: ids 1, 3",
+     "4 rows: ids 1, 2, 3, 4",
+     "1 row: id 1, because all inserts fail"
+    ],
+    "answer": "3 rows: ids 1, 3, 4",
+    "explanation": "The first insert repeats 'a@x' and violates UNIQUE. NULL is not considered equal to another NULL, so both NULL inserts succeed in these databases, leaving ids 1, 3 and 4.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "orders.customer_id references customers(id) with ON DELETE CASCADE. What happens when a customer row is deleted?",
+    "options": [
+     "The delete is rejected while orders exist",
+     "The orders keep their customer_id as orphans",
+     "The orders' customer_id is set to NULL",
+     "The customer's orders are deleted automatically too"
+    ],
+    "answer": "The customer's orders are deleted automatically too",
+    "explanation": "CASCADE propagates the delete to the child rows. Rejecting the delete is RESTRICT or NO ACTION, setting NULL is SET NULL, and leaving orphans is exactly what a foreign key prevents.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A table (id, email, name) has both id and email unique and never NULL. Which statement is correct?",
+    "options": [
+     "Both id and email are candidate keys, and one of them is chosen as the primary key",
+     "Only id can be a key because email is text",
+     "email must be turned into a composite key with name",
+     "A table needs a surrogate key even when it has candidate keys"
+    ],
+    "answer": "Both id and email are candidate keys, and one of them is chosen as the primary key",
+    "explanation": "Any minimal set of columns that uniquely identifies rows is a candidate key. The primary key is simply the candidate key you choose, and the others remain as UNIQUE constraints. Data type does not stop a column from being a key.",
+    "points": 20
+   }
+  ]
+ }
+}

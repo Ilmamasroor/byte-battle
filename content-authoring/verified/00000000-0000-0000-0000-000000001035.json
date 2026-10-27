@@ -1,0 +1,132 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001035",
+ "battle": {
+  "title": "Scheduler Showdown: Who Gets the CPU?",
+  "description": "FCFS, SJF and Round Robin face off in a fight for CPU time.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which scheduling policy can starve long jobs if short jobs keep arriving?",
+    "options": [
+     "First-Come First-Served",
+     "Round Robin",
+     "Shortest Job First",
+     "FCFS with a time limit"
+    ],
+    "answer": "Shortest Job First",
+    "explanation": "SJF always prefers the job with the shortest burst, so a long job can wait forever behind a stream of short ones. Round Robin gives every process a turn, so it cannot starve anyone.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "One CPU-bound process with a huge burst arrives first, followed by many short I/O-bound processes, under FCFS. What is this problem called?",
+    "options": [
+     "The convoy effect",
+     "Belady's anomaly",
+     "Priority inversion",
+     "Thrashing"
+    ],
+    "answer": "The convoy effect",
+    "explanation": "Short processes pile up behind the long one and wait a long time, lowering utilization and raising average waiting time. Belady's anomaly and thrashing are memory-management issues, and priority inversion involves locks.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Three processes arrive at time 0 with bursts 5, 3 and 2, served FCFS in that order. What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] burst = {5, 3, 2};\n        int clock = 0;\n        int totalWait = 0;\n        for (int b : burst) {\n            totalWait += clock;\n            clock += b;\n        }\n        System.out.println(String.format(\"%.2f\", totalWait / 3.0));\n    }\n}",
+    "options": [
+     "3.33",
+     "4.33",
+     "5.00",
+     "3.50"
+    ],
+    "answer": "4.33",
+    "explanation": "Waiting times are 0, 5 and 8, which sum to 13, and 13 / 3 = 4.33. Turnaround times (5, 8, 10) average 7.67, which is a different metric.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "An interactive time-sharing system must give every user a quick first response, even when many jobs are running. Which policy fits best?",
+    "options": [
+     "FCFS, so nobody is interrupted",
+     "Non-preemptive SJF",
+     "Run the longest job first",
+     "Round Robin with a reasonably small time quantum"
+    ],
+    "answer": "Round Robin with a reasonably small time quantum",
+    "explanation": "Round Robin cycles through all ready processes so each gets the CPU quickly, giving good response time. FCFS and non-preemptive SJF let one running job block everyone else until it finishes.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "In Round Robin, the time quantum is set larger than every process's burst time. How does the scheduler behave?",
+    "options": [
+     "Like Shortest Job First",
+     "Like FCFS",
+     "It never preempts and never finishes",
+     "It context switches more often than before"
+    ],
+    "answer": "Like FCFS",
+    "explanation": "No process ever uses up its quantum, so none is preempted and each runs to completion in arrival order, which is FCFS. A very small quantum causes the extra context switches, not a large one.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Round Robin Average Waiting Time",
+   "description": "n processes all arrive at time 0 and sit in a ready queue in input order. The CPU runs the process at the front for min(q, remaining burst) time units; if it still has work left it goes to the back of the queue, otherwise it finishes. Waiting time of a process = completion time - burst time. Print the average waiting time over all processes, using String.format(\"%.2f\", x).",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: n and the time quantum q. Line 2: n burst times.",
+   "outputDescription": "The average waiting time with exactly 2 decimal places.",
+   "constraints": "1 <= n <= 100, 1 <= q <= 100, 1 <= burst <= 100",
+   "starterCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int q = in.nextInt();\n        int[] burst = new int[n];\n        for (int i = 0; i < n; i++) burst[i] = in.nextInt();\n        double avgWait = 0;\n        // TODO: simulate Round Robin with quantum q (all processes arrive at time 0,\n        // queue order is the input order) and compute the average waiting time.\n        System.out.println(String.format(\"%.2f\", avgWait));\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int q = in.nextInt();\n        int[] burst = new int[n];\n        int[] rem = new int[n];\n        ArrayDeque<Integer> queue = new ArrayDeque<>();\n        for (int i = 0; i < n; i++) {\n            burst[i] = in.nextInt();\n            rem[i] = burst[i];\n            queue.add(i);\n        }\n        int time = 0;\n        long totalWait = 0;\n        while (!queue.isEmpty()) {\n            int i = queue.poll();\n            int run = Math.min(q, rem[i]);\n            time += run;\n            rem[i] -= run;\n            if (rem[i] > 0) queue.add(i);\n            else totalWait += time - burst[i];\n        }\n        System.out.println(String.format(\"%.2f\", (double) totalWait / n));\n    }\n}\n",
+   "tests": [
+    {
+     "input": "3 4\n24 3 3\n",
+     "hidden": false,
+     "expectedOutput": "5.67\n"
+    },
+    {
+     "input": "4 2\n5 3 1 4\n",
+     "hidden": false,
+     "expectedOutput": "6.75\n"
+    },
+    {
+     "input": "1 3\n10\n",
+     "hidden": true,
+     "expectedOutput": "0.00\n"
+    },
+    {
+     "input": "3 100\n5 8 2\n",
+     "hidden": true,
+     "expectedOutput": "6.00\n"
+    },
+    {
+     "input": "5 1\n3 1 4 1 5\n",
+     "hidden": true,
+     "expectedOutput": "5.40\n"
+    },
+    {
+     "input": "6 3\n10 5 8 2 7 4\n",
+     "hidden": true,
+     "expectedOutput": "21.83\n"
+    },
+    {
+     "input": "2 5\n7 7\n",
+     "hidden": true,
+     "expectedOutput": "6.00\n"
+    },
+    {
+     "input": "8 4\n20 1 15 3 9 12 6 2\n",
+     "hidden": true,
+     "expectedOutput": "32.63\n"
+    }
+   ]
+  }
+ ]
+}

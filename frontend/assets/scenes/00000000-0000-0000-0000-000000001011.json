@@ -1,0 +1,340 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001011",
+ "title": "Threads: start() makes one, run() does not",
+ "kind": "computer",
+ "intro": "A Thread object is just an object until start() is called. Which thread prints when we call run() instead?",
+ "predict": {
+  "question": "main calls t.run() on a Thread whose task prints the current thread's name. What prints?",
+  "options": [
+   "hi from Thread-0",
+   "hi from main",
+   "Both names, on two cores"
+  ],
+  "answer": 1,
+  "reveal": "run() is a normal method call, so main itself executes it. Only start() asks the JVM for a new thread with its own stack."
+ },
+ "takeaway": "start() creates a new thread that runs run() on its own stack; calling run() directly is just a method call on the current thread.",
+ "code": [
+  "Thread t = new Thread(() -> hi());",
+  "t.run();    // oops: plain method call",
+  "t.start();  // real new thread",
+  "t.join();   // main waits for t",
+  "System.out.println(\"main done\");",
+  "// hi() prints \"hi from \" + thread name"
+ ],
+ "steps": [
+  {
+   "say": "Your CPU has several cores, and each can run one thread at a time. Right now only the main thread is running, on core 0.",
+   "cpu": {
+    "doing": "main thread runs your program",
+    "regs": {
+     "PC": "start"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "heap": [],
+   "console": [],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "at": -1
+  },
+  {
+   "say": "new Thread(...) only builds an object on the heap. No new thread exists yet, so core 1 is still idle.",
+   "cpu": {
+    "doing": "execute: new Thread(...)",
+    "regs": {
+     "PC": "line 1"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "t0",
+     "type": "Thread",
+     "fields": {
+      "name": "Thread-0",
+      "status": "NEW"
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "heap"
+   ],
+   "at": 0
+  },
+  {
+   "say": "The gotcha: t.run() runs hi() right on main's own stack. Core 1 stays idle, because no second thread was ever created.",
+   "cpu": {
+    "doing": "main runs hi() itself",
+    "regs": {
+     "PC": "line 2"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0"
+     }
+    },
+    {
+     "frame": "run() on main",
+     "vars": {}
+    }
+   ],
+   "console": [
+    "hi from main"
+   ],
+   "highlight": [
+    "stack",
+    "console"
+   ],
+   "at": 1,
+   "note": "run() = ordinary call"
+  },
+  {
+   "say": "run() returned and main moved on. All of that happened on ONE thread, one line after another. Nothing ran in parallel.",
+   "cpu": {
+    "doing": "main continues",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0"
+     }
+    }
+   ],
+   "highlight": [
+    "cpu"
+   ],
+   "at": 2
+  },
+  {
+   "say": "Now t.start(): the JVM creates a real thread with its own private stack, and the scheduler puts it on core 1 while main keeps core 0.",
+   "cpu": {
+    "doing": "two threads run at the same time",
+    "regs": {
+     "PC": "line 3"
+    },
+    "cores": [
+     "main",
+     "Thread-0",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0"
+     }
+    },
+    {
+     "frame": "Thread-0 run()",
+     "vars": {}
+    }
+   ],
+   "heap": [
+    {
+     "id": "t0",
+     "type": "Thread",
+     "fields": {
+      "name": "Thread-0",
+      "status": "RUNNABLE"
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "stack",
+    "heap"
+   ],
+   "at": 2,
+   "note": "start() = new thread"
+  },
+  {
+   "say": "main now calls join(): 'wait until Thread-0 is finished'. main goes to sleep and frees core 0, so only Thread-0 is busy.",
+   "cpu": {
+    "doing": "main WAITING in join()",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     null,
+     "Thread-0",
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0",
+      "status": "WAITING"
+     }
+    },
+    {
+     "frame": "Thread-0 run()",
+     "vars": {}
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "at": 3
+  },
+  {
+   "say": "Thread-0 runs hi() on core 1 and prints its own name. Then its run() ends and the thread dies, and its stack frame is gone.",
+   "cpu": {
+    "doing": "Thread-0 finished",
+    "regs": {
+     "PC": "line 4"
+    },
+    "cores": [
+     null,
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0",
+      "status": "WAITING"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "t0",
+     "type": "Thread",
+     "fields": {
+      "name": "Thread-0",
+      "status": "TERMINATED"
+     },
+     "state": "live"
+    }
+   ],
+   "console": [
+    "hi from main",
+    "hi from Thread-0"
+   ],
+   "highlight": [
+    "console",
+    "stack"
+   ],
+   "at": 3
+  },
+  {
+   "say": "Thread-0 is done, so join() returns and main wakes up. That is why 'main done' can only print after 'hi from Thread-0'.",
+   "cpu": {
+    "doing": "main runs again",
+    "regs": {
+     "PC": "line 5"
+    },
+    "cores": [
+     "main",
+     null,
+     null,
+     null
+    ]
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "t": "-> t0"
+     }
+    }
+   ],
+   "console": [
+    "hi from main",
+    "hi from Thread-0",
+    "main done"
+   ],
+   "highlight": [
+    "cpu",
+    "console"
+   ],
+   "at": 4
+  },
+  {
+   "say": "Remember: start() gives you a new thread and a new stack. run() gives you nothing new. join() waits for a thread to finish.",
+   "panels": [
+    {
+     "title": "run() vs start()",
+     "rows": [
+      [
+       "call",
+       "new thread?"
+      ],
+      [
+       "t.run()",
+       "no"
+      ],
+      [
+       "t.start()",
+       "yes"
+      ]
+     ],
+     "hl": [
+      2
+     ]
+    }
+   ],
+   "highlight": [
+    "panel:0"
+   ],
+   "at": -1
+  }
+ ]
+}

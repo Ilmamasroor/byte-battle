@@ -1,0 +1,167 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001050",
+ "title": "Message queue: drop it off, do it later",
+ "kind": "sequence",
+ "intro": "A food app takes orders faster than the kitchen cooks them. A queue sits in the middle to absorb the rush.",
+ "predict": {
+  "question": "The consumer crashes after receiving order 2 but before acknowledging it. What does the queue do?",
+  "options": [
+   "Lose the order silently",
+   "Redeliver it, because it was never acknowledged",
+   "Delete it to keep the queue clean"
+  ],
+  "answer": 1,
+  "reveal": "The queue only removes a message after an acknowledgement. No ack means it is delivered again, so nothing is lost."
+ },
+ "takeaway": "A queue decouples fast producers from slow consumers, buffers the rush, and redelivers until a consumer acknowledges.",
+ "steps": [
+  {
+   "say": "The order app (producer) and the kitchen worker (consumer) never talk directly. The queue sits between them.",
+   "actors": [
+    "Producer",
+    "Queue",
+    "Consumer"
+   ],
+   "actorState": {
+    "0": "ready",
+    "1": "empty",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "A customer places order 1. The producer hands it to the queue and moves on at once.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "order #1",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#1 waiting",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "The queue delivers order 1 to the idle consumer. It stays in the queue as 'in flight' until acknowledged.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "deliver #1",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#1 in flight",
+    "2": "cooking #1"
+   }
+  },
+  {
+   "say": "A rush: order 2 arrives while the kitchen is busy. The producer does not wait; the queue holds it.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "order #2",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "1 fly, 1 wait",
+    "2": "cooking #1"
+   }
+  },
+  {
+   "say": "Order 3 arrives too. The slow consumer causes a backlog, but no order is dropped and the app stays fast.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "order #3",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "1 fly, 2 wait",
+    "2": "cooking #1"
+   }
+  },
+  {
+   "say": "Order 1 is done. The consumer sends an acknowledgement (ack), and the queue finally deletes it.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "ack #1",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "2 waiting",
+    "2": "idle"
+   }
+  },
+  {
+   "say": "The queue hands order 2 to the free consumer.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "deliver #2",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#2 fly, #3 wait",
+    "2": "cooking #2"
+   }
+  },
+  {
+   "say": "Disaster: the consumer crashes mid-cook, before sending any ack.",
+   "msg": {
+    "from": 2,
+    "to": 2,
+    "label": "crashed, no ack",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#2 fly, #3 wait",
+    "2": "DOWN"
+   }
+  },
+  {
+   "say": "No ack arrives, so the queue keeps order 2 instead of deleting it. It will retry.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "no ack, keep #2",
+    "kind": "note"
+   }
+  },
+  {
+   "say": "The consumer restarts and the queue redelivers order 2. Nothing was lost.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "redeliver #2",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#2 fly, #3 wait",
+    "2": "cooking #2"
+   }
+  },
+  {
+   "say": "This time the ack arrives and order 2 is removed. Order 3 is next. Retry plus ack means at-least-once delivery.",
+   "msg": {
+    "from": 2,
+    "to": 1,
+    "label": "ack #2",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "ready",
+    "1": "#3 waiting",
+    "2": "idle"
+   }
+  }
+ ]
+}

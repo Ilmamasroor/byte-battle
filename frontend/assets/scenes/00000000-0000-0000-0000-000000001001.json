@@ -1,0 +1,212 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001001",
+ "title": "Inside your computer: running four lines of Java",
+ "kind": "computer",
+ "intro": "Let's look inside the machine while it runs a tiny program. First, a guess!",
+ "predict": {
+  "question": "Where does the text \"Ilma\" live while the program runs?",
+  "options": [
+   "In the stack box called name",
+   "On the heap, with name pointing to it",
+   "Inside the CPU"
+  ],
+  "answer": 1,
+  "reveal": "Text is an object, so it lives on the heap. The stack box called name only holds a reference to it."
+ },
+ "takeaway": "Primitives sit in stack boxes; objects live on the heap and the stack holds a reference to them.",
+ "code": [
+  "int age = 17;",
+  "String name = \"Ilma\";",
+  "age = age + 1;",
+  "System.out.println(name + \" \" + age);"
+ ],
+ "steps": [
+  {
+   "say": "This is your computer. The CPU runs one line at a time and memory holds the values. Let's run four lines of Java.",
+   "cpu": {
+    "doing": "waiting for the first instruction",
+    "regs": {
+     "PC": "line 1"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {}
+    }
+   ],
+   "heap": [],
+   "console": [],
+   "highlight": [
+    "cpu"
+   ],
+   "at": -1
+  },
+  {
+   "say": "int age = 17 makes a small box on the stack called age and drops 17 in it. Simple values live right there.",
+   "cpu": {
+    "doing": "execute: int age = 17",
+    "regs": {
+     "PC": "line 1"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "age": "17"
+     }
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 0
+  },
+  {
+   "say": "A String is an object, so the text goes on the heap. The stack box name only keeps a reference pointing to it.",
+   "cpu": {
+    "doing": "execute: String name = \"Ilma\"",
+    "regs": {
+     "PC": "line 2"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "age": "17",
+      "name": "-> s1"
+     }
+    }
+   ],
+   "heap": [
+    {
+     "id": "s1",
+     "type": "String",
+     "fields": {
+      "text": "\"Ilma\""
+     },
+     "state": "new"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 1
+  },
+  {
+   "say": "Stack is small, fast and cleaned up automatically. Heap is roomier and holds objects. A reference is just an address linking the two.",
+   "heap": [
+    {
+     "id": "s1",
+     "type": "String",
+     "fields": {
+      "text": "\"Ilma\""
+     },
+     "state": "live"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "flow": [],
+   "at": 1
+  },
+  {
+   "say": "age = age + 1: the CPU reads 17 from the box, adds 1, and writes 18 back into the same box.",
+   "cpu": {
+    "doing": "read age (17), add 1, store 18",
+    "regs": {
+     "PC": "line 3",
+     "tmp": "18"
+    }
+   },
+   "stack": [
+    {
+     "frame": "main()",
+     "vars": {
+      "age": "18",
+      "name": "-> s1"
+     }
+    }
+   ],
+   "highlight": [
+    "cpu",
+    "stack"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 2
+  },
+  {
+   "say": "println follows the reference name -> s1 to find the text, joins it with age, and sends the result to the console.",
+   "cpu": {
+    "doing": "follow name to s1, build \"Ilma 18\"",
+    "regs": {
+     "PC": "line 4"
+    }
+   },
+   "console": [
+    "Ilma 18"
+   ],
+   "highlight": [
+    "cpu",
+    "heap",
+    "console"
+   ],
+   "flow": [
+    [
+     "cpu",
+     "ram"
+    ]
+   ],
+   "at": 3
+  },
+  {
+   "say": "When main() ends its stack frame vanishes. Nothing points to the String any more, so the garbage collector may free it.",
+   "cpu": {
+    "doing": "main() returned",
+    "regs": {
+     "PC": "end"
+    }
+   },
+   "stack": [],
+   "heap": [
+    {
+     "id": "s1",
+     "type": "String",
+     "fields": {
+      "text": "\"Ilma\""
+     },
+     "state": "garbage"
+    }
+   ],
+   "highlight": [
+    "stack",
+    "heap"
+   ],
+   "flow": [],
+   "at": -1
+  }
+ ]
+}

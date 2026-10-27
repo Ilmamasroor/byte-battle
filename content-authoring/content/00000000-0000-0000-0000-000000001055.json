@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001055",
+ "battle": {
+  "title": "Blueprint Under Pressure",
+  "description": "Walk through a system design round in a clear order the interviewer can follow.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "The interviewer says: \"Design a URL shortener.\" What do you do FIRST?",
+    "options": [
+      "Draw boxes for load balancers, caches and shards immediately",
+      "Pick a database and start writing the schema",
+      "Clarify requirements: features, expected scale, read/write ratio, and availability needs",
+      "Describe how Bitly works from memory"
+    ],
+    "answer": "Clarify requirements: features, expected scale, read/write ratio, and availability needs",
+    "explanation": "Requirements and scale drive every later choice, so they come first. Drawing boxes or picking a database early commits you to a design before you know the problem.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which order is the most sensible way to structure a design round?",
+    "options": [
+      "Requirements, rough capacity estimates, high-level design, deep dive on key parts, bottlenecks and trade-offs",
+      "Deep dive on one component, then requirements, then a diagram",
+      "Database schema, then code, then requirements",
+      "Technology list, then scale, then a summary"
+    ],
+    "answer": "Requirements, rough capacity estimates, high-level design, deep dive on key parts, bottlenecks and trade-offs",
+    "explanation": "Going from broad to narrow keeps the interviewer oriented and gives you room to adjust. Starting deep or with technologies makes the answer hard to follow and easy to derail.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Ten minutes in, the interviewer says nothing and you are unsure whether to continue. What is the best habit?",
+    "options": [
+      "Keep talking faster so there is no silence",
+      "Stop and wait for the interviewer to guide every step",
+      "Pause, summarise the design so far, and ask which area they would like to explore deeper",
+      "Switch to a completely different design to look flexible"
+    ],
+    "answer": "Pause, summarise the design so far, and ask which area they would like to explore deeper",
+    "explanation": "A design round is a collaboration, so check in and let the interviewer steer you to the area they care about. Rushing or waiting passively ignores that, and restarting wastes the progress you made.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "You propose a single database and the interviewer asks what happens at 100x traffic. What is the strongest reply?",
+    "options": [
+      "That will never happen, so it is fine",
+      "Find the bottleneck first, then add caching, replicas or sharding as needed, noting each cost",
+      "I would switch to a more expensive server and call it done",
+      "We will use microservices, which fixes all scaling problems"
+    ],
+    "answer": "Find the bottleneck first, then add caching, replicas or sharding as needed, noting each cost",
+    "explanation": "Scaling answers should be driven by the actual bottleneck and include the cost of each step, such as cache invalidation or replication lag. Buzzwords like 'microservices fix everything' show no reasoning.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You realise midway that your design has a flaw in how it handles failures. What do you do?",
+    "options": [
+      "Hope the interviewer does not notice and carry on",
+      "Point it out, explain the failure scenario, and show a fix such as retries or replication",
+      "Blame the vague requirements",
+      "Restart the whole design from scratch in silence"
+    ],
+    "answer": "Point it out, explain the failure scenario, and show a fix such as retries or replication",
+    "explanation": "Spotting and fixing your own flaw is a strong signal of engineering maturity. Hiding it is risky and dishonest, and blaming requirements or silently restarting shows poor ownership.",
+    "points": 20
+   }
+  ]
+ }
+}

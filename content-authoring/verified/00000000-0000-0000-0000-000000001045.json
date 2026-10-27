@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001045",
+ "battle": {
+  "title": "Spread the Load",
+  "description": "Round robin, least connections and the hash that moves everyone.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is the main purpose of a load balancer in front of several servers?",
+    "options": [
+     "Spread requests across servers for more capacity and availability",
+     "Make every request faster by compressing it",
+     "Store a copy of the database on each server",
+     "Replace the need for health checks"
+    ],
+    "answer": "Spread requests across servers for more capacity and availability",
+    "explanation": "A load balancer distributes incoming traffic and stops routing to unhealthy servers, so you gain capacity and resilience. It does not speed up a single request, and it relies on health checks.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "What is a weakness of plain round robin?",
+    "options": [
+     "It can only work with two servers",
+     "It always sends one client to the same server",
+     "It ignores each server's capacity and current load",
+     "It requires sessions to be stored in the balancer"
+    ],
+    "answer": "It ignores each server's capacity and current load",
+    "explanation": "Round robin hands out requests in turn, so a slow or weak server gets the same share as a strong one even if it is already busy. Weighted or least-connections strategies address this.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Requests vary hugely: some finish in 5 ms, others hold a connection for 30 seconds. Which balancing strategy suits this best?",
+    "options": [
+     "Plain round robin",
+     "Least connections",
+     "Random choice",
+     "Always the first server until it is full"
+    ],
+    "answer": "Least connections",
+    "explanation": "Least connections sends new work to the server with the fewest active connections, so servers stuck on long requests are avoided. Round robin and random keep feeding busy servers.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Shopping carts live in each web server's memory, so users lose carts when a server restarts or is replaced. What is the best fix?",
+    "options": [
+     "Use sticky sessions forever and hope servers stay up",
+     "Buy one bigger server and drop the balancer",
+     "Switch the balancer to round robin",
+     "Move sessions to a shared store such as Redis so any server can serve any user"
+    ],
+    "answer": "Move sessions to a shared store such as Redis so any server can serve any user",
+    "explanation": "Sticky sessions hide the problem but carts still vanish when that server dies. A shared session store makes servers stateless and interchangeable. Round robin alone would scatter users across servers with no cart.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Clients are mapped to servers with id % servers. How many of these six clients change server when the pool grows from 3 to 4? What does the program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] ids = {7, 12, 20, 33, 41, 50};\n        int moved = 0;\n        for (int id : ids) {\n            if (id % 3 != id % 4) moved++;\n        }\n        System.out.println(moved);\n    }\n}",
+    "options": [
+     "4",
+     "2",
+     "3",
+     "6"
+    ],
+    "answer": "4",
+    "explanation": "The program prints 4: ids 7, 20, 33 and 41 move, while 12 and 50 stay. Plain hash-mod remaps most clients when the pool size changes, which is why consistent hashing is used when remapping is expensive.",
+    "points": 20
+   }
+  ]
+ }
+}

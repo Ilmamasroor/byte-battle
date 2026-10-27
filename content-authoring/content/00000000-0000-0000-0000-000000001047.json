@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001047",
+ "battle": {
+  "title": "Scale It Up or Out",
+  "description": "Bigger box or more boxes? Pick wisely when the traffic roars.",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is vertical scaling?",
+    "options": [
+     "Adding more identical machines behind a load balancer",
+     "Copying the database to another region",
+     "Splitting one service into smaller services",
+     "Adding more CPU or RAM to an existing machine"
+    ],
+    "answer": "Adding more CPU or RAM to an existing machine",
+    "explanation": "Vertical scaling (scale up) makes one machine bigger. Adding machines is horizontal scaling (scale out); replication and microservices are different strategies.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "What is a key limit of vertical scaling?",
+    "options": [
+     "It always requires rewriting the application",
+     "One machine has a hardware ceiling and remains a single point of failure",
+     "It cannot increase memory",
+     "It only works for stateless services"
+    ],
+    "answer": "One machine has a hardware ceiling and remains a single point of failure",
+    "explanation": "Even the biggest server has a maximum size, and if it fails everything fails. The upside is simplicity: usually no application changes are needed.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A news site's traffic spikes 20 times on election night, then falls back. Which approach fits best?",
+    "options": [
+     "Buy one huge server and keep it running all year",
+     "Upgrade the RAM on the current server that night",
+     "Autoscale stateless web servers behind a load balancer",
+     "Show users an error page once capacity is exceeded"
+    ],
+    "answer": "Autoscale stateless web servers behind a load balancer",
+    "explanation": "Horizontal scaling with autoscaling adds servers for the spike and removes them afterwards, so you pay only for what you use. A single huge server is costly and still has a ceiling; a RAM upgrade means downtime.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A small internal app has one relational database that is running out of CPU, and the team is two people. What is the sensible first step?",
+    "options": [
+     "Move it to a larger instance (scale vertically)",
+     "Shard it into 16 shards immediately",
+     "Rewrite the app into microservices first",
+     "Replace the database with a different data model"
+    ],
+    "answer": "Move it to a larger instance (scale vertically)",
+    "explanation": "Scaling up needs no application change and is quick. Sharding adds major complexity, so it is saved for when the biggest practical machine is no longer enough.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Five servers handle 200 requests per second each, and the load is 900. What does the program print for utilisation percent before and after one server fails?",
+    "code": "public class Main {\n    static int util(int load, int servers, int cap) {\n        return load * 100 / (servers * cap);\n    }\n    public static void main(String[] args) {\n        System.out.println(util(900, 5, 200));\n        System.out.println(util(900, 4, 200));\n    }\n}",
+    "options": [
+     "90 / 90",
+     "72 / 90",
+     "90 / 100",
+     "90 / 112"
+    ],
+    "answer": "90 / 112",
+    "explanation": "Before: 900 / (5 x 200) = 90%. After one failure: 900 / (4 x 200) = 112%, so the survivors are overloaded. Horizontal scaling needs headroom (N+1 capacity) to survive failures.",
+    "points": 20
+   }
+  ]
+ }
+}

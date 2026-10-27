@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001039",
+ "battle": {
+  "title": "Dining Philosophers Cage Match",
+  "description": "Bounded buffers, hungry readers and philosophers with too few forks.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "HARD",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "A bounded buffer uses semaphores empty (N), full (0) and mutex (1). A producer wrongly runs wait(mutex) BEFORE wait(empty). What can happen when the buffer is full?",
+    "options": [
+     "The producer overwrites the oldest item",
+     "Deadlock: the producer holds the mutex while waiting for space, so no consumer can enter to free a slot",
+     "Nothing, the order of waits does not matter",
+     "The consumer produces the missing items itself"
+    ],
+    "answer": "Deadlock: the producer holds the mutex while waiting for space, so no consumer can enter to free a slot",
+    "explanation": "The producer sleeps on empty while holding mutex, and a consumer needs mutex to remove an item and signal empty. The counting semaphore must be waited on first, then the mutex.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "In the classic readers-writers solution that gives readers priority, which problem can occur?",
+    "options": [
+     "Readers can starve forever",
+     "Two writers can write at the same time",
+     "Readers and a writer can read and write together",
+     "Writers can starve if readers keep arriving"
+    ],
+    "answer": "Writers can starve if readers keep arriving",
+    "explanation": "New readers are admitted whenever any reader is active, so a waiting writer may never see the data unused. Mutual exclusion between writers and readers is still preserved.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Which of these is NOT one of the four necessary conditions for deadlock?",
+    "options": [
+     "Mutual exclusion",
+     "Hold and wait",
+     "Resources can be preempted",
+     "Circular wait"
+    ],
+    "answer": "Resources can be preempted",
+    "explanation": "The condition is no preemption: a resource can be released only voluntarily by its holder. If resources could be taken away, deadlock could be broken, so preemption is the opposite of a requirement.",
+    "points": 20
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Five philosophers each need forks i (left) and (i+1)%5 (right), but philosopher 4 picks fork 0 first and fork 4 second. Each first takes its first fork if free, then tries its second. How many philosophers eat after this single round?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        boolean[] taken = new boolean[5];\n        boolean[] hasFirst = new boolean[5];\n        for (int i = 0; i < 5; i++) {\n            int first = (i == 4) ? 0 : i;\n            if (!taken[first]) { taken[first] = true; hasFirst[i] = true; }\n        }\n        int eating = 0;\n        for (int i = 0; i < 5; i++) {\n            int second = (i == 4) ? 4 : (i + 1) % 5;\n            if (hasFirst[i] && !taken[second]) { taken[second] = true; eating++; }\n        }\n        System.out.println(eating);\n    }\n}",
+    "options": [
+     "0",
+     "1",
+     "2",
+     "5"
+    ],
+    "answer": "1",
+    "explanation": "Philosophers 0 to 3 take forks 0 to 3, while philosopher 4 is blocked on fork 0. Only philosopher 3 finds its second fork (4) free, so one eats. Breaking the symmetry removes the circular wait.",
+    "points": 20
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Five philosophers each grab the left fork and then wait for the right one, and the table deadlocks. Which fix is guaranteed to prevent deadlock?",
+    "options": [
+     "Allow at most four philosophers to try to pick up forks at the same time",
+     "After a failed attempt, put the fork down and retry after a random delay",
+     "Give each philosopher a bigger plate",
+     "Add a sixth philosopher to the table"
+    ],
+    "answer": "Allow at most four philosophers to try to pick up forks at the same time",
+    "explanation": "With at most 4 competing for 5 forks, at least one philosopher can always get both forks, so circular wait cannot form. Random back-off only makes deadlock unlikely and can livelock or starve someone.",
+    "points": 20
+   }
+  ]
+ }
+}

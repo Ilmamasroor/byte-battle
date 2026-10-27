@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001049",
+ "battle": {
+  "title": "CAP Clash",
+  "description": "Pick your side when the network splits: consistency or availability.",
+  "battleType": "SURVIVAL",
+  "difficulty": "HARD",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which statement about the CAP theorem is correct?",
+    "options": [
+     "When a network partition occurs, a system must trade consistency against availability",
+     "A system must permanently give up one of the three properties even on a healthy network",
+     "Partition tolerance is optional for systems spanning several data centres",
+     "Availability means every piece of data is stored three times"
+    ],
+    "answer": "When a network partition occurs, a system must trade consistency against availability",
+    "explanation": "CAP only forces a choice during a partition: answer possibly stale data (stay available) or refuse some requests (stay consistent). On a healthy network you can have both, and real networks cannot rule out partitions.",
+    "points": 20
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A bank ledger is replicated across two regions and the link between them fails. Which behaviour is right for transfers?",
+    "options": [
+     "Accept writes on both sides and reconcile later",
+     "Accept writes everywhere and drop conflicts silently",
+     "Prefer consistency: reject or delay writes that cannot be confirmed by a majority",
+     "Take the whole bank offline for every operation"
+    ],
+    "answer": "Prefer consistency: reject or delay writes that cannot be confirmed by a majority",
+    "explanation": "For money, serving a wrong balance or allowing double spending is worse than a temporary refusal, so a CP choice is appropriate. Accepting writes on both sides risks conflicting ledgers.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "What does eventual consistency promise?",
+    "options": [
+     "Every read returns the most recent write",
+     "Replicas never differ, even briefly",
+     "Writes are guaranteed never to be lost during a partition",
+     "If updates stop, all replicas will converge to the same value"
+    ],
+    "answer": "If updates stop, all replicas will converge to the same value",
+    "explanation": "Eventual consistency allows temporary staleness but guarantees convergence once writes cease. Always seeing the latest write is strong consistency, a much stronger promise.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "Which guarantee says that once a write is acknowledged, any later read by any client sees that write or a newer one?",
+    "options": [
+     "Read-your-writes",
+     "Linearizability (strong consistency)",
+     "Monotonic reads",
+     "Eventual consistency"
+    ],
+    "answer": "Linearizability (strong consistency)",
+    "explanation": "Linearizability applies to all clients. Read-your-writes covers only the client that wrote, and monotonic reads only stops a client from seeing data go backwards in time.",
+    "points": 20
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Three replicas hold the same key with (timestamp, value) pairs and merge by last-write-wins. What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        long[][] replicas = {{10, 7}, {12, 4}, {11, 9}};\n        long[] best = replicas[0];\n        for (long[] r : replicas) {\n            if (r[0] > best[0]) best = r;\n        }\n        System.out.println(best[1] + \" \" + best[0]);\n    }\n}",
+    "options": [
+     "4 12",
+     "9 11",
+     "7 10",
+     "4 10"
+    ],
+    "answer": "4 12",
+    "explanation": "Last-write-wins keeps the highest timestamp, 12, so value 4 survives and values 7 and 9 are silently discarded. If clocks are skewed, a logically later write can lose, which is why LWW can lose data.",
+    "points": 20
+   }
+  ]
+ }
+}

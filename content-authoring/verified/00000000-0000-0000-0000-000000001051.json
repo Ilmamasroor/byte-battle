@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001051",
+ "battle": {
+  "title": "Interview Warm-Up",
+  "description": "Ask the right questions before you write a single line of code.",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "The interviewer says: \"Find the duplicates in an array.\" What do you do FIRST?",
+    "options": [
+     "Start coding a nested loop right away, since it is the simplest approach",
+     "Ask clarifying questions: element types, size, return all duplicates or one, may I modify input",
+     "Say you will use a HashMap and begin writing it",
+     "Ask the interviewer to give you the optimal solution so you can learn from it"
+    ],
+    "answer": "Ask clarifying questions: element types, size, return all duplicates or one, may I modify input",
+    "explanation": "The statement is deliberately vague, and the answers change the design (sorting in place, a set, or a bit trick). Jumping straight to code, even with a good data structure, risks solving the wrong problem.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "What is the main purpose of clarifying questions at the start of a coding interview?",
+    "options": [
+     "To buy thinking time so the interviewer thinks you are slow to answer",
+     "To show the interviewer that you already know the answer",
+     "To make the interviewer simplify the problem until it is trivial",
+     "To pin down inputs, outputs, constraints and edge cases so you solve the real problem"
+    ],
+    "answer": "To pin down inputs, outputs, constraints and edge cases so you solve the real problem",
+    "explanation": "Clarifying is about scope and correctness, not stalling or showing off. Interviewers watch whether you gather requirements the way you would on a real team.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You asked about input size and the interviewer did not answer, saying only \"you decide\". What is the strongest move?",
+    "options": [
+     "State an assumption out loud (say up to 10^5 elements) and offer to revisit it",
+     "Silently assume a tiny input so any solution works",
+     "Refuse to continue until the interviewer gives exact numbers",
+     "Assume the worst case is impossible and ignore constraints altogether"
+    ],
+    "answer": "State an assumption out loud (say up to 10^5 elements) and offer to revisit it",
+    "explanation": "Stating assumptions makes your reasoning visible and lets the interviewer correct you early. Silent assumptions are the classic failure, and refusing to proceed looks inflexible.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which set of questions best targets edge cases for \"reverse a string\"?",
+    "options": [
+     "Which language, which IDE, and can I use Google",
+     "How many test cases will you run and how long do I have",
+     "Can it be empty or null, is it unicode, and do I reverse in place or return a new string",
+     "Is this question from a real company and does it have a known answer"
+    ],
+    "answer": "Can it be empty or null, is it unicode, and do I reverse in place or return a new string",
+    "explanation": "Good clarifying questions probe the data and the contract: empty or null input, character set, and in-place versus new output. Questions about tooling or the question's origin say nothing about correctness.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "After clarifying, what is the best next step before coding?",
+    "options": [
+     "Say nothing and code for ten minutes so you do not waste time",
+     "Restate the problem and assumptions, walk through a small example, and confirm",
+     "Ask the interviewer if your future solution will be accepted",
+     "Immediately state the final time complexity before describing any approach"
+    ],
+    "answer": "Restate the problem and assumptions, walk through a small example, and confirm",
+    "explanation": "Restating with a small example confirms shared understanding and catches mistakes while they are cheap. Silent coding hides your thinking, and quoting complexity before choosing an approach is premature.",
+    "points": 20
+   }
+  ]
+ }
+}

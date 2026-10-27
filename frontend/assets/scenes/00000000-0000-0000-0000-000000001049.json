@@ -1,0 +1,142 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001049",
+ "title": "CAP: when the link breaks, pick a side",
+ "kind": "sequence",
+ "intro": "Two nodes must agree on the last concert ticket. Then the network between them breaks. What now?",
+ "predict": {
+  "question": "During a network partition, can a system be fully consistent AND fully available?",
+  "options": [
+   "Yes, with faster servers",
+   "No, it must choose one",
+   "Yes, if you add a third node"
+  ],
+  "answer": 1,
+  "reveal": "A partition means a node cannot confirm with the other side. It either refuses requests (consistent) or answers anyway and may diverge (available)."
+ },
+ "takeaway": "CAP: when a partition happens you choose consistency (refuse some requests) or availability (answer, maybe wrongly).",
+ "steps": [
+  {
+   "say": "Node A and Node B each keep a copy of the data: 1 ticket left. They sync every change to each other.",
+   "actors": [
+    "Client",
+    "Node A",
+    "Node B"
+   ],
+   "actorState": {
+    "0": "buyer",
+    "1": "tickets=1",
+    "2": "tickets=1"
+   }
+  },
+  {
+   "say": "A network partition: the cable between A and B is cut. Both nodes are alive but cannot talk to each other.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "link to B is cut",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "Path 1, choose Consistency. A buyer asks Node A for the last ticket.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "buy last ticket",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "Node A cannot tell B about the sale. If it sells anyway, B might sell it too.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "cannot reach B",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "So A refuses: an error, but the data stays correct. We kept consistency and lost availability.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "503 try again later",
+    "kind": "error"
+   }
+  },
+  {
+   "say": "Rewind. Path 2, choose Availability. Same partition, same buyer, same last ticket.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "buy last ticket",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "buyer",
+    "1": "tickets=1",
+    "2": "tickets=1"
+   }
+  },
+  {
+   "say": "Node A just answers: sold. It cannot tell B, so B still thinks 1 ticket is left.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "OK, ticket is yours",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "buyer",
+    "1": "tickets=0",
+    "2": "tickets=1"
+   }
+  },
+  {
+   "say": "Meanwhile a second buyer reaches Node B and asks for the same ticket.",
+   "msg": {
+    "from": 0,
+    "to": 2,
+    "label": "buy last ticket",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "B also says yes. Both buyers are happy, but the copies now disagree.",
+   "msg": {
+    "from": 2,
+    "to": 0,
+    "label": "OK, ticket is yours",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "buyer",
+    "1": "tickets=0",
+    "2": "tickets=0"
+   }
+  },
+  {
+   "say": "When the link heals, the nodes find one ticket sold twice and must reconcile, maybe refunding someone.",
+   "msg": {
+    "from": 1,
+    "to": 2,
+    "label": "sold twice: conflict",
+    "kind": "error"
+   },
+   "actorState": {
+    "0": "buyer",
+    "1": "CONFLICT",
+    "2": "CONFLICT"
+   }
+  },
+  {
+   "say": "Partitions will happen, so real systems choose: banks lean consistent, social feeds lean available.",
+   "msg": {
+    "from": 1,
+    "to": 1,
+    "label": "pick C or A",
+    "kind": "note"
+   }
+  }
+ ]
+}
