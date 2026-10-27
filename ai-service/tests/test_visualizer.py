@@ -262,24 +262,123 @@ def test_extractor_no_threads():
 def test_racy_counter_lost_update():
     r = visualize(RACY, use_llm=False)
     assert r["confidence"] == "high"
+    assert r["provenance"] == "teaching-simulation"
+    assert r["support"]["status"] == "supported"
     kinds = [s["kind"] for s in r["schedules"]]
-    assert kinds == ["SAFE", "RACE"]
-    safe, race = r["schedules"]
+    assert kinds == ["SAFE", "RACE", "RACE_ALT", "SYNC"]
+    safe, race, alt, sync = r["schedules"]
     assert safe["finalValues"] == {"count": 2}
     assert race["finalValues"] == {"count": 1}
-    # interleaving: t1 READ, t2 READ, t2 WRITE, t1 WRITE (lost update)
-    assert [(s["thread"], s["kind"]) for s in race["steps"]] == [("t1", "READ"), ("t2", "READ"), ("t2", "WRITE"), ("t1", "WRITE")]
-    assert [s.get("local") for s in race["steps"] if s["kind"] == "READ"] == [0, 0]
-    assert [s["hazard"] for s in race["steps"]] == [True] * 4
+    # canonical order: both read, both calculate, t1 writes, t2 overwrites
+    assert [(s["thread"], s["kind"]) for s in race["steps"]] == [
+        ("t1", "READ"), ("t2", "READ"), ("t1", "COMPUTE"), ("t2", "COMPUTE"), ("t1", "WRITE"), ("t2", "WRITE")]
+    reads = [s for s in race["steps"] if s["kind"] == "READ"]
+    assert [s["local"] for s in reads] == [0, 0]
+    computes = [s for s in race["steps"] if s["kind"] == "COMPUTE"]
+    assert [(s["before"], s["value"]) for s in computes] == [(0, 1), (0, 1)]
+    w1, w2 = [s for s in race["steps"] if s["kind"] == "WRITE"]
+    assert (w1["before"], w1["value"], w1["stale"]) == (0, 1, False)
+    assert (w2["before"], w2["value"], w2["stale"]) == (1, 1, True)  # B's copy was 0, shared was already 1
+    assert [s["hazard"] for s in race["steps"]] == [True, True, False, False, True, True]
     h = r["hazards"][0]
     assert h["type"] == "RACE_CONDITION" and h["variables"] == ["count"]
-    assert h["expected"] == 2 and h["actual"] == 1 and h["steps"] == [0, 1, 2, 3]
+    assert h["expected"] == 2 and h["actual"] == 1 and h["steps"] == [0, 1, 4, 5]
+    # the alternative interleaving: t2 runs entirely inside t1's gap, then t1 writes its stale result
+    assert [(s["thread"], s["kind"]) for s in alt["steps"]] == [
+        ("t1", "READ"), ("t2", "READ"), ("t2", "COMPUTE"), ("t2", "WRITE"), ("t1", "COMPUTE"), ("t1", "WRITE")]
+    assert alt["finalValues"] == {"count": 1} and alt["actual"] == {"count": 1} and alt["expected"] == {"count": 2}
+    assert [s["stale"] for s in alt["steps"] if s["kind"] == "WRITE"] == [False, True]
     assert "synchronized" in r["fixSuggestion"]
-    assert set(r["svg"]) == {"safe", "race"}
+    assert set(r["svg"]) == {"safe", "race", "race_alt", "sync"}
     text = svg_text(r["svg"]["race"])
     assert "expected 2, got 1" in text and "count=1" in text and "L5" in text and "t1" in text and "t2" in text
     assert "init 0" in text
     assert "hatch" in r["svg"]["race"]
+
+
+def test_synchronized_schedule_blocks_the_second_thread_and_keeps_both_updates():
+    r = visualize(RACY, use_llm=False)
+    sync = next(s for s in r["schedules"] if s["kind"] == "SYNC")
+    assert sync["finalValues"] == {"count": 2} and sync["actual"] == {"count": 2}
+    seq = [(s["thread"], s["kind"], bool(s.get("blocked"))) for s in sync["steps"]]
+    assert seq == [
+        ("t1", "LOCK", False), ("t1", "READ", False),
+        ("t2", "LOCK", True),  # t2 tries to enter while t1 holds the lock
+        ("t1", "COMPUTE", False), ("t1", "WRITE", False), ("t1", "UNLOCK", False),
+        ("t2", "LOCK", False), ("t2", "READ", False), ("t2", "COMPUTE", False), ("t2", "WRITE", False), ("t2", "UNLOCK", False)]
+    reads = [s["local"] for s in sync["steps"] if s["kind"] == "READ"]
+    assert reads == [0, 1]  # the second thread reads the first thread's result
+    assert not any(s["stale"] for s in sync["steps"] if s["kind"] == "WRITE")
+    assert not any(s["hazard"] for s in sync["steps"])
+    assert all(s.get("synthetic") for s in sync["steps"] if s["kind"] in ("LOCK", "UNLOCK"))
+    assert next(s for s in sync["steps"] if s.get("blocked"))["waitingFor"] == "t1"
+
+
+RACY_LOOP = """public class Main {
+    static int count = 0;
+    public static void main(String[] args) {
+        Runnable r = () -> { for (int i = 0; i < 100; i++) { count++; } };
+        new Thread(r).start();
+        new Thread(r).start();
+    }
+}
+"""
+
+
+def counter_program(body: str) -> str:
+    return (
+        "public class Main {\n    static int count = 0;\n\n    static void increment() {\n" + body + "\n    }\n\n"
+        "    public static void main(String[] args) throws Exception {\n"
+        "        Thread a = new Thread(Main::increment);\n        Thread b = new Thread(Main::increment);\n"
+        "        a.start();\n        b.start();\n    }\n}\n"
+    )
+
+
+def race_steps(code: str):
+    r = visualize(code, use_llm=False)
+    return r, next(s for s in r["schedules"] if s["kind"] == "RACE")
+
+
+def test_calculation_is_its_own_step_with_its_own_line_and_real_amount():
+    r, race = race_steps(counter_program("        int tmp = count;\n        tmp = tmp + 5;\n        count = tmp;"))
+    assert r["support"]["status"] == "supported"
+    assert [(s["kind"], s["line"], s["text"]) for s in race["steps"] if s["thread"] == "a"] == [
+        ("READ", 5, "read count"), ("COMPUTE", 6, "tmp = tmp + 5"), ("WRITE", 7, "count = tmp")]
+    assert race["finalValues"] == {"count": 5} and race["expected"] == {"count": 10}
+
+
+def test_increment_forms_of_a_private_copy_are_modelled_exactly():
+    for body, amount in (
+        ("        int tmp = count;\n        tmp++;\n        count = tmp;", 1),
+        ("        int tmp = count;\n        tmp += 2;\n        count = tmp;", 2),
+        ("        int tmp = count;\n        count = tmp + 3;", 3),
+    ):
+        r, race = race_steps(counter_program(body))
+        assert r["support"]["status"] == "supported"
+        assert race["finalValues"] == {"count": amount}, body
+        assert [s["value"] for s in race["steps"] if s["kind"] == "COMPUTE"] == [amount, amount]
+
+
+def test_a_calculation_the_simulator_cannot_evaluate_is_unsupported_not_guessed():
+    r = visualize(counter_program("        int tmp = count;\n        tmp = tmp * 2;\n        count = tmp;"), use_llm=False)
+    assert r["support"]["status"] == "unsupported"
+    assert any("could not evaluate" in x for x in r["support"]["reasons"])
+
+
+def test_simplified_loops_are_partial():
+    r = visualize(RACY_LOOP, use_llm=False)
+    assert r["support"]["status"] == "partial"
+    assert len(r["support"]["reasons"]) == 1 and "Loops are shown as a single pass" in r["support"]["reasons"][0]
+
+
+def test_visualization_is_deterministic():
+    assert visualize(RACY, use_llm=False)["schedules"] == visualize(RACY, use_llm=False)["schedules"]
+
+
+def test_unsupported_program_says_so_instead_of_inventing_events():
+    r = visualize(NO_THREADS, use_llm=False)
+    assert r["schedules"] == []
+    assert r["support"]["status"] == "unsupported" and r["support"]["reasons"]
 
 
 def test_synchronized_fixed_versions_have_no_hazard():
@@ -326,7 +425,7 @@ def test_reentrantlock_deadlock_and_ordered_fix():
 
 def test_mode_filters():
     assert [s["kind"] for s in visualize(RACY, mode="safe", use_llm=False)["schedules"]] == ["SAFE"]
-    assert [s["kind"] for s in visualize(RACY, mode="race", use_llm=False)["schedules"]] == ["RACE"]
+    assert [s["kind"] for s in visualize(RACY, mode="race", use_llm=False)["schedules"]] == ["RACE", "RACE_ALT", "SYNC"]
     r = visualize(SYNC_FIXED, mode="race", use_llm=False)
     assert [s["kind"] for s in r["schedules"]] == ["SAFE"] and any("No race" in n for n in r["notes"])
     r = visualize(RACY, mode="deadlock", use_llm=False)

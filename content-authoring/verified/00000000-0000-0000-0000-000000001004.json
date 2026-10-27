@@ -1,0 +1,162 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001004",
+ "battle": {
+  "title": "Collections Crash Course",
+  "description": "Lists, sets and maps under pressure: pick the right tool and survive the traps.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which collection automatically rejects duplicate elements and has no get(index) method?",
+    "options": [
+     "ArrayList",
+     "HashSet",
+     "LinkedList",
+     "ArrayDeque"
+    ],
+    "answer": "HashSet",
+    "explanation": "A Set holds each element at most once and is not indexed. ArrayList and LinkedList allow duplicates and index access, and ArrayDeque also allows duplicates.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Map<String, Integer> map = new HashMap<>();\n        map.put(\"a\", 1);\n        map.put(\"b\", 2);\n        map.put(\"a\", 3);\n        System.out.println(map.size());\n        System.out.println(map.get(\"a\"));\n    }\n}",
+    "options": [
+     "3 / 3",
+     "2 / 1",
+     "2 / 3",
+     "3 / 1"
+    ],
+    "answer": "2 / 3",
+    "explanation": "Putting an existing key replaces its value instead of adding an entry, so the map has 2 entries and a is now 3. Expecting 3 entries treats put like a list add.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> list = new ArrayList<>(List.of(10, 20, 30, 1));\n        list.remove(1);\n        list.remove(Integer.valueOf(1));\n        System.out.println(list);\n    }\n}",
+    "options": [
+     "[10, 30]",
+     "[10, 20, 30]",
+     "[20, 30]",
+     "[10, 20]"
+    ],
+    "answer": "[10, 30]",
+    "explanation": "remove(1) with an int argument removes the element at index 1 (the 20). Then remove(Integer.valueOf(1)) removes the value 1. Thinking remove(1) deletes the value 1 gives the wrong list.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must count how many times each word appears in a text and then print the words in alphabetical order. Which structure fits best?",
+    "options": [
+     "ArrayList<String> with nested loops to count",
+     "HashSet<String> of the words",
+     "HashMap<String,Integer> printed in its iteration order",
+     "TreeMap<String,Integer> counting as you go"
+    ],
+    "answer": "TreeMap<String,Integer> counting as you go",
+    "explanation": "A map stores a count per word and TreeMap keeps its keys sorted, so iteration is alphabetical. HashMap has no guaranteed order, and a HashSet cannot store counts.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        List<Integer> l = new ArrayList<>(List.of(1, 2, 3, 4));\n        try {\n            for (int x : l) {\n                if (x == 2) l.remove(Integer.valueOf(x));\n            }\n            System.out.println(l);\n        } catch (ConcurrentModificationException e) {\n            System.out.println(\"CME\");\n        }\n    }\n}",
+    "options": [
+     "[1, 3, 4]",
+     "[1, 2, 3, 4]",
+     "IndexOutOfBounds",
+     "CME"
+    ],
+    "answer": "CME",
+    "explanation": "Structurally modifying an ArrayList while a for-each loop iterates it makes the iterator throw ConcurrentModificationException on the next step. Expecting a clean [1, 3, 4] ignores the fail-fast iterator; use Iterator.remove or removeIf instead.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Word Frequency Ranking",
+   "description": "Read n lowercase words. Print each distinct word with the number of times it occurs, one 'word count' pair per line. Order the lines by count from highest to lowest; words with the same count go in alphabetical order.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: n. Line 2: n words separated by spaces.",
+   "outputDescription": "One line per distinct word: the word, a space, its count.",
+   "constraints": "1 <= n <= 1000, each word has 1 to 10 characters",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        for (int i = 0; i < n; i++) {\n            String w = st.nextToken();\n            // TODO: count each word in a Map\n        }\n        // TODO: print \"word count\" lines, most frequent first, ties in alphabetical order\n        System.out.println(\"0\");\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        Map<String, Integer> freq = new HashMap<>();\n        for (int i = 0; i < n; i++) freq.merge(st.nextToken(), 1, Integer::sum);\n        List<Map.Entry<String, Integer>> es = new ArrayList<>(freq.entrySet());\n        es.sort((a, b) -> a.getValue().equals(b.getValue()) ? a.getKey().compareTo(b.getKey()) : b.getValue() - a.getValue());\n        for (Map.Entry<String, Integer> e : es) System.out.println(e.getKey() + \" \" + e.getValue());\n    }\n}\n",
+   "tests": [
+    {
+     "input": "6\nthe cat the dog the cat\n",
+     "hidden": false,
+     "expectedOutput": "the 3\ncat 2\ndog 1\n"
+    },
+    {
+     "input": "4\nb a d c\n",
+     "hidden": false,
+     "expectedOutput": "a 1\nb 1\nc 1\nd 1\n"
+    },
+    {
+     "input": "1\nsolo\n",
+     "hidden": true,
+     "expectedOutput": "solo 1\n"
+    },
+    {
+     "input": "5\nz z z z z\n",
+     "hidden": true,
+     "expectedOutput": "z 5\n"
+    },
+    {
+     "input": "7\nbanana apple banana cherry apple banana cherry\n",
+     "hidden": true,
+     "expectedOutput": "banana 3\napple 2\ncherry 2\n"
+    },
+    {
+     "input": "60\nw0 w7 w1 w8 w2 w9 w3 w10 w4 w11 w5 w12 w6 w0 w7 w1 w8 w2 w9 w3 w10 w4 w11 w5 w12 w6 w0 w7 w1 w8 w2 w9 w3 w10 w4 w11 w5 w12 w6 w0 w7 w1 w8 w2 w9 w3 w10 w4 w11 w5 w12 w6 w0 w7 w1 w8 w2 w9 w3 w10\n",
+     "hidden": true,
+     "expectedOutput": "w0 5\nw1 5\nw10 5\nw2 5\nw3 5\nw7 5\nw8 5\nw9 5\nw11 4\nw12 4\nw4 4\nw5 4\nw6 4\n"
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "The Wrong Remove",
+   "description": "The program reads n integers and then a target value, and should remove the first occurrence of that VALUE from the list, then print the remaining numbers separated by spaces. It removes the wrong element or crashes. Input: n, the n integers, then the target (the target is always in the list). Output: remaining numbers on one line.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "WRONG_OVERLOAD",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        List<Integer> list = new ArrayList<>();\n        for (int i = 0; i < n; i++) list.add(in.nextInt());\n        int target = in.nextInt();\n        list.remove(target);\n        StringBuilder sb = new StringBuilder();\n        for (int x : list) sb.append(x).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        List<Integer> list = new ArrayList<>();\n        for (int i = 0; i < n; i++) list.add(in.nextInt());\n        int target = in.nextInt();\n        list.remove(Integer.valueOf(target));\n        StringBuilder sb = new StringBuilder();\n        for (int x : list) sb.append(x).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "tests": [
+    {
+     "input": "3\n3 2 1\n1\n",
+     "hidden": false,
+     "expectedOutput": "3 2\n"
+    },
+    {
+     "input": "4\n5 6 7 8\n7\n",
+     "hidden": false,
+     "expectedOutput": "5 6 8\n"
+    },
+    {
+     "input": "3\n9 9 4\n9\n",
+     "hidden": true,
+     "expectedOutput": "9 4\n"
+    },
+    {
+     "input": "5\n10 20 30 40 50\n40\n",
+     "hidden": true,
+     "expectedOutput": "10 20 30 50\n"
+    }
+   ],
+   "hints": [
+    "Run it on '3 2 1' with target 1. Which number disappears and which one should?",
+    "Look at the list.remove(...) call. ArrayList has more than one remove method.",
+    "remove(int) deletes by position and remove(Object) deletes by value. With an int variable, which one is chosen?",
+    "Wrap the target so Java picks the by-value version: list.remove(Integer.valueOf(target))."
+   ]
+  }
+ ]
+}

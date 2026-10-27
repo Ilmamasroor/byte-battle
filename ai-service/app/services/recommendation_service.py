@@ -1,5 +1,12 @@
 from collections import Counter
+import re
+
 from app.models.recommendation_models import RecommendationRequest, RecommendationResponse
+
+
+def _readable(dimension: str) -> str:
+    """'hintDependency' -> 'hint dependency' for learner-facing text."""
+    return re.sub(r"(?<!^)(?=[A-Z])", " ", dimension).lower()
 
 
 STARTING_TOPIC_MAPPING = {
@@ -156,7 +163,7 @@ def get_recommendation(request: RecommendationRequest) -> RecommendationResponse
         weakest_score = assessed[weakest_dimension]
         challenge = DIMENSION_FALLBACK[weakest_dimension]
         reason = (
-            f"Your {weakest_dimension} score ({weakest_score}%) is lower than your other "
+            f"Your {_readable(weakest_dimension)} score ({weakest_score}%) is lower than your other "
             f"areas in {request.topic}, so we recommend the {challenge}."
         )
         return RecommendationResponse(

@@ -165,7 +165,25 @@ public class InterviewService {
                 .createdAt(assistantReply.getCreatedAt())
                 .score(score)
                 .feedback(feedback)
+                .rubric(rubricOf(evaluation))
                 .build();
+    }
+
+    static java.util.Map<String, Double> rubricOf(AiInterviewEvaluateResponse e) {
+        if (e == null) {
+            return null;
+        }
+        java.util.Map<String, Double> r = new LinkedHashMap<>();
+        r.put("conceptualCorrectness", clamp(e.conceptualCorrectness()));
+        r.put("completeness", clamp(e.completeness()));
+        r.put("technicalClarity", clamp(e.technicalClarity()));
+        r.put("reasoning", clamp(e.reasoning()));
+        r.put("explanation", clamp(e.explanation()));
+        return r;
+    }
+
+    private static double clamp(Double v) {
+        return v == null ? 0.0 : Math.max(0.0, Math.min(1.0, v));
     }
 
     @Transactional

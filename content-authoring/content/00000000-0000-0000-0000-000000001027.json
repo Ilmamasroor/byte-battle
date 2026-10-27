@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001027",
+ "battle": {
+  "title": "Join Junction",
+  "description": "Inner, left and cross joins: know exactly which rows survive.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What does an INNER JOIN return?",
+    "options": [
+     "Every row from the left table, with NULLs where nothing matches",
+     "Only the row pairs where the join condition is true",
+     "Every combination of rows from both tables",
+     "Rows in the left table that have no match in the right"
+    ],
+    "answer": "Only the row pairs where the join condition is true",
+    "explanation": "INNER JOIN keeps a combined row only when the ON condition is true. Keeping unmatched left rows is a LEFT JOIN, all combinations is a CROSS JOIN, and unmatched-only rows need a LEFT JOIN plus an IS NULL filter.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Tables users(id, name): (1, 'A'), (2, 'B'), (3, 'C') and orders(id, user_id): (10, 1), (11, 1), (12, 3). Query: SELECT u.name FROM users u LEFT JOIN orders o ON o.user_id = u.id; What comes back?",
+    "options": [
+     "4 rows: A, A, B, C",
+     "3 rows: A, B, C",
+     "3 rows: A, A, C",
+     "2 rows: A, C"
+    ],
+    "answer": "4 rows: A, A, B, C",
+    "explanation": "A matches two orders so it appears twice, B has no order but a LEFT JOIN keeps it once with NULL order columns, and C matches one order. That is 4 rows. The 3-row A, A, C answer is what an INNER JOIN would give.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Report: list every customer, including those who have never ordered, together with their orders where any exist. Which join fits?",
+    "options": [
+     "customers INNER JOIN orders",
+     "customers CROSS JOIN orders",
+     "customers LEFT JOIN orders",
+     "orders LEFT JOIN customers"
+    ],
+    "answer": "customers LEFT JOIN orders",
+    "explanation": "The customers table must be the preserved side, so customers LEFT JOIN orders keeps customers with no orders. INNER JOIN drops them, CROSS JOIN pairs everything with everything, and orders LEFT JOIN customers preserves orders instead.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Tables a(x): (1), (2), (3) and b(y): (2), (3), (3), (4). Query: SELECT COUNT(*) FROM a JOIN b ON a.x = b.y; What is the count?",
+    "options": [
+     "3",
+     "2",
+     "4",
+     "12"
+    ],
+    "answer": "3",
+    "explanation": "x = 2 matches one row of b and x = 3 matches two rows of b, x = 1 matches none: 1 + 2 = 3 joined rows. Duplicates on one side multiply matches, so the answer is not the number of distinct matching values (2), and 12 would be a cross join.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "Query: SELECT c.id FROM customers c LEFT JOIN orders o ON o.customer_id = c.id WHERE o.status = 'PAID'; What effect does the WHERE have?",
+    "options": [
+     "Customers with no orders still appear with NULLs",
+     "Customers with no orders disappear, so it acts like an inner join for this filter",
+     "It raises an error because WHERE cannot use the right table",
+     "Only customers with no orders appear"
+    ],
+    "answer": "Customers with no orders disappear, so it acts like an inner join for this filter",
+    "explanation": "For a customer with no orders, o.status is NULL, and NULL = 'PAID' is UNKNOWN, so the row is filtered out. To keep unmatched customers, move the status test into the ON clause.",
+    "points": 20
+   }
+  ]
+ }
+}

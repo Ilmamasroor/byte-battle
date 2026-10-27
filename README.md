@@ -1,6 +1,58 @@
-# Byte Battle Backend
+# Byte Battle
 
-Spring Boot backend for **Byte Battle**, a gamified technical learning platform: auth and users, learner profiles, Byte DNA, curriculum, battles, coding challenges (Judge0), debugging exercises, performance, recommendations, interviews, and the bridge to the Python AI service.
+**Think Deeper. Code Better.** A free, adaptive technical-learning platform that turns *knowing* a concept into *being able to use it*: learn, practice, fail, get a diagnosis, improve, and prepare for the interview, in one connected loop.
+
+Hack for Social Cause entry. Theme: Education & Skill Development. UN SDGs: **4** (Quality Education, target 4.4 skills for employment), **8** (Decent Work) and **10** (Reduced Inequalities).
+
+---
+
+## Why this exists
+
+Learners can find content everywhere, yet many still struggle to apply a concept in code, debug it, or explain it in an interview. In our preliminary survey of 19 technical learners:
+
+* **84.2% (16/19)** often or occasionally struggle to answer an interview question, solve a problem, or explain a concept after studying it.
+* **47.4% (9/19)** rated their difficulty applying concepts at 4 or 5 out of 5.
+* **63.2% (12/19)** already stitch together AI assistants, YouTube, documentation and coding sites to get unstuck.
+
+This is a small survey, not a national study; it motivates the problem and is not a measure of impact. Learners without mentors, paid courses or interview coaching, which is common outside metro colleges, bear this gap hardest. Byte Battle is built to run on free tooling: self-hosted code execution (Judge0), a free LLM tier, the browser's or phone's own text-to-speech, and no paid cloud services. Full statement: [docs/problem-statement.md](docs/problem-statement.md).
+
+## What it does
+
+The loop: **Understand, Visualize, Relate, Remember, Battle, Code, Debug, Explain, Diagnose, Improve.**
+
+* **Adaptive profile ("Byte DNA")** built at onboarding and updated from every result.
+* **Visualize concepts honestly.** A deterministic simulator reads the learner's Java thread code, builds the interleavings (a lost update, a lock fixing it) and plays them as synchronized thread lanes, a timeline, a source-line highlight, captions and optional spoken narration. Each lesson is labelled a *teaching simulation* or an *authored example*, and programs it cannot model accurately are reported as unsupported, never faked. Details: [docs/visualization-platform.md](docs/visualization-platform.md).
+* **Battles, coding challenges and debugging exercises**, graded by the backend and Judge0, never by the LLM.
+* **Diagnosis and recommendations:** failures are analysed, the learner profile evolves, and the next step is recommended.
+* **AI interview practice** with a rubric score per answer, plus XP, streaks and a readiness view.
+* **Learner controls:** captions always available; narration, speed (Slower / Normal / Faster) and volume are optional.
+
+Flagship domain: Java multithreading and concurrency (race conditions, synchronization, deadlocks), with DSA, DBMS, OS, networks, system design and interview preparation in the curriculum.
+
+## Architecture at a glance
+
+```
+Flutter client (tested on web; mobile targets supported by Flutter)  ->  Spring Boot API (JWT, Flyway, PostgreSQL)
+                                             |-> Judge0 CE (sandboxed code execution)
+                                             |-> Python FastAPI AI service (grounded LLM + deterministic visualizer)
+```
+
+Diagrams and module responsibilities: [docs/architecture.md](docs/architecture.md). Use cases and user stories: [docs/use-cases.md](docs/use-cases.md), [docs/user-stories.md](docs/user-stories.md). Sample data and example requests: [docs/sample-data.md](docs/sample-data.md).
+
+## Quick demo (web)
+
+Follow [Quick Start](#2-quick-start) to start the services, then run the client in a browser: `cd frontend && flutter run -d web-server --web-port 5000` and open `http://localhost:5000`. Register, finish onboarding, open a concept such as **Race Conditions** and choose **Visualize**. Press play to follow the lost update step by step; switch to the lock variant to see it fixed. Narration needs a browser with speech voices (Chrome works); the caption is always shown.
+
+## Repository layout
+
+| Path | What it is |
+|---|---|
+| `src/` | Spring Boot backend (this folder's Maven project) |
+| `frontend/` | Flutter client, including the visualization engine (`lib/features/learning/viz3d`) |
+| `ai-service/` | Python FastAPI AI service and the deterministic thread simulator |
+| `judge0/` | Judge0 sandbox (Docker Compose) |
+| `docs/` | Architecture, problem statement, use cases, sample data, visualization notes |
+| `scripts/` | `e2e_smoke.py`, an end-to-end walk through a learner journey |
 
 Running it end to end: see [docs/running-locally.md](docs/running-locally.md).
 
@@ -245,15 +297,25 @@ Response (for the Flutter client to animate; `svg` is the server-rendered fallba
 
 Unit and WebMvc tests (Mockito, MockRestServiceServer; H2 profile, no external services) live in `src/test/java`. Run `./mvnw -o -q clean test`.
 
+Other suites: `cd ai-service && .venv/bin/python -m pytest -q` (AI service and simulator) and `cd frontend && flutter test` (client, including the visualization engine, narration and speech-reliability tests with fake engines; real audio is checked by listening in a browser).
+
 With the whole stack running (Postgres, Judge0, AI service, backend) `python3 scripts/e2e_smoke.py` exercises a real learner journey (AI, Judge0, battle, debugging, interview, XP, Byte DNA) and exits non-zero if anything is broken.
 
 ---
 
 ## 7. Known Limitations / Next Steps
 
-- The Flutter client in `frontend/` was written against an earlier version of this API (it uses `/api/ai/onboarding` + `/api/learner-profile` for onboarding, which still works) and does not yet use `/api/onboarding`, `/api/visualize`, `/api/learning/*` or `/api/gamification/me`. It has not been build-tested against the current backend.
+- The Flutter client in `frontend/` has been run and tested on the web (`flutter run -d web-server`). It has not been tested on a physical Android or iOS device, and the Linux desktop target is not supported (the text-to-speech plugin has no Linux implementation).
+- Spoken narration uses the platform's own voices. In a browser, quality and availability depend on the voices installed (Chrome's English voices are network voices and need internet). Captions work without any voice.
+- The concept visualizer simulates a *teaching model* of the code, not a JVM trace. It models simple shared-variable updates, locks and a few patterns; anything it cannot evaluate accurately (for example some arithmetic on shared values) is reported as unsupported.
 - The visualizer understands Java thread code (race, safe, deadlock); other languages/concepts need extractor support in the AI service. The onboarding guard remembers completed users in memory (cleared on restart, then re-checked in the DB).
 - Concept/Topic/Domain have read APIs only; content is managed through Flyway seed migrations.
 - Password reset emails need valid SMTP credentials configured locally.
 - Judge0 compiles once per test case, so a Java submission takes roughly 5-12 s end to end.
 - Battle hints (`/api/ai/battle-hint`) are not yet counted as "hints used" in the battle evidence.
+
+---
+
+## 8. License
+
+Released under the [MIT License](LICENSE). Copyright (c) 2026 Ilma Masroor. Third-party components (Judge0 CE, Flutter, Spring Boot, FastAPI and others) keep their own licenses.

@@ -98,6 +98,8 @@ class Extractor:
         self.runnable_vars: Dict[str, Tuple[int, int]] = {}
         self.thread_by_var: Dict[str, str] = {}
         self.sites: List[Site] = []
+        # local variables currently holding a copy of a shared variable (`int tmp = count;`): local name -> shared name
+        self._alias: Dict[str, str] = {}
         self._scan_structure()
 
     # ---------------------------------------------------------------- structure
@@ -319,6 +321,11 @@ class Extractor:
         src_text = re.sub(r"\s+", " ", self.src[start : start + len(stmt)]).strip() if stmt else ""
         claimed: List[Tuple[int, int]] = []
 
+        upd = self._alias_update(stmt, line, src_text) if self._alias else None
+        if upd is not None:
+            return upd
+        self._register_alias(stmt)
+
         def mk(kind, target="", text="", **kw) -> Op:
             return Op(kind=kind, target=target, line=line, text=text or src_text, source=src_text, **kw)
 
@@ -413,8 +420,9 @@ class Extractor:
                         delta = int(dm2.group(1))
                     events.append((m.start(), self._rmw(v, delta, None, line, src_text, approx=delta is None)))
                 else:
-                    ops = []
-                    ops.append(mk("WRITE", v, f"{v} = {expr}" if expr else v, assign=lit))
+                    ops = self._alias_write(v, expr, line, src_text) if self._alias else None
+                    if ops is None:
+                        ops = [mk("WRITE", v, f"{v} = {expr}" if expr else v, assign=lit)]
                     events.append((m.start(), ops))
                 local_claimed.append((m.start(), m.end()))
             for m in pat_any.finditer(stmt):
@@ -428,6 +436,69 @@ class Extractor:
         for _, evs in events:
             ops.extend(evs)
         return ops
+
+    # ----------------------------------------------------- private copies of a shared variable
+    def _register_alias(self, stmt: str) -> None:
+        """`int tmp = count;` makes `tmp` this thread's private copy of the shared `count`."""
+        m = re.match(r"\s*(?:final\s+)?(?:int|long|Integer|Long)\s+(\w+)\s*=\s*(?:(?:this|\w+)\s*\.\s*)?(\w+)\s*$", stmt)
+        if m and m.group(2) in self.shared and m.group(1) not in self.shared:
+            self._alias[m.group(1)] = m.group(2)
+
+    @staticmethod
+    def _delta_of(expr: str, name: str) -> Optional[int]:
+        """`name + 3`, `name - 2` or `3 + name` -> the signed amount; a bare `name` -> 0; anything else -> None."""
+        n = re.escape(name)
+        expr = expr.strip()
+        if expr == name:
+            return 0
+        m = re.fullmatch(rf"{n}\s*([+-])\s*(\d+)", expr)
+        if m:
+            return int(m.group(2)) * (1 if m.group(1) == "+" else -1)
+        m = re.fullmatch(rf"(\d+)\s*\+\s*{n}", expr)
+        return int(m.group(1)) if m else None
+
+    @staticmethod
+    def _calc(a: str, delta: int) -> str:
+        return f"{a} = {a} {'+' if delta >= 0 else '-'} {abs(delta)}"
+
+    def _alias_update(self, stmt: str, line: int, src_text: str) -> Optional[List[Op]]:
+        """A statement that only changes a private copy (`tmp = tmp + 1`, `tmp++`, `tmp += 2`): the calculation."""
+        for a, v in self._alias.items():
+            n = re.escape(a)
+            delta: Optional[int] = None
+            m = re.fullmatch(rf"\s*{n}\s*=\s*(.+?)\s*", stmt)
+            if m:
+                delta = self._delta_of(m.group(1), a)
+            m = re.fullmatch(rf"\s*{n}\s*([+-])=\s*(\d+)\s*", stmt)
+            if m:
+                delta = int(m.group(2)) * (1 if m.group(1) == "+" else -1)
+            m = re.fullmatch(rf"\s*(?:{n}\s*(\+\+|--)|(\+\+|--)\s*{n})\s*", stmt)
+            if m:
+                delta = 1 if "++" in (m.group(1) or m.group(2)) else -1
+            if delta is not None and delta != 0:
+                return [Op(kind="COMPUTE", target=v, line=line, text=self._calc(a, delta), delta=delta, source=src_text)]
+            touches = re.match(rf"\s*{n}\s*(?:[-+*/]?=|\+\+|--)", stmt) or re.match(rf"\s*(?:\+\+|--)\s*{n}\b", stmt)
+            if touches and delta is None:
+                self.notes.append(f"line {line}: could not evaluate the calculation on '{a}' exactly; assumed +1")
+                return [Op(kind="COMPUTE", target=v, line=line, text=self._calc(a, 1), delta=1, source=src_text)]
+        return None
+
+    def _alias_write(self, v: str, expr: str, line: int, src_text: str) -> Optional[List[Op]]:
+        """`count = tmp;` or `count = tmp + 1;`: writes back a private copy, optionally calculating it first."""
+        for a, av in self._alias.items():
+            if av != v:
+                continue
+            delta = self._delta_of(expr, a)
+            if delta is None and re.search(rf"(?<![\w.]){re.escape(a)}\b", expr):
+                self.notes.append(f"line {line}: could not evaluate the update expression exactly; assumed +1 per execution")
+                delta = 1
+            if delta is None:
+                continue
+            ops = [Op(kind="WRITE", target=v, line=line, text=f"{v} = {a}", delta=0, source=src_text)]
+            if delta != 0:
+                ops.insert(0, Op(kind="COMPUTE", target=v, line=line, text=self._calc(a, delta), delta=delta, source=src_text))
+            return ops
+        return None
 
     def _rmw(self, v: str, delta: Optional[int], assign, line: int, src_text: str, approx: bool = False) -> List[Op]:
         if delta is None:
@@ -443,7 +514,11 @@ class Extractor:
 
     def _method_ops(self, meth: Method, this_name: str, depth: int, stack: Set[str], call_offset: int) -> List[Op]:
         nodes = parse_statements(self.text, *meth.body_span)
-        ops = self._walk(nodes, this_name, depth, stack)
+        saved, self._alias = self._alias, {}
+        try:
+            ops = self._walk(nodes, this_name, depth, stack)
+        finally:
+            self._alias = saved
         if "synchronized" in meth.mods:
             lock = f"{meth.cls}.class" if "static" in meth.mods and meth.cls else this_name
             line = self.lines.line(meth.body_span[0])
@@ -485,6 +560,7 @@ class Extractor:
         for item in body:
             kind = item[0]
             if kind == "span":
+                self._alias = {}
                 span, this_name = item[1], item[2]
                 if len(item) > 4 and item[4]:  # expression lambda
                     seg = self.text[span[0] : span[1]]

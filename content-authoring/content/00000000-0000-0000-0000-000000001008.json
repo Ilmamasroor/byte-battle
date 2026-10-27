@@ -1,0 +1,113 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001008",
+ "battle": {
+  "title": "Binary Search Blitz",
+  "description": "Halve the range, find the target, beat the clock.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 150,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What must be true about an array before binary search can be used on it?",
+    "options": [
+     "It must be sorted",
+     "It must contain no duplicate values",
+     "Its length must be a power of two",
+     "It must contain only positive numbers"
+    ],
+    "answer": "It must be sorted",
+    "explanation": "Binary search discards half the range by comparing with the middle, which is only valid when the data is ordered. Duplicates are fine and length and sign do not matter.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Roughly how many comparisons does binary search need, at most, on a sorted array of 1000 elements?",
+    "options": [
+     "500",
+     "10",
+     "100",
+     "1000"
+    ],
+    "answer": "10",
+    "explanation": "Each step halves the range, and log2(1000) is just under 10, so about 10 comparisons suffice. 500 or 1000 describes a linear scan.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int[] a = {1, 3, 5, 7, 9, 11};\n        int lo = 0, hi = a.length - 1, steps = 0, pos = -1;\n        while (lo <= hi) {\n            int mid = (lo + hi) / 2;\n            steps++;\n            if (a[mid] == 7) { pos = mid; break; }\n            if (a[mid] < 7) lo = mid + 1; else hi = mid - 1;\n        }\n        System.out.println(pos);\n        System.out.println(steps);\n    }\n}",
+    "options": [
+     "3 / 2",
+     "4 / 3",
+     "3 / 3",
+     "3 / 1"
+    ],
+    "answer": "3 / 3",
+    "explanation": "Probes are index 2 (5 < 7, go right), index 4 (9 > 7, go left) and index 3 (found), so the index is 3 after 3 probes. Guessing 2 steps forgets the first probe that goes right.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "A sorted array has millions of values, possibly repeated. For many queries you need the FIRST position whose value is >= x. What is best?",
+    "options": [
+     "A linear scan from the start for each query",
+     "Copy and sort the array for every query, then scan",
+     "Put the values in a HashSet and look up x",
+     "Binary search that keeps narrowing to the left half even after a match (lower bound)"
+    ],
+    "answer": "Binary search that keeps narrowing to the left half even after a match (lower bound)",
+    "explanation": "The array is already sorted, so each query is O(log n); continuing left after a match finds the first position. A HashSet cannot answer 'first position >= x', and rescanning or re-sorting wastes time.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int lo = 1500000000;\n        int hi = 2000000000;\n        int bad = (lo + hi) / 2;\n        int good = lo + (hi - lo) / 2;\n        System.out.println(bad + \" / \" + good);\n    }\n}",
+    "options": [
+     "1750000000 / 1750000000",
+     "-397483648 / 1750000000",
+     "Exception / 1750000000",
+     "-397483648 / -397483648"
+    ],
+    "answer": "-397483648 / 1750000000",
+    "explanation": "lo + hi is 3.5 billion, which exceeds the int maximum and wraps negative before being divided. lo + (hi - lo) / 2 never exceeds hi, which is why it is the safe way to compute mid.",
+    "points": 20
+   }
+  ]
+ },
+ "debug": [
+  {
+   "title": "The Last Candidate",
+   "description": "The program reads a sorted array of distinct integers and q queries. For each query it should print the index of the value, or -1 if absent. It sometimes prints -1 for values that are present. Input: n, the sorted array, q, then q queries. Output: one index or -1 per query.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "WRONG_CONDITION",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int q = in.nextInt();\n        while (q-- > 0) {\n            int x = in.nextInt();\n            int lo = 0, hi = n - 1, ans = -1;\n            while (lo < hi) {\n                int mid = lo + (hi - lo) / 2;\n                if (a[mid] == x) { ans = mid; break; }\n                if (a[mid] < x) lo = mid + 1; else hi = mid - 1;\n            }\n            System.out.println(ans);\n        }\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        int[] a = new int[n];\n        for (int i = 0; i < n; i++) a[i] = in.nextInt();\n        int q = in.nextInt();\n        while (q-- > 0) {\n            int x = in.nextInt();\n            int lo = 0, hi = n - 1, ans = -1;\n            while (lo <= hi) {\n                int mid = lo + (hi - lo) / 2;\n                if (a[mid] == x) { ans = mid; break; }\n                if (a[mid] < x) lo = mid + 1; else hi = mid - 1;\n            }\n            System.out.println(ans);\n        }\n    }\n}\n",
+   "tests": [
+    {
+     "input": "5\n1 3 5 7 9\n3\n5 9 4\n",
+     "hidden": false
+    },
+    {
+     "input": "1\n5\n2\n5 6\n",
+     "hidden": false
+    },
+    {
+     "input": "6\n2 4 6 8 10 12\n4\n2 12 7 8\n",
+     "hidden": true
+    },
+    {
+     "input": "3\n-5 0 5\n3\n-5 0 5\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Search for 5 in an array that has only one element, [5]. Is it found?",
+    "The search works for many values but fails sometimes. Look at the loop condition.",
+    "When lo and hi meet there is still one candidate left. Does the loop test that last candidate?",
+    "Use while (lo <= hi) so the final remaining element is also checked."
+   ]
+  }
+ ]
+}

@@ -72,7 +72,7 @@ public class VisualizationService {
                 .findFirst()
                 .orElseThrow(() -> new ResourceNotFoundException("No visualization is available for this concept yet"));
         JsonNode viz = visualize(new VisualizeRequest(exercise.getBuggyCode(), Mode.AUTO, null, false));
-        return new ConceptVisualization(conceptId, exercise.getId(), exercise.getTitle(), exercise.getBugCategory(), viz);
+        return new ConceptVisualization(conceptId, exercise.getId(), exercise.getTitle(), exercise.getBugCategory(), exercise.getBuggyCode(), viz);
     }
 
     private JsonNode cached(String key, Supplier<JsonNode> loader) {

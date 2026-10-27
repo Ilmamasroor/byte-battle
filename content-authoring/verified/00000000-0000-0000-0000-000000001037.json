@@ -1,0 +1,175 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001037",
+ "battle": {
+  "title": "Evict or Be Evicted",
+  "description": "FIFO, LRU, Belady and thrashing: which page gets the boot?",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "The optimal page-replacement algorithm (OPT) gives the fewest page faults. Why is it not used in real systems?",
+    "options": [
+     "It needs future knowledge of the reference string",
+     "It needs too much disk space",
+     "It only works with two frames",
+     "It causes Belady's anomaly"
+    ],
+    "answer": "It needs future knowledge of the reference string",
+    "explanation": "OPT evicts the page that will not be used for the longest time, which the OS cannot know in advance. It is used only as a benchmark. OPT never suffers Belady's anomaly.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which algorithm can produce MORE page faults after you give the process MORE frames (Belady's anomaly)?",
+    "options": [
+     "LRU",
+     "OPT",
+     "FIFO",
+     "All stack algorithms"
+    ],
+    "answer": "FIFO",
+    "explanation": "FIFO ignores recency, so a larger memory can hold a different set of pages and cause extra faults. LRU and OPT are stack algorithms: the pages held with n frames are always a subset of those held with n+1.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "FIFO replacement runs on the reference string 1 2 3 4 1 2 5 1 2 3 4 5, first with 3 frames and then with 4. What does this program print?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        int[] ref = {1, 2, 3, 4, 1, 2, 5, 1, 2, 3, 4, 5};\n        for (int f = 3; f <= 4; f++) {\n            Deque<Integer> q = new ArrayDeque<>();\n            int faults = 0;\n            for (int p : ref) {\n                if (!q.contains(p)) {\n                    faults++;\n                    if (q.size() == f) q.poll();\n                    q.add(p);\n                }\n            }\n            System.out.println(faults);\n        }\n    }\n}",
+    "options": [
+     "9 / 9",
+     "10 / 9",
+     "9 / 10",
+     "10 / 8"
+    ],
+    "answer": "9 / 10",
+    "explanation": "With 3 frames FIFO faults 9 times, with 4 frames it faults 10 times. This is the textbook Belady's anomaly: more frames, more faults.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Exact LRU needs a timestamp or stack update on every memory reference, which is too slow. What do real systems use instead?",
+    "options": [
+     "Evict a random frame every time",
+     "Always evict the most recently loaded page",
+     "Evict the page with the lowest page number",
+     "An approximation such as the clock (second-chance) algorithm using reference bits"
+    ],
+    "answer": "An approximation such as the clock (second-chance) algorithm using reference bits",
+    "explanation": "The hardware sets a reference bit on each access and the clock hand gives recently used pages a second chance, approximating LRU cheaply. Random or lowest-number eviction ignores locality.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "CPU utilization is falling and the disk is constantly paging. The OS reacts by admitting more processes. Why does this make things worse?",
+    "options": [
+     "More processes take frames away from the others, increasing page faults and deepening thrashing",
+     "More processes always improve CPU utilization",
+     "The disk gets faster under heavier load",
+     "Page faults stop once more processes are running"
+    ],
+    "answer": "More processes take frames away from the others, increasing page faults and deepening thrashing",
+    "explanation": "Thrashing means processes lack enough frames for their working sets and spend most time paging. Admitting more processes shrinks each one's share further. The cure is to lower the degree of multiprogramming.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Count LRU Page Faults",
+   "description": "A memory has f empty frames and uses Least Recently Used (LRU) replacement. Process the reference string in order. A reference to a page already in a frame is a hit and makes it the most recently used. Otherwise it is a page fault: if all frames are full, evict the least recently used page, then load the new page. Print the total number of page faults.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: f (frames) and n (length of the reference string). Line 2: n page numbers.",
+   "outputDescription": "A single integer: the number of page faults.",
+   "constraints": "1 <= f <= 20, 1 <= n <= 200, 0 <= page <= 99",
+   "starterCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int f = in.nextInt();\n        int n = in.nextInt();\n        int[] ref = new int[n];\n        for (int i = 0; i < n; i++) ref[i] = in.nextInt();\n        int faults = 0;\n        // TODO: simulate LRU replacement with f frames and count the page faults\n        System.out.println(faults);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int f = in.nextInt();\n        int n = in.nextInt();\n        LinkedList<Integer> frames = new LinkedList<>();\n        int faults = 0;\n        for (int i = 0; i < n; i++) {\n            Integer p = in.nextInt();\n            if (frames.remove(p)) {\n                frames.addLast(p);\n            } else {\n                faults++;\n                if (frames.size() == f) frames.removeFirst();\n                frames.addLast(p);\n            }\n        }\n        System.out.println(faults);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "3 12\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+     "hidden": false,
+     "expectedOutput": "10\n"
+    },
+    {
+     "input": "3 8\n7 0 1 2 0 3 0 4\n",
+     "hidden": false,
+     "expectedOutput": "6\n"
+    },
+    {
+     "input": "1 5\n1 1 2 2 1\n",
+     "hidden": true,
+     "expectedOutput": "3\n"
+    },
+    {
+     "input": "4 12\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+     "hidden": true,
+     "expectedOutput": "8\n"
+    },
+    {
+     "input": "2 10\n1 2 1 3 1 4 1 5 1 6\n",
+     "hidden": true,
+     "expectedOutput": "6\n"
+    },
+    {
+     "input": "5 6\n1 2 3 1 2 3\n",
+     "hidden": true,
+     "expectedOutput": "3\n"
+    },
+    {
+     "input": "1 1\n9\n",
+     "hidden": true,
+     "expectedOutput": "1\n"
+    },
+    {
+     "input": "3 15\n2 3 2 1 5 2 4 5 3 2 5 2 1 4 3\n",
+     "hidden": true,
+     "expectedOutput": "10\n"
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "FIFO That Remembers Too Much",
+   "description": "The program counts page faults under FIFO replacement with f frames. FIFO must evict the page that was loaded earliest, no matter how recently it was used. The code gives wrong counts on some reference strings. Input: line 1 has f and n, line 2 has n page numbers. Output: the number of page faults.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "STATE_MUTATION",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int f = in.nextInt();\n        int n = in.nextInt();\n        LinkedList<Integer> frames = new LinkedList<>();\n        int faults = 0;\n        for (int i = 0; i < n; i++) {\n            Integer p = in.nextInt();\n            if (!frames.contains(p)) {\n                faults++;\n                if (frames.size() == f) frames.removeFirst();\n                frames.addLast(p);\n            } else {\n                frames.remove(p);\n                frames.addLast(p);\n            }\n        }\n        System.out.println(faults);\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int f = in.nextInt();\n        int n = in.nextInt();\n        LinkedList<Integer> frames = new LinkedList<>();\n        int faults = 0;\n        for (int i = 0; i < n; i++) {\n            Integer p = in.nextInt();\n            if (!frames.contains(p)) {\n                faults++;\n                if (frames.size() == f) frames.removeFirst();\n                frames.addLast(p);\n            }\n        }\n        System.out.println(faults);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "3 12\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+     "hidden": false,
+     "expectedOutput": "9\n"
+    },
+    {
+     "input": "3 5\n1 2 3 1 4\n",
+     "hidden": false,
+     "expectedOutput": "4\n"
+    },
+    {
+     "input": "2 6\n1 2 1 2 1 2\n",
+     "hidden": true,
+     "expectedOutput": "2\n"
+    },
+    {
+     "input": "3 8\n7 0 1 2 0 3 0 4\n",
+     "hidden": true,
+     "expectedOutput": "7\n"
+    },
+    {
+     "input": "4 12\n1 2 3 4 1 2 5 1 2 3 4 5\n",
+     "hidden": true,
+     "expectedOutput": "10\n"
+    }
+   ],
+   "hints": [
+    "Compare the output with a hand trace of 3 frames on 1 2 3 1 4 and then more pages. Which page is evicted when each new page arrives?",
+    "Look at the branch that runs when the page is already in memory (a hit). What does it do to the queue?",
+    "A hit moves the page to the back of the queue, so the queue order tracks recency. That is LRU behaviour, not FIFO.",
+    "Remove the else branch: on a hit do nothing. FIFO order depends only on when a page was loaded."
+   ]
+  }
+ ]
+}

@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001050",
+ "battle": {
+  "title": "Queue Up!",
+  "description": "Producers, consumers, duplicates and dead letters.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 180,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is the main benefit of putting a message queue between a producer and a consumer?",
+    "options": [
+     "The consumer is guaranteed to reply in real time",
+     "They are decoupled: the producer does not wait, and the queue buffers bursts",
+     "Messages can never be processed more than once",
+     "The producer learns the processing result immediately"
+    ],
+    "answer": "They are decoupled: the producer does not wait, and the queue buffers bursts",
+    "explanation": "A queue lets the producer hand off work and move on while consumers process at their own pace. It adds asynchrony, so you do not get an immediate result or a real-time guarantee.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Checkout must not wait for a slow email provider after an order is placed. What should you do?",
+    "options": [
+     "Publish an order-placed message and let a worker send the email",
+     "Call the email API inside the checkout request",
+     "Raise the HTTP timeout on checkout",
+     "Make the browser poll the database until the email is sent"
+    ],
+    "answer": "Publish an order-placed message and let a worker send the email",
+    "explanation": "Queuing the work makes checkout fast and lets the worker retry if the provider is down. A synchronous call ties checkout latency and availability to the email service.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "A queue offers at-least-once delivery. What must the consumer be prepared for?",
+    "options": [
+     "Never receiving a message at all",
+     "Receiving every message exactly once",
+     "Always receiving messages in strict global order",
+     "Receiving the same message more than once"
+    ],
+    "answer": "Receiving the same message more than once",
+    "explanation": "At-least-once means no loss but possible redelivery (for example after a missed ack), so processing should be idempotent. Exactly-once is much harder and usually achieved by deduplicating on the consumer side.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What is a dead-letter queue used for?",
+    "options": [
+     "Storing messages for consumers that are currently offline",
+     "Archiving every successfully processed message",
+     "Holding messages that repeatedly failed, so they stop blocking the main queue",
+     "Giving high-priority messages a faster lane"
+    ],
+    "answer": "Holding messages that repeatedly failed, so they stop blocking the main queue",
+    "explanation": "After a set number of failed attempts, a poison message is moved aside for inspection instead of being retried forever. Buffering for offline consumers is what the normal queue already does.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A payment queue delivers some messages twice. What does this program print for the naive total and the total with deduplication by id?",
+    "code": "import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        int[] ids = {1, 2, 2, 3, 1};\n        int[] amounts = {10, 20, 20, 5, 10};\n        int naive = 0, dedup = 0;\n        Set<Integer> seen = new HashSet<>();\n        for (int i = 0; i < ids.length; i++) {\n            naive += amounts[i];\n            if (seen.add(ids[i])) dedup += amounts[i];\n        }\n        System.out.println(naive + \" / \" + dedup);\n    }\n}",
+    "options": [
+     "65 / 35",
+     "35 / 35",
+     "65 / 65",
+     "55 / 35"
+    ],
+    "answer": "65 / 35",
+    "explanation": "The naive sum counts duplicates: 10 + 20 + 20 + 5 + 10 = 65. Skipping ids already seen counts each payment once: 10 + 20 + 5 = 35. Idempotent consumers make at-least-once delivery safe.",
+    "points": 20
+   }
+  ]
+ }
+}

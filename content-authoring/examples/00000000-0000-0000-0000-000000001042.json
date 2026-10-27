@@ -1,0 +1,122 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001042",
+ "title": "TCP: shake hands, then talk",
+ "kind": "sequence",
+ "intro": "Before your browser sends a single byte, TCP makes the two computers agree. How many messages?",
+ "predict": {
+  "question": "How many messages must be exchanged before the first real data can be sent?",
+  "options": [
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": 1,
+  "reveal": "Three: SYN, SYN-ACK, ACK. After that both sides know the other is listening and the connection is open."
+ },
+ "takeaway": "TCP spends a three-step handshake to make delivery reliable; UDP skips it and just sends.",
+ "steps": [
+  {
+   "say": "Two computers, no connection yet. The server is listening; the browser is closed.",
+   "actorState": {
+    "0": "CLOSED",
+    "1": "LISTEN"
+   },
+   "actors": [
+    "Browser",
+    "Server"
+   ]
+  },
+  {
+   "say": "Step 1: the browser says SYN, meaning 'I want to talk, and my numbering starts at 100'.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "SYN seq=100",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "SYN-SENT",
+    "1": "LISTEN"
+   }
+  },
+  {
+   "say": "Step 2: the server answers SYN-ACK: 'Heard you. I am ready, and my numbering starts at 300.'",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "SYN-ACK seq=300 ack=101",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "SYN-SENT",
+    "1": "SYN-RECEIVED"
+   }
+  },
+  {
+   "say": "Step 3: the browser confirms with ACK. Now both sides know the other can hear them.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "ACK ack=301",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "ESTABLISHED",
+    "1": "ESTABLISHED"
+   }
+  },
+  {
+   "say": "The connection is open, so the browser can finally send its request.",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "GET /index.html",
+    "kind": "req"
+   }
+  },
+  {
+   "say": "The server replies with the page. TCP numbers every byte so lost ones can be resent.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "200 OK + data",
+    "kind": "res"
+   }
+  },
+  {
+   "say": "To finish, the browser sends FIN: 'I have nothing more to send.'",
+   "msg": {
+    "from": 0,
+    "to": 1,
+    "label": "FIN",
+    "kind": "req"
+   },
+   "actorState": {
+    "0": "FIN-WAIT",
+    "1": "CLOSE-WAIT"
+   }
+  },
+  {
+   "say": "The server acknowledges and closes its side too.",
+   "msg": {
+    "from": 1,
+    "to": 0,
+    "label": "ACK + FIN",
+    "kind": "res"
+   },
+   "actorState": {
+    "0": "TIME-WAIT",
+    "1": "CLOSED"
+   }
+  },
+  {
+   "say": "Reliable, ordered, and a bit slow to start. UDP skips all of this: just send and hope.",
+   "msg": {
+    "from": 0,
+    "to": 0,
+    "label": "UDP: no handshake",
+    "kind": "note"
+   }
+  }
+ ]
+}

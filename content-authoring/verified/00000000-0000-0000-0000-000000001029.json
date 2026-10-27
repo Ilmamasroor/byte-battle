@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001029",
+ "battle": {
+  "title": "Normal Form Showdown",
+  "description": "1NF to BCNF: spot the dependency that breaks each form.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "A table violates First Normal Form when:",
+    "options": [
+     "A non-key column depends on only part of the key",
+     "A column stores a list of values such as 'red,green' in one cell",
+     "A non-key column depends on another non-key column",
+     "The table has no foreign keys"
+    ],
+    "answer": "A column stores a list of values such as 'red,green' in one cell",
+    "explanation": "1NF requires atomic values and no repeating groups, so a cell holding a list breaks it. The partial and transitive dependencies in the other options are 2NF and 3NF problems.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "enrollment(student_id, course_id, student_name, grade) has key (student_id, course_id), and student_name depends only on student_id. What is the lowest normal form it violates?",
+    "options": [
+     "First Normal Form",
+     "Second Normal Form",
+     "Third Normal Form",
+     "Boyce-Codd Normal Form"
+    ],
+    "answer": "Second Normal Form",
+    "explanation": "All values are atomic so 1NF holds, but student_name depends on part of the composite key, a partial dependency, which breaks 2NF. It also fails the later forms, but 2NF is the first one broken.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "employee(emp_id, dept_id, dept_name) has key emp_id and the dependency dept_id -> dept_name. How should you redesign it?",
+    "options": [
+     "Add dept_name to the primary key",
+     "Merge dept_id and dept_name into one text column",
+     "Keep one table and add an index on dept_name",
+     "Split into employee(emp_id, dept_id) and department(dept_id, dept_name)"
+    ],
+    "answer": "Split into employee(emp_id, dept_id) and department(dept_id, dept_name)",
+    "explanation": "dept_name depends on emp_id only through dept_id, a transitive dependency that breaks 3NF and repeats the name for every employee. Moving the department facts to their own table, linked by dept_id, removes the redundancy. An index does not remove duplicated data.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Assuming a table is already in 2NF, which statement describes Third Normal Form?",
+    "options": [
+     "No non-key attribute depends on another non-key attribute, so there are no transitive dependencies on the key",
+     "Every column holds a single atomic value",
+     "Every non-key attribute depends on only part of the primary key",
+     "Every determinant is a candidate key, with no exceptions at all"
+    ],
+    "answer": "No non-key attribute depends on another non-key attribute, so there are no transitive dependencies on the key",
+    "explanation": "3NF forbids transitive dependencies: non-key attributes must depend on the key and nothing but the key. Atomic values describe 1NF, partial dependence is exactly what 2NF forbids, and the 'every determinant is a candidate key' rule is the stricter BCNF.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "How does BCNF differ from 3NF?",
+    "options": [
+     "BCNF additionally requires every cell to be atomic",
+     "BCNF permits partial dependencies that 3NF forbids",
+     "BCNF needs every determinant to be a superkey; 3NF excepts dependents that are prime attributes",
+     "BCNF removes multivalued dependencies, which 3NF cannot"
+    ],
+    "answer": "BCNF needs every determinant to be a superkey; 3NF excepts dependents that are prime attributes",
+    "explanation": "BCNF is stricter than 3NF: for every nontrivial functional dependency X -> Y, X must be a superkey. 3NF lets X -> Y slip through if Y is a prime attribute. Atomicity is 1NF and multivalued dependencies are the concern of 4NF.",
+    "points": 20
+   }
+  ]
+ }
+}

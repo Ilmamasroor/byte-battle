@@ -57,13 +57,14 @@ public class SecurityConfig {
 
     @Bean
     public CorsConfigurationSource corsConfigurationSource(
-            @Value("${bytebattle.cors.allowed-origins:http://localhost:3000,http://localhost:8080}") String origins) {
+            @Value("${bytebattle.cors.allowed-origins:http://localhost:*,http://127.0.0.1:*}") String origins) {
         CorsConfiguration config = new CorsConfiguration();
         List<String> allowed = Arrays.stream(origins.split(","))
                 .map(String::trim).filter(s -> !s.isEmpty()).toList();
-        config.setAllowedOrigins(allowed);
+        // patterns (not exact origins) so Flutter web on any localhost port works: http://localhost:*
+        config.setAllowedOriginPatterns(allowed);
         config.setAllowedMethods(List.of("GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept"));
+        config.setAllowedHeaders(List.of("Authorization", "Content-Type", "Accept", "ngrok-skip-browser-warning"));
         config.setMaxAge(3600L);
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);

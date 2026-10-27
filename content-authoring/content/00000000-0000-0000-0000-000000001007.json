@@ -1,0 +1,156 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001007",
+ "battle": {
+  "title": "Linked List Gauntlet",
+  "description": "Follow the pointers, dodge the nulls and survive each round.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "In a singly linked list where you already hold the head, how long does inserting a new node at the head take?",
+    "options": [
+     "O(n), because elements must shift",
+     "O(1)",
+     "O(log n)",
+     "O(n), because you walk to the end"
+    ],
+    "answer": "O(1)",
+    "explanation": "Create the node, point it at the old head and make it the new head: a constant number of steps. Shifting is an array cost and walking to the end is for tail insertion without a tail pointer.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n    public static void main(String[] args) {\n        Node head = null;\n        for (int v = 1; v <= 3; v++) {\n            Node n = new Node(v);\n            n.next = head;\n            head = n;\n        }\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}",
+    "options": [
+     "1 2 3",
+     "3 1",
+     "1 3",
+     "3 2 1"
+    ],
+    "answer": "3 2 1",
+    "explanation": "Each new node is placed in front of the current head, so the last value added (3) ends up first. Expecting 1 2 3 assumes appending at the tail.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n    public static void main(String[] args) {\n        Node head = new Node(1);\n        head.next = new Node(2);\n        head.next.next = new Node(3);\n        head.next.next.next = new Node(4);\n        Node cur = head;\n        while (cur.next != null && cur.next.val != 3) cur = cur.next;\n        cur.next = cur.next.next;\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}",
+    "options": [
+     "1 2 4",
+     "1 2 3",
+     "1 3 4",
+     "2 4"
+    ],
+    "answer": "1 2 4",
+    "explanation": "The loop stops on the node BEFORE the one holding 3 and relinks it to skip the target. Printing 1 3 4 would mean the wrong node was unlinked.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You must detect whether a linked list contains a cycle while using only O(1) extra memory. Which approach works?",
+    "options": [
+     "Store every visited node in a HashSet",
+     "Two pointers: slow moves 1 step, fast moves 2 steps",
+     "Traverse until null and count the nodes",
+     "Reverse the list and compare it to the original"
+    ],
+    "answer": "Two pointers: slow moves 1 step, fast moves 2 steps",
+    "explanation": "If a cycle exists the fast pointer eventually catches the slow one; if not, fast reaches null. The HashSet works but uses O(n) memory, and counting until null loops forever on a cycle.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "What does this program print?",
+    "code": "public class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n    public static void main(String[] args) {\n        Node head = new Node(1);\n        head.next = new Node(2);\n        head.next.next = new Node(3);\n        Node prev = null, cur = head;\n        while (cur != null) {\n            Node nxt = cur.next;\n            cur.next = prev;\n            prev = cur;\n            cur = nxt;\n        }\n        System.out.println(prev.val);\n        System.out.println(head.next == null);\n    }\n}",
+    "options": [
+     "3 / true",
+     "3 / false",
+     "1 / true",
+     "1 / false"
+    ],
+    "answer": "3 / true",
+    "explanation": "After reversing, prev is the new head (3). The old head node (1) became the tail, so its next is null and the second line is true. Thinking the head is still 1 forgets that the head changes.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Remove Nth From End",
+   "description": "Build a singly linked list from n integers using your own Node class. Then read k and remove the k-th node counted from the END of the list (k = 1 is the last node, k = n is the first). Print the remaining values separated by single spaces, or EMPTY if no nodes remain.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "Line 1: n. Line 2: n integers. Line 3: k.",
+   "outputDescription": "The remaining list on one line, or EMPTY.",
+   "constraints": "1 <= n <= 1000, 1 <= k <= n, -1000 <= value <= 1000",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        Node head = null, tail = null;\n        for (int i = 0; i < n; i++) {\n            Node node = new Node(Integer.parseInt(st.nextToken()));\n            if (head == null) head = tail = node; else { tail.next = node; tail = node; }\n        }\n        int k = Integer.parseInt(br.readLine().trim());\n        // TODO: remove the k-th node counting from the END of the list (k = 1 is the last node)\n        if (head == null) { System.out.println(\"EMPTY\"); return; }\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        int n = Integer.parseInt(br.readLine().trim());\n        StringTokenizer st = new StringTokenizer(br.readLine());\n        Node head = null, tail = null;\n        for (int i = 0; i < n; i++) {\n            Node node = new Node(Integer.parseInt(st.nextToken()));\n            if (head == null) head = tail = node; else { tail.next = node; tail = node; }\n        }\n        int k = Integer.parseInt(br.readLine().trim());\n        Node dummy = new Node(0);\n        dummy.next = head;\n        Node fast = dummy, slow = dummy;\n        for (int i = 0; i < k; i++) fast = fast.next;\n        while (fast.next != null) { fast = fast.next; slow = slow.next; }\n        slow.next = slow.next.next;\n        head = dummy.next;\n        if (head == null) { System.out.println(\"EMPTY\"); return; }\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "tests": [
+    {
+     "input": "5\n1 2 3 4 5\n2\n",
+     "hidden": false
+    },
+    {
+     "input": "3\n10 20 30\n1\n",
+     "hidden": false
+    },
+    {
+     "input": "1\n7\n1\n",
+     "hidden": true
+    },
+    {
+     "input": "4\n5 6 7 8\n4\n",
+     "hidden": true
+    },
+    {
+     "input": "2\n-1 -2\n2\n",
+     "hidden": true
+    },
+    {
+     "input": "200\n-50 -13 24 -40 -3 34 -30 7 44 -20 17 -47 -10 27 -37 0 37 -27 10 47 -17 20 -44 -7 30 -34 3 40 -24 13 50 -14 23 -41 -4 33 -31 6 43 -21 16 -48 -11 26 -38 -1 36 -28 9 46 -18 19 -45 -8 29 -35 2 39 -25 12 49 -15 22 -42 -5 32 -32 5 42 -22 15 -49 -12 25 -39 -2 35 -29 8 45 -19 18 -46 -9 28 -36 1 38 -26 11 48 -16 21 -43 -6 31 -33 4 41 -23 14 -50 -13 24 -40 -3 34 -30 7 44 -20 17 -47 -10 27 -37 0 37 -27 10 47 -17 20 -44 -7 30 -34 3 40 -24 13 50 -14 23 -41 -4 33 -31 6 43 -21 16 -48 -11 26 -38 -1 36 -28 9 46 -18 19 -45 -8 29 -35 2 39 -25 12 49 -15 22 -42 -5 32 -32 5 42 -22 15 -49 -12 25 -39 -2 35 -29 8 45 -19 18 -46 -9 28 -36 1 38 -26 11 48 -16 21 -43 -6 31 -33 4 41\n77\n",
+     "hidden": true
+    }
+   ]
+  }
+ ],
+ "debug": [
+  {
+   "title": "The Stubborn Head",
+   "description": "The program builds a linked list, then deletes the FIRST node whose value equals t (if there is none, nothing changes) and prints the list, or EMPTY if it ends up empty. Deleting works for middle and last nodes but not when the target is the first node. Input: n, n integers, then t. Output: remaining values separated by spaces, or EMPTY.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "EDGE_CASE_HEAD",
+   "buggyCode": "import java.util.*;\n\npublic class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        Node head = null, tail = null;\n        for (int i = 0; i < n; i++) {\n            Node node = new Node(in.nextInt());\n            if (head == null) head = tail = node; else { tail.next = node; tail = node; }\n        }\n        int t = in.nextInt();\n        Node cur = head;\n        while (cur.next != null && cur.next.val != t) cur = cur.next;\n        if (cur.next != null) cur.next = cur.next.next;\n        if (head == null) { System.out.println(\"EMPTY\"); return; }\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "solutionCode": "import java.util.*;\n\npublic class Main {\n    static class Node {\n        int val; Node next;\n        Node(int v) { val = v; }\n    }\n\n    public static void main(String[] args) {\n        Scanner in = new Scanner(System.in);\n        int n = in.nextInt();\n        Node head = null, tail = null;\n        for (int i = 0; i < n; i++) {\n            Node node = new Node(in.nextInt());\n            if (head == null) head = tail = node; else { tail.next = node; tail = node; }\n        }\n        int t = in.nextInt();\n        if (head.val == t) {\n            head = head.next;\n        } else {\n            Node cur = head;\n            while (cur.next != null && cur.next.val != t) cur = cur.next;\n            if (cur.next != null) cur.next = cur.next.next;\n        }\n        if (head == null) { System.out.println(\"EMPTY\"); return; }\n        StringBuilder sb = new StringBuilder();\n        for (Node c = head; c != null; c = c.next) sb.append(c.val).append(' ');\n        System.out.println(sb.toString().trim());\n    }\n}\n",
+   "tests": [
+    {
+     "input": "4\n1 2 3 4\n3\n",
+     "hidden": false
+    },
+    {
+     "input": "1\n5\n5\n",
+     "hidden": false
+    },
+    {
+     "input": "4\n1 2 3 4\n1\n",
+     "hidden": true
+    },
+    {
+     "input": "3\n7 8 9\n9\n",
+     "hidden": true
+    },
+    {
+     "input": "3\n4 4 4\n4\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Delete the first value of the list, for example list 1 2 3 4 with t = 1. What do you see?",
+    "The loop always looks at cur.next. Which node can never be reached as 'cur.next'?",
+    "The head has no previous node, so the normal unlink never removes it.",
+    "Handle the head separately: if head.val == t, move head = head.next; otherwise run the normal search from the head."
+   ]
+  }
+ ]
+}

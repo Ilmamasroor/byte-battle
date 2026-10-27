@@ -1,15 +1,49 @@
 """Deterministic scheduler: SAFE, RACE (lost update) and DEADLOCK schedules."""
+import re
 from dataclasses import dataclass, field
 from typing import Any, Dict, List, Optional, Set, Tuple
 
 from app.services.visualizer.models import Op, ThreadModel, VisModel
 
-SIM_KINDS = {"READ", "WRITE", "LOCK", "UNLOCK", "WAIT", "NOTIFY", "SLEEP"}
+SIM_KINDS = {"READ", "COMPUTE", "WRITE", "LOCK", "UNLOCK", "WAIT", "NOTIFY", "SLEEP"}
+
+SYNC_LOCK = "lock"  # the lock the SYNC schedule adds around the read-calculate-write
+
+
+def _compute_text(write: Op) -> str:
+    m = re.match(r"^\w+\s*=\s*tmp\s*(.+)$", write.text or "")
+    if m:
+        return f"tmp = tmp {m.group(1)}"
+    if write.assign is not None:
+        return f"tmp = {write.assign}"
+    return "tmp = tmp + 1"
+
+
+def _with_compute(ops: List[Op]) -> List[Op]:
+    """Makes the calculation its own step: a READ ... WRITE of the same variable whose WRITE carries the update
+    (`count = tmp + 1`) becomes READ, COMPUTE (`tmp = tmp + 1`), WRITE (`count = tmp`). Models that already have an
+    explicit COMPUTE are left alone."""
+    out: List[Op] = []
+    read: Set[str] = set()
+    for o in ops:
+        if o.kind == "READ":
+            read.add(o.target)
+        elif o.kind == "COMPUTE":
+            read.discard(o.target)
+            read.add("\0" + o.target)  # already has its calculation step
+        elif o.kind == "WRITE":
+            if o.target in read and ("\0" + o.target) not in read:
+                out.append(Op(kind="COMPUTE", target=o.target, line=o.line, text=_compute_text(o), delta=o.delta, assign=o.assign, source=o.source))
+                o = o.model_copy(update={"text": f"{o.target} = tmp"})
+            read.discard(o.target)
+            read.discard("\0" + o.target)
+        out.append(o)
+    return out
 
 
 def worker_threads(model: VisModel) -> List[ThreadModel]:
     return [
-        ThreadModel(id=t.id, label=t.label, ops=[o for o in t.ops if o.kind in SIM_KINDS])
+        ThreadModel(id=t.id, label=t.label, ops=_with_compute([o for o in t.ops if o.kind in SIM_KINDS]))
         for t in model.threads
         if t.id != "main" and any(o.kind in SIM_KINDS for o in t.ops)
     ]
@@ -27,6 +61,8 @@ class Engine:
         self.owner: Dict[str, str] = {}
         self.depth: Dict[str, int] = {}
         self.local: Dict[Tuple[str, str], float] = {}
+        self.read_val: Dict[Tuple[str, str], float] = {}  # what each thread saw when it last read a variable
+        self.computed: Set[Tuple[str, str]] = set()  # (thread, variable) whose private copy holds a calculated result
         self.steps: List[Dict[str, Any]] = []
 
     def done(self, tid: str) -> bool:
@@ -76,20 +112,38 @@ class Engine:
         elif op.kind == "READ":
             v = self.values.get(op.target, 0)
             self.local[(tid, op.target)] = v
+            self.read_val[(tid, op.target)] = v
+            self.computed.discard((tid, op.target))
             extra["value"] = _fmt(v)
             extra["local"] = _fmt(v)
-        elif op.kind == "WRITE":
+        elif op.kind == "COMPUTE":
             base = self.local.get((tid, op.target), self.values.get(op.target, 0))
-            if op.assign is not None:
-                new = op.assign
-            elif op.delta is not None:
-                new = base + op.delta
-            else:
-                new = base + 1
+            new = self._updated(op, base)
+            self.local[(tid, op.target)] = new
+            self.computed.add((tid, op.target))
+            extra["before"] = _fmt(base)
+            extra["value"] = _fmt(new)
+            extra["local"] = _fmt(new)
+        elif op.kind == "WRITE":
+            key = (tid, op.target)
+            base = self.local.get(key, self.values.get(op.target, 0))
+            new = base if key in self.computed else self._updated(op, base)
+            before = self.values.get(op.target, 0)
+            seen = self.read_val.get(key)
             self.values[op.target] = new
+            self.computed.discard(key)
+            extra["before"] = _fmt(before)
             extra["value"] = _fmt(new)
             extra["wrote"] = _fmt(new)
+            # the thread's copy was out of date: this write erases whatever was stored since it read
+            extra["stale"] = seen is not None and seen != before
         return self._record(tid, op, idx, **extra)
+
+    @staticmethod
+    def _updated(op: Op, base: float) -> float:
+        if op.assign is not None:
+            return op.assign
+        return base + (op.delta if op.delta is not None else 1)
 
     def run_until(self, tid: str, op_index: int) -> bool:
         """Run thread until op `op_index` has executed. False if blocked first."""
@@ -184,45 +238,106 @@ def find_races(model: VisModel) -> List[Dict[str, Any]]:
     return races
 
 
-def _race_schedule(model: VisModel, race: Dict[str, Any], expected: Dict[str, Any]):
+RACE_LABELS = {
+    "RACE": "Both read first, then both write",
+    "RACE_ALT": "One thread finishes inside the other's gap",
+}
+
+
+def _race_candidate(model: VisModel, race: Dict[str, Any]):
+    """The two threads and the read/write positions of an unprotected read-modify-write in each."""
     workers = {t.id: t for t in worker_threads(model)}
     A, B, var = workers[race["a"]], workers[race["b"]], race["var"]
     pa, pb = _rmw_pairs(A, var), _rmw_pairs(B, var)
     sets = {A.id: _locksets(A), B.id: _locksets(B)}
-    # pick an unprotected RMW pair in each thread (read/write not under a shared lock)
-    cand = None
     for (ra, wa) in pa:
         for (rb, wb) in pb:
             if not (sets[A.id][ra] & sets[B.id][rb]) and not (sets[A.id][wa] & sets[B.id][wb]):
-                cand = (ra, wa, rb, wb)
-                break
-        if cand:
-            break
+                return A, B, var, (ra, wa, rb, wb)
+    return None
+
+
+def _race_schedule(model: VisModel, race: Dict[str, Any], expected: Dict[str, Any], interleaving: str = "RACE"):
+    """One valid interleaving that loses an update.
+
+    RACE (the default teaching order): A reads, B reads, both calculate, A writes, B writes, so B's write replaces
+    A's with a value computed from the same old read.
+    RACE_ALT: A reads, then B runs its whole read-calculate-write inside A's gap, then A writes its stale result.
+    """
+    cand = _race_candidate(model, race)
     if cand is None:
         return None
-    ra, wa, rb, wb = cand
+    A, B, var, (ra, wa, rb, wb) = cand
     eng = Engine([A, B], _initial(model))
-    ok = (
-        eng.run_until(A.id, ra)
-        and eng.run_until(B.id, wb)
-        and eng.run_to_end(A.id)
-        and eng.run_to_end(B.id)
-    )
+    if interleaving == "RACE":
+        ok = (
+            eng.run_until(A.id, ra)
+            and eng.run_until(B.id, rb)
+            and eng.run_until(A.id, wa - 1)
+            and eng.run_until(B.id, wb - 1)
+            and eng.run_until(A.id, wa)
+            and eng.run_until(B.id, wb)
+            and eng.run_to_end(A.id)
+            and eng.run_to_end(B.id)
+        )
+    else:
+        ok = eng.run_until(A.id, ra) and eng.run_until(B.id, wb) and eng.run_to_end(A.id) and eng.run_to_end(B.id)
     if not ok:
         return None
     # hazard steps: the two READs and two WRITEs of the racy RMW pairs
-    idx_steps = [s for s in eng.steps if s["target"] == var and s["kind"] in ("READ", "WRITE")]
-    for s in idx_steps:
-        if (s["thread"] == A.id and s["opIndex"] in (ra, wa)) or (s["thread"] == B.id and s["opIndex"] in (rb, wb)):
-            s["hazard"] = True
-    actual = eng.final_values()
+    for s in eng.steps:
+        if s["target"] == var and s["kind"] in ("READ", "WRITE"):
+            if (s["thread"] == A.id and s["opIndex"] in (ra, wa)) or (s["thread"] == B.id and s["opIndex"] in (rb, wb)):
+                s["hazard"] = True
     return {
-        "kind": "RACE",
+        "kind": interleaving,
+        "label": RACE_LABELS[interleaving],
         "steps": eng.steps,
-        "finalValues": actual,
+        "finalValues": eng.final_values(),
         "expected": {var: expected.get(var)},
         "var": var,
         "threads": [A.id, B.id],
+    }
+
+
+def _sync_schedule(model: VisModel, race: Dict[str, Any], expected: Dict[str, Any]):
+    """The same two threads with the read-calculate-write guarded by one lock. B tries to enter while A is inside,
+    is blocked, and only reads after A has written and released, so the update survives."""
+    cand = _race_candidate(model, race)
+    if cand is None:
+        return None
+    A, B, var, (ra, wa, rb, wb) = cand
+
+    def guarded(t: ThreadModel, r: int, w: int) -> ThreadModel:
+        ops = list(t.ops)
+        line_r, line_w = ops[r].line, ops[w].line
+        ops.insert(w + 1, Op(kind="UNLOCK", target=SYNC_LOCK, line=line_w, text="}  // release the lock"))
+        ops.insert(r, Op(kind="LOCK", target=SYNC_LOCK, line=line_r, text="synchronized (lock) {"))
+        return ThreadModel(id=t.id, label=t.label, ops=ops)
+
+    gA, gB = guarded(A, ra, wa), guarded(B, rb, wb)
+    eng = Engine([gA, gB], _initial(model))
+    if not eng.run_until(A.id, ra + 1):  # A takes the lock and reads
+        return None
+    if not eng.run_until(B.id, rb - 1):  # anything B does before it reaches the lock
+        return None
+    if eng.attempt_blocked(B.id) is None or not eng.blocked(B.id):
+        return None
+    if not (eng.run_to_end(A.id) and eng.run_to_end(B.id)):
+        return None
+    for s in eng.steps:
+        if s["kind"] in ("LOCK", "UNLOCK"):
+            s["synthetic"] = True  # added by the fix, not in the learner's code
+    return {
+        "kind": "SYNC",
+        "label": "Same threads, read-calculate-write inside synchronized",
+        "steps": eng.steps,
+        "finalValues": eng.final_values(),
+        "expected": {var: expected.get(var)},
+        "actual": {var: eng.final_values().get(var)},
+        "var": var,
+        "threads": [A.id, B.id],
+        "locks": [SYNC_LOCK],
     }
 
 
@@ -336,9 +451,10 @@ def simulate(model: VisModel, mode: str = "auto") -> Dict[str, Any]:
     want_safe = mode in ("auto", "safe")
 
     race_found = deadlock_found = False
+    extra_after: List[Dict[str, Any]] = []
     if want_race:
         for race in find_races(model):
-            sched = _race_schedule(model, race, expected)
+            sched = _race_schedule(model, race, expected, "RACE")
             var = race["var"]
             if sched is None:
                 hazards.append(
@@ -365,6 +481,13 @@ def simulate(model: VisModel, mode: str = "auto") -> Dict[str, Any]:
             sched["expected"] = {var: exp}
             sched["actual"] = {var: actual}
             schedules.append(sched)
+            for extra in (_race_schedule(model, race, expected, "RACE_ALT"), _sync_schedule(model, race, expected)):
+                if extra is None:
+                    continue
+                if extra["kind"] == "RACE_ALT":
+                    extra["expected"] = {var: exp}
+                    extra["actual"] = {var: extra["finalValues"].get(var)}
+                extra_after.append(extra)
             hazards.append(
                 {
                     "type": "RACE_CONDITION",
@@ -390,6 +513,7 @@ def simulate(model: VisModel, mode: str = "auto") -> Dict[str, Any]:
             fixes.append(hazards[-1]["fixSuggestion"])
             race_found = True
             break  # one demonstrated race schedule is enough
+    schedules.extend(extra_after)
     if want_dead:
         for cyc in find_deadlock_cycles(model):
             sched = _deadlock_schedule(model, cyc)

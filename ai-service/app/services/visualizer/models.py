@@ -2,7 +2,7 @@ from typing import Dict, List, Literal, Optional, Union
 
 from pydantic import BaseModel, Field
 
-OpKind = Literal["READ", "WRITE", "LOCK", "UNLOCK", "WAIT", "NOTIFY", "SLEEP", "START", "JOIN"]
+OpKind = Literal["READ", "COMPUTE", "WRITE", "LOCK", "UNLOCK", "WAIT", "NOTIFY", "SLEEP", "START", "JOIN"]
 
 
 class Op(BaseModel):

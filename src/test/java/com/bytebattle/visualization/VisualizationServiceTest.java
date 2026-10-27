@@ -82,6 +82,7 @@ class VisualizationServiceTest {
 
         assertThat(v.title()).isEqualTo("The Vanishing Increments");
         assertThat(v.visualization()).isSameAs(result);
+        assertThat(v.code()).isEqualTo("class Buggy {}"); // the source the steps' line numbers refer to, never the solution
         ArgumentCaptor<Map<String, Object>> body = ArgumentCaptor.forClass(Map.class);
         verify(client).visualize(body.capture());
         assertThat(body.getValue().get("code")).isEqualTo("class Buggy {}"); // never the solution

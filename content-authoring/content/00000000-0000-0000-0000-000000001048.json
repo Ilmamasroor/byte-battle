@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001048",
+ "battle": {
+  "title": "Split, Copy, Survive",
+  "description": "Shards, replicas, lag and quorums in a distributed data store.",
+  "battleType": "QUIZ",
+  "difficulty": "HARD",
+  "timeLimitSeconds": 360,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is the difference between replication and sharding?",
+    "options": [
+     "Replication splits data across nodes, sharding copies it",
+     "They are two names for the same technique",
+     "Sharding is only for caches, replication only for databases",
+     "Replication copies the same data to several nodes, sharding splits data into disjoint parts"
+    ],
+    "answer": "Replication copies the same data to several nodes, sharding splits data into disjoint parts",
+    "explanation": "Replication gives redundancy and read capacity: every replica holds the same data. Sharding gives write and storage capacity: each shard holds a different slice. Real systems usually combine both.",
+    "points": 20
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Users save their profile, reload, and sometimes see the old version because reads go to lagging replicas. What is the best fix?",
+    "options": [
+     "Add more replicas to spread the reads",
+     "Send a user's reads to the leader for a short time after they write",
+     "Shard the profile table by user id",
+     "Make replication more asynchronous"
+    ],
+    "answer": "Send a user's reads to the leader for a short time after they write",
+    "explanation": "This is read-your-writes consistency: the writer reads from the leader (or a caught-up replica) until replicas catch up. More replicas can increase lag, and sharding does not address staleness at all.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "An orders table is sharded by creation month. What problem will appear?",
+    "options": [
+     "All current writes land on the newest shard, creating a hotspot",
+     "Old orders can no longer be found",
+     "Every query must touch all shards",
+     "Replication becomes impossible"
+    ],
+    "answer": "All current writes land on the newest shard, creating a hotspot",
+    "explanation": "A monotonically increasing key such as time concentrates all new traffic on one shard while others sit idle. A high-cardinality, evenly spread key such as a hashed customer id spreads load better.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "Why use consistent hashing instead of hash(key) mod N to place keys on shards?",
+    "options": [
+     "It removes the need for replication",
+     "It guarantees every shard holds exactly the same number of keys",
+     "Adding or removing a node moves only a small fraction of the keys",
+     "It makes lookups free of any network hop"
+    ],
+    "answer": "Adding or removing a node moves only a small fraction of the keys",
+    "explanation": "With mod N, changing N remaps most keys. With a hash ring, a new node takes over only the neighbouring range (roughly 1/N of keys). Balance is helped by virtual nodes but never perfectly guaranteed.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "A store has N = 5 replicas. Which write quorum W and read quorum R guarantee that every read overlaps the latest successful write?",
+    "options": [
+     "W = 2, R = 3",
+     "W = 3, R = 3",
+     "W = 1, R = 4",
+     "W = 4, R = 1"
+    ],
+    "answer": "W = 3, R = 3",
+    "explanation": "Overlap needs R + W > N. 3 + 3 = 6 > 5 works. The other options each sum to exactly 5, so a read set can miss every node that holds the newest write.",
+    "points": 20
+   }
+  ]
+ }
+}

@@ -1,0 +1,138 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001041",
+ "battle": {
+  "title": "Subnet Slice-n-Dice",
+  "description": "Prefix lengths, masks, private ranges and host counts under pressure.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "In the address 192.168.1.0/26, what does the /26 tell you?",
+    "options": [
+     "The subnet holds exactly 26 hosts",
+     "There are 26 subnets in the network",
+     "The first 26 bits identify the network",
+     "The last 26 bits identify the network"
+    ],
+    "answer": "The first 26 bits identify the network",
+    "explanation": "The prefix length is the number of leading bits that form the network part; here 32 - 26 = 6 bits remain for hosts. It is not a host or subnet count, and it counts from the left, not the right.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "Which of these is a private (RFC 1918) IPv4 address?",
+    "options": [
+     "172.20.5.9",
+     "172.32.0.1",
+     "192.169.1.1",
+     "11.0.0.1"
+    ],
+    "answer": "172.20.5.9",
+    "explanation": "The private block 172.16.0.0 to 172.31.255.255 contains 172.20.5.9. 172.32.0.1 and 192.169.1.1 look similar but sit just outside the private ranges.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "An office VLAN needs room for 50 devices. Which prefix gives the smallest subnet that still fits them?",
+    "options": [
+     "/27",
+     "/25",
+     "/28",
+     "/26"
+    ],
+    "answer": "/26",
+    "explanation": "A /26 leaves 6 host bits: 64 addresses, 62 usable after network and broadcast. /27 gives only 30 usable, too few, while /25 gives 126 and wastes space.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "How many usable hosts do these prefixes allow? What does the program print?",
+    "code": "public class Main {\n    static int usable(int prefix) {\n        return (1 << (32 - prefix)) - 2;\n    }\n    public static void main(String[] args) {\n        System.out.println(usable(28));\n        System.out.println(usable(30));\n    }\n}",
+    "options": [
+     "16 / 4",
+     "14 / 2",
+     "15 / 3",
+     "14 / 4"
+    ],
+    "answer": "14 / 2",
+    "explanation": "Usable hosts = 2^(32 - prefix) - 2, because the network and broadcast addresses are reserved. /28 gives 16 - 2 = 14 and /30 gives 4 - 2 = 2. The 16 and 4 options forget the reservation.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A host 192.168.10.77 uses a /26 mask. What network address does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        int ip = (192 << 24) | (168 << 16) | (10 << 8) | 77;\n        int mask = -1 << (32 - 26);\n        int net = ip & mask;\n        System.out.println((net >>> 24) + \".\" + ((net >> 16) & 255) + \".\" + ((net >> 8) & 255) + \".\" + (net & 255));\n    }\n}",
+    "options": [
+     "192.168.10.0",
+     "192.168.10.76",
+     "192.168.10.64",
+     "192.168.10.128"
+    ],
+    "answer": "192.168.10.64",
+    "explanation": "A /26 mask ends in 192 in the last octet, so 77 AND 192 = 64 (binary 01001101 AND 11000000). The /26 blocks start at 0, 64, 128 and 192, and 77 lies in the 64 block, not the 0 block.",
+    "points": 20
+   }
+  ]
+ },
+ "coding": [
+  {
+   "title": "Find My Subnet",
+   "description": "Given an IPv4 address in CIDR notation a.b.c.d/p, print the network address (the address with all host bits set to 0) and the number of usable host addresses, which is 2^(32-p) - 2.",
+   "difficulty": "MEDIUM",
+   "inputDescription": "A single line: an IPv4 address in CIDR notation, such as 192.168.10.77/26.",
+   "outputDescription": "Line 1: the network address in dotted decimal. Line 2: the number of usable hosts.",
+   "constraints": "Each octet is 0 to 255, 1 <= p <= 30",
+   "starterCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().trim().split(\"/\");\n        int p = Integer.parseInt(parts[1]);\n        String[] o = parts[0].split(\"\\\\.\");\n        // TODO: pack the four octets into a number, build the mask from p,\n        // AND them to get the network address, and count usable hosts\n        System.out.println(\"0.0.0.0\");\n        System.out.println(0);\n    }\n}\n",
+   "solutionCode": "import java.io.*;\nimport java.util.*;\n\npublic class Main {\n    public static void main(String[] args) throws Exception {\n        BufferedReader br = new BufferedReader(new InputStreamReader(System.in));\n        String[] parts = br.readLine().trim().split(\"/\");\n        int p = Integer.parseInt(parts[1]);\n        String[] o = parts[0].split(\"\\\\.\");\n        long ip = 0;\n        for (int i = 0; i < 4; i++) ip = (ip << 8) | Integer.parseInt(o[i]);\n        long mask = (0xFFFFFFFFL << (32 - p)) & 0xFFFFFFFFL;\n        long net = ip & mask;\n        long hosts = (1L << (32 - p)) - 2;\n        System.out.println(((net >> 24) & 255) + \".\" + ((net >> 16) & 255) + \".\" + ((net >> 8) & 255) + \".\" + (net & 255));\n        System.out.println(hosts);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "192.168.10.77/26\n",
+     "hidden": false,
+     "expectedOutput": "192.168.10.64\n62\n"
+    },
+    {
+     "input": "10.1.2.3/8\n",
+     "hidden": false,
+     "expectedOutput": "10.0.0.0\n16777214\n"
+    },
+    {
+     "input": "172.16.5.200/20\n",
+     "hidden": true,
+     "expectedOutput": "172.16.0.0\n4094\n"
+    },
+    {
+     "input": "192.168.1.1/30\n",
+     "hidden": true,
+     "expectedOutput": "192.168.1.0\n2\n"
+    },
+    {
+     "input": "255.255.255.255/30\n",
+     "hidden": true,
+     "expectedOutput": "255.255.255.252\n2\n"
+    },
+    {
+     "input": "10.0.0.0/24\n",
+     "hidden": true,
+     "expectedOutput": "10.0.0.0\n254\n"
+    },
+    {
+     "input": "200.100.50.25/17\n",
+     "hidden": true,
+     "expectedOutput": "200.100.0.0\n32766\n"
+    },
+    {
+     "input": "130.45.99.254/25\n",
+     "hidden": true,
+     "expectedOutput": "130.45.99.128\n126\n"
+    },
+    {
+     "input": "1.2.3.4/1\n",
+     "hidden": true,
+     "expectedOutput": "0.0.0.0\n2147483646\n"
+    }
+   ]
+  }
+ ]
+}

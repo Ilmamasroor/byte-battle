@@ -97,16 +97,18 @@ public CanonicalKnowledgeResponse canonicalKnowledge(
 
 @PostMapping("/analogy")
 public AnalogyResponse analogy(
-        @RequestParam java.util.UUID conceptId) {
+        @RequestParam java.util.UUID conceptId,
+        @RequestParam(required = false) String lens) {
 
-    return aiFeatureService.generateAnalogy(conceptId);
+    return aiFeatureService.generateAnalogy(conceptId, lens);
 }
 
 @PostMapping("/mnemonic")
 public MnemonicResponse mnemonic(
-        @RequestParam java.util.UUID conceptId) {
+        @RequestParam java.util.UUID conceptId,
+        @RequestParam(required = false) String lens) {
 
-    return aiFeatureService.generateMnemonic(conceptId);
+    return aiFeatureService.generateMnemonic(conceptId, lens);
 }
 @PostMapping("/battle-hint")
 public BattleHintResponse generateBattleHint(

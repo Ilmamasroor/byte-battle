@@ -29,8 +29,12 @@ public final class VisualizationDtos {
             @Size(max = 100) String method) {
     }
 
-    /** A ready-made visualization for a concept (the buggy code of a seeded debugging exercise). */
+    /**
+     * A ready-made visualization for a concept (the buggy code of a seeded debugging exercise). {@code code} is that
+     * same buggy source, which the learner already sees in the debugging exercise; the client shows it beside the
+     * simulation so each step's source line can be highlighted.
+     */
     public record ConceptVisualization(
-            UUID conceptId, UUID exerciseId, String title, String bugCategory, JsonNode visualization) {
+            UUID conceptId, UUID exerciseId, String title, String bugCategory, String code, JsonNode visualization) {
     }
 }

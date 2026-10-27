@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001053",
+ "battle": {
+  "title": "The Trade-off Tightrope",
+  "description": "Weigh options out loud and defend your choice like a senior engineer.",
+  "battleType": "SURVIVAL",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which answer to \"HashMap or sorted array for lookups?\" shows the strongest trade-off thinking?",
+    "options": [
+      "HashMap, because it is always better than an array",
+      "Sorted array, because arrays are simpler and simple is always best",
+      "Either one works, it does not really matter in practice",
+      "HashMap: O(1) lookup, more memory. Sorted array: compact, O(log n) search, slow inserts"
+    ],
+    "answer": "HashMap: O(1) lookup, more memory. Sorted array: compact, O(log n) search, slow inserts",
+    "explanation": "A strong answer names what each option gains and costs. Declaring a winner with no reasoning ('always better') or refusing to choose shows no engineering judgment.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "You gave a brute force O(n^2) solution and the interviewer asks, \"Can you do better?\" What do you do?",
+    "options": [
+      "Say no, this is the best possible, and stop",
+      "Name the bottleneck, propose a hash set, and state the time versus space trade-off",
+      "Silently erase everything and start over with no explanation",
+      "Apologise repeatedly and ask for a hint immediately"
+    ],
+    "answer": "Name the bottleneck, propose a hash set, and state the time versus space trade-off",
+    "explanation": "Interviewers want to see you find the bottleneck and trade space for time deliberately. Giving up or going silent hides your reasoning, and asking for a hint with no attempt looks passive.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "The interviewer asks why you picked a linked list over an array for a queue. Your reason was weak. What is the best response?",
+    "options": [
+      "Defend the choice more loudly so it sounds confident",
+      "Say the interviewer told you to use it",
+      "Switch immediately to anything the interviewer hints at without thinking",
+      "Re-evaluate openly, admit what the choice costs, and change it if the trade-offs favour the alternative"
+    ],
+    "answer": "Re-evaluate openly, admit what the choice costs, and change it if the trade-offs favour the alternative",
+    "explanation": "Interviewers reward honest, evidence-based reasoning. Defending a weak choice out of ego is a red flag, and flipping with no analysis shows you never had a reason in the first place.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "Which statement best ties a trade-off to the requirements?",
+    "options": [
+      "Since reads dominate and the data is small, I will favour fast lookups over memory savings",
+      "I picked it because it is what I used in my last project",
+      "This is the optimal one, everybody knows that",
+      "Memory is cheap, so I never need to consider it"
+    ],
+    "answer": "Since reads dominate and the data is small, I will favour fast lookups over memory savings",
+    "explanation": "A trade-off is only meaningful relative to requirements such as read/write ratio and data size. Appeals to habit, authority or 'memory is cheap' skip the reasoning interviewers are looking for.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Two designs are close: one is faster, one is simpler to maintain. The interviewer wants a decision. What do you say?",
+    "options": [
+      "Pick the faster one with no mention of maintenance",
+      "Say both are fine and leave it to the interviewer",
+      "Recommend one based on the stated goals, name what you give up, and say what would make you change your mind",
+      "Pick the simpler one only because you are more comfortable with it"
+    ],
+    "answer": "Recommend one based on the stated goals, name what you give up, and say what would make you change your mind",
+    "explanation": "Seniors commit to a recommendation while being explicit about the cost and the conditions that would flip it. Dodging the decision or choosing out of comfort shows weak ownership.",
+    "points": 20
+   }
+  ]
+ }
+}

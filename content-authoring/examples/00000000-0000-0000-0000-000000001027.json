@@ -1,0 +1,586 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001027",
+ "title": "Joins: matching rows across two tables",
+ "kind": "table",
+ "intro": "Two tables, one shared key. Let's watch a JOIN pair the rows up.",
+ "predict": {
+  "question": "How many rows does this INNER JOIN return? (Ben has no orders.)",
+  "options": [
+   "2",
+   "3",
+   "4"
+  ],
+  "answer": 1,
+  "reveal": "Ann has two orders and Cy has one, so 3 rows. Ben matches nothing, so an INNER JOIN drops him."
+ },
+ "takeaway": "A JOIN pairs rows where the ON condition is true. INNER keeps only matches; LEFT also keeps unmatched left rows.",
+ "steps": [
+  {
+   "say": "We have users and orders. Each order stores the user_id of who placed it. That user_id is the link between the tables.",
+   "query": {
+    "text": "SELECT users.name, orders.item FROM users JOIN orders ON users.id = orders.user_id",
+    "focus": ""
+   },
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "say": "FROM and JOIN name the two tables to combine. ON says how a user row matches an order row.",
+   "query": {
+    "text": "SELECT users.name, orders.item FROM users JOIN orders ON users.id = orders.user_id",
+    "focus": "ON"
+   },
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ]
+  },
+  {
+   "say": "Take Ann (id 1). Two orders have user_id 1, so Ann pairs with both. That makes two result rows.",
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      0
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [
+      0,
+      1
+     ],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "item"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "Book"
+     ],
+     [
+      "Ann",
+      "Pen"
+     ]
+    ],
+    "hl": [
+     0,
+     1
+    ]
+   }
+  },
+  {
+   "say": "Now Ben (id 2). No order has user_id 2, so Ben has no partner and an INNER JOIN leaves him out.",
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      1
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [
+      0,
+      1,
+      2
+     ],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "item"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "Book"
+     ],
+     [
+      "Ann",
+      "Pen"
+     ]
+    ],
+    "hl": []
+   }
+  },
+  {
+   "say": "Cy (id 3) matches order 12, the Lamp. One more result row.",
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      2
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [
+      2
+     ],
+     "dim": [
+      0,
+      1
+     ],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "item"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "Book"
+     ],
+     [
+      "Ann",
+      "Pen"
+     ],
+     [
+      "Cy",
+      "Lamp"
+     ]
+    ],
+    "hl": [
+     2
+    ]
+   }
+  },
+  {
+   "say": "The finished INNER JOIN has three rows. Ben is missing because he never ordered anything.",
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "item"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "Book"
+     ],
+     [
+      "Ann",
+      "Pen"
+     ],
+     [
+      "Cy",
+      "Lamp"
+     ]
+    ],
+    "hl": []
+   }
+  },
+  {
+   "say": "Switch to LEFT JOIN and every user stays. Ben appears with NULL where the order should be.",
+   "query": {
+    "text": "SELECT users.name, orders.item FROM users LEFT JOIN orders ON users.id = orders.user_id",
+    "focus": "LEFT JOIN"
+   },
+   "tables": [
+    {
+     "name": "users",
+     "cols": [
+      "id",
+      "name"
+     ],
+     "rows": [
+      [
+       "1",
+       "Ann"
+      ],
+      [
+       "2",
+       "Ben"
+      ],
+      [
+       "3",
+       "Cy"
+      ]
+     ],
+     "hl": [
+      1
+     ],
+     "dim": [],
+     "hlCols": [
+      0
+     ]
+    },
+    {
+     "name": "orders",
+     "cols": [
+      "id",
+      "user_id",
+      "item"
+     ],
+     "rows": [
+      [
+       "10",
+       "1",
+       "Book"
+      ],
+      [
+       "11",
+       "1",
+       "Pen"
+      ],
+      [
+       "12",
+       "3",
+       "Lamp"
+      ]
+     ],
+     "hl": [],
+     "dim": [],
+     "hlCols": [
+      1
+     ]
+    }
+   ],
+   "result": {
+    "cols": [
+     "name",
+     "item"
+    ],
+    "rows": [
+     [
+      "Ann",
+      "Book"
+     ],
+     [
+      "Ann",
+      "Pen"
+     ],
+     [
+      "Ben",
+      "NULL"
+     ],
+     [
+      "Cy",
+      "Lamp"
+     ]
+    ],
+    "hl": [
+     2
+    ]
+   }
+  }
+ ]
+}

@@ -70,7 +70,31 @@ public class AiFeatureService {
         return aiFeatureClient.generateCanonicalKnowledge(request);
     }
 
+    /** The "explain it through ..." themes a learner can pick. Only these are ever forwarded to the AI. */
+    static final java.util.Set<String> LENSES = java.util.Set.of(
+            "movies", "cricket", "gaming", "food", "music", "football", "space", "anime", "travel");
+
+    /** Returns the canonical lens for a requested one, or null when it is blank or not on the allow-list. */
+    static String normalizeLens(String lens) {
+        if (lens == null) return null;
+        String l = lens.trim().toLowerCase(java.util.Locale.ROOT);
+        return LENSES.contains(l) ? l : null;
+    }
+
+    /** A chosen lens replaces the learner's stored interests for this one request, so the output follows it. */
+    private Map<String, Object> withLens(Map<String, Object> byteDNAData, String lens) {
+        String l = normalizeLens(lens);
+        if (l == null) return byteDNAData;
+        Map<String, Object> copy = new LinkedHashMap<>(byteDNAData);
+        copy.put("interests", java.util.List.of(l));
+        return copy;
+    }
+
     public AnalogyResponse generateAnalogy(UUID conceptId) {
+        return generateAnalogy(conceptId, null);
+    }
+
+    public AnalogyResponse generateAnalogy(UUID conceptId, String lens) {
 
         Concept concept = conceptRepository.findById(conceptId)
                 .orElseThrow(() ->
@@ -78,7 +102,7 @@ public class AiFeatureService {
                                 "Concept not found: " + conceptId));
 
         Map<String, Object> conceptData = buildConceptData(concept);
-        Map<String, Object> byteDNAData = buildByteDNAData();
+        Map<String, Object> byteDNAData = withLens(buildByteDNAData(), lens);
 
         try {
             Map<String, Object> canonicalKnowledge = new LinkedHashMap<>();
@@ -184,6 +208,10 @@ public class AiFeatureService {
     }
 
 public MnemonicResponse generateMnemonic(UUID conceptId) {
+    return generateMnemonic(conceptId, null);
+}
+
+public MnemonicResponse generateMnemonic(UUID conceptId, String lens) {
 
     Concept concept = conceptRepository.findById(conceptId)
             .orElseThrow(() ->
@@ -191,7 +219,7 @@ public MnemonicResponse generateMnemonic(UUID conceptId) {
                             "Concept not found: " + conceptId));
 
     Map<String, Object> conceptData = buildConceptData(concept);
-    Map<String, Object> byteDNAData = buildByteDNAData();
+    Map<String, Object> byteDNAData = withLens(buildByteDNAData(), lens);
 
     try {
         CanonicalKnowledgeResponse knowledge =

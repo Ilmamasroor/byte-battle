@@ -1,0 +1,78 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001040",
+ "battle": {
+  "title": "Packet Journey",
+  "description": "Follow a message down and up the network stack, layer by layer.",
+  "battleType": "QUIZ",
+  "difficulty": "EASY",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "Which OSI layer is responsible for routing packets between different networks using IP addresses?",
+    "options": [
+     "Data link layer",
+     "Network layer",
+     "Transport layer",
+     "Session layer"
+    ],
+    "answer": "Network layer",
+    "explanation": "The network layer (layer 3) handles logical addressing and routing across networks. The data link layer is tempting, but it only moves frames between devices on the same local link using MAC addresses.",
+    "points": 10
+   },
+   {
+    "type": "MCQ",
+    "text": "In the four-layer TCP/IP model, where do protocols such as HTTP and DNS live?",
+    "options": [
+     "Application layer",
+     "Transport layer",
+     "Internet layer",
+     "Link layer"
+    ],
+    "answer": "Application layer",
+    "explanation": "HTTP and DNS are application protocols, so they sit in the TCP/IP application layer. TCP and UDP are the transport layer, and IP is the internet layer.",
+    "points": 10
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "Two PCs plugged into the same switch cannot talk, and the link light on one network card is off. Which layer should you check first?",
+    "options": [
+     "Application layer (browser settings)",
+     "Transport layer (TCP ports)",
+     "Physical layer (cable, port, card)",
+     "Presentation layer (encryption format)"
+    ],
+    "answer": "Physical layer (cable, port, card)",
+    "explanation": "With no link light, the problem is almost certainly at the bottom of the stack: cable, port or NIC. Troubleshooting from the physical layer upward avoids wasting time on software layers that cannot work without a link.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What is the unit of data called at the OSI data link layer?",
+    "options": [
+     "Segment",
+     "Packet",
+     "Bit",
+     "Frame"
+    ],
+    "answer": "Frame",
+    "explanation": "The data link layer wraps data into frames with MAC addresses. A segment belongs to TCP at the transport layer and a packet belongs to IP at the network layer.",
+    "points": 15
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "A sender wraps its data going down the stack. What does this program print?",
+    "code": "public class Main {\n    public static void main(String[] args) {\n        String data = \"HELLO\";\n        String segment = \"TCP[\" + data + \"]\";\n        String packet = \"IP[\" + segment + \"]\";\n        String frame = \"ETH[\" + packet + \"]\";\n        System.out.println(frame);\n    }\n}",
+    "options": [
+     "TCP[IP[ETH[HELLO]]]",
+     "ETH[IP[TCP[HELLO]]]",
+     "IP[TCP[ETH[HELLO]]]",
+     "ETH[TCP[IP[HELLO]]]"
+    ],
+    "answer": "ETH[IP[TCP[HELLO]]]",
+    "explanation": "Encapsulation adds headers as data moves down: transport first (TCP), then network (IP), then link (ETH), so the outermost wrapper is the lowest layer. The receiver peels them off in the reverse order.",
+    "points": 20
+   }
+  ]
+ }
+}

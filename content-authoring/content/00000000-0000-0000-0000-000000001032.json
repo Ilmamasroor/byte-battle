@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001032",
+ "battle": {
+  "title": "Index Hunt",
+  "description": "Indexes, composite keys and reading query plans.",
+  "battleType": "QUIZ",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 300,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "What is the main trade-off of adding an index to a table?",
+    "options": [
+     "Faster writes but slower reads",
+     "Faster lookups and sorting on that column, at the cost of extra storage and slower writes",
+     "It guarantees every query will use it",
+     "It removes the need for a primary key"
+    ],
+    "answer": "Faster lookups and sorting on that column, at the cost of extra storage and slower writes",
+    "explanation": "An index speeds up reads that filter or sort on the indexed columns, but every INSERT, UPDATE and DELETE must also maintain it and it takes space. It never speeds up writes, and the planner decides whether to use it.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "SELECT * FROM orders WHERE customer_id = 42 is slow on a 50 million row table and the plan shows a full table scan. What is the best first fix?",
+    "options": [
+     "Index every column of the table",
+     "Add ORDER BY customer_id to the query",
+     "Use SELECT DISTINCT instead",
+     "Create an index on orders(customer_id)"
+    ],
+    "answer": "Create an index on orders(customer_id)",
+    "explanation": "An index on the filtered column lets the database seek straight to the matching rows. Indexing everything bloats storage and slows writes, and ORDER BY or DISTINCT do not avoid scanning.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "A composite B-tree index exists on (last_name, first_name). Which filter can use it most effectively for a seek?",
+    "options": [
+     "WHERE first_name = 'Ann'",
+     "WHERE last_name = 'Lee'",
+     "WHERE LOWER(last_name) = 'lee'",
+     "WHERE last_name LIKE '%ee'"
+    ],
+    "answer": "WHERE last_name = 'Lee'",
+    "explanation": "A composite index is ordered by its leftmost column first, so a condition on last_name can seek. Filtering only on first_name skips the leading column, wrapping the column in a function hides it from the index, and a leading wildcard prevents a range seek.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "EXPLAIN shows a full table scan for WHERE id = 5 on a 10 row table, even though id has an index. What is the most likely reason?",
+    "options": [
+     "The index is corrupt",
+     "Indexes are ignored for equality tests",
+     "The planner estimates that reading the tiny table directly is cheaper than using the index",
+     "A WHERE on id can never use an index"
+    ],
+    "answer": "The planner estimates that reading the tiny table directly is cheaper than using the index",
+    "explanation": "The optimizer is cost-based: for a very small table, one sequential read costs less than walking an index. It is a normal planner choice, not corruption, and equality is the most index-friendly condition.",
+    "points": 20
+   },
+   {
+    "type": "MCQ",
+    "text": "Why is an index on a column with only two values, split about 50/50, usually of little help?",
+    "options": [
+     "A match returns half the table, so many random lookups cost more than one sequential scan",
+     "B-tree indexes cannot store duplicate values",
+     "Indexes only work on numeric columns",
+     "Such an index would be larger than the table"
+    ],
+    "answer": "A match returns half the table, so many random lookups cost more than one sequential scan",
+    "explanation": "Selectivity matters: when a value matches a large share of rows, scanning the table once is cheaper than thousands of index lookups, so the planner skips the index. B-trees handle duplicates fine and work on any sortable type.",
+    "points": 20
+   }
+  ]
+ }
+}

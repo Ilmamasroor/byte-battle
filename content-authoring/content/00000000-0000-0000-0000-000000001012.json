@@ -1,0 +1,37 @@
+{
+ "debug": [
+  {
+   "title": "The Vanishing Increments",
+   "description": "In each round two threads each add 1 to a shared counter, so after r rounds the counter should be 2r. The program prints a smaller number. Input: the number of rounds r. Output: 'Count: ' followed by the final counter.",
+   "difficulty": "MEDIUM",
+   "bugCategory": "RACE_CONDITION",
+   "buggyCode": "public class Main {\n    static int count = 0;\n\n    static void increment() throws InterruptedException {\n        int tmp = count;\n        Thread.sleep(1);\n        count = tmp + 1;\n    }\n\n    public static void main(String[] args) throws Exception {\n        int rounds = new java.util.Scanner(System.in).nextInt();\n        for (int r = 0; r < rounds; r++) {\n            Runnable task = () -> {\n                try { increment(); } catch (InterruptedException e) { }\n            };\n            Thread a = new Thread(task);\n            Thread b = new Thread(task);\n            a.start();\n            b.start();\n            a.join();\n            b.join();\n        }\n        System.out.println(\"Count: \" + count);\n    }\n}\n",
+   "solutionCode": "public class Main {\n    static int count = 0;\n\n    static synchronized void increment() throws InterruptedException {\n        int tmp = count;\n        Thread.sleep(1);\n        count = tmp + 1;\n    }\n\n    public static void main(String[] args) throws Exception {\n        int rounds = new java.util.Scanner(System.in).nextInt();\n        for (int r = 0; r < rounds; r++) {\n            Runnable task = () -> {\n                try { increment(); } catch (InterruptedException e) { }\n            };\n            Thread a = new Thread(task);\n            Thread b = new Thread(task);\n            a.start();\n            b.start();\n            a.join();\n            b.join();\n        }\n        System.out.println(\"Count: \" + count);\n    }\n}\n",
+   "tests": [
+    {
+     "input": "1\n",
+     "hidden": false
+    },
+    {
+     "input": "3\n",
+     "hidden": false
+    },
+    {
+     "input": "5\n",
+     "hidden": true
+    },
+    {
+     "input": "2\n",
+     "hidden": true
+    }
+   ],
+   "hints": [
+    "Run with 1 round. The count should be 2. Why would two increments produce only 1?",
+    "Look at increment(). Both threads can read count before either one writes it back.",
+    "The read-modify-write on the shared counter is not atomic, so one update overwrites the other (a lost update).",
+    "Make increment() synchronized (or guard the read and write with one lock) so only one thread at a time runs the whole read-sleep-write sequence."
+   ]
+  }
+ ],
+ "conceptId": "00000000-0000-0000-0000-000000001012"
+}

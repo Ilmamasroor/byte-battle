@@ -1,0 +1,77 @@
+{
+ "conceptId": "00000000-0000-0000-0000-000000001028",
+ "battle": {
+  "title": "Group Rush",
+  "description": "Aggregates, GROUP BY, HAVING and NULL behaviour at speed.",
+  "battleType": "SPEED_ROUND",
+  "difficulty": "MEDIUM",
+  "timeLimitSeconds": 240,
+  "questions": [
+   {
+    "type": "MCQ",
+    "text": "You want departments that have more than 5 employees. Where does the condition COUNT(*) > 5 belong?",
+    "options": [
+     "In WHERE, because it filters rows",
+     "In HAVING, because it filters groups after aggregation",
+     "In GROUP BY, because it defines the groups",
+     "In ORDER BY, because it ranks groups"
+    ],
+    "answer": "In HAVING, because it filters groups after aggregation",
+    "explanation": "HAVING filters groups after aggregation. WHERE runs before grouping on individual rows, so aggregate functions such as COUNT are not allowed there.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Table orders(id, user_id, amount): (1, 7, 30), (2, 7, 20), (3, 9, 10). Query: SELECT user_id, SUM(amount) FROM orders GROUP BY user_id HAVING SUM(amount) > 15; What is returned?",
+    "options": [
+     "(7, 30), (7, 20)",
+     "(7, 50), (9, 10)",
+     "(9, 10) only",
+     "(7, 50) only"
+    ],
+    "answer": "(7, 50) only",
+    "explanation": "Grouping gives user 7 a sum of 50 and user 9 a sum of 10. HAVING keeps groups whose sum exceeds 15, so only (7, 50) remains. The first option shows ungrouped rows, which GROUP BY collapses.",
+    "points": 10
+   },
+   {
+    "type": "PREDICT_OUTPUT",
+    "text": "Table t(g, v): ('a', 10), ('a', NULL), ('b', NULL). Query: SELECT g, COUNT(v), AVG(v) FROM t GROUP BY g; Which result is right (g: count, avg)?",
+    "options": [
+     "a: 1, 10; b: 0, NULL",
+     "a: 2, 10; b: 1, NULL",
+     "a: 2, 5; b: 0, 0",
+     "a: 1, 5; b: 0, NULL"
+    ],
+    "answer": "a: 1, 10; b: 0, NULL",
+    "explanation": "COUNT(v) and AVG(v) ignore NULL values. Group a has one non-NULL value, so the count is 1 and the average is 10, not 5. Group b has no non-NULL values, so the count is 0 and the average is NULL, not 0.",
+    "points": 15
+   },
+   {
+    "type": "MCQ",
+    "text": "What is the difference between COUNT(*) and COUNT(col)?",
+    "options": [
+     "They are identical",
+     "COUNT(col) counts rows, COUNT(*) counts distinct values",
+     "COUNT(*) counts rows, COUNT(col) counts rows where col is not NULL",
+     "COUNT(*) skips rows that contain any NULL"
+    ],
+    "answer": "COUNT(*) counts rows, COUNT(col) counts rows where col is not NULL",
+    "explanation": "COUNT(*) counts every row in the group, while COUNT(col) counts only the rows where col is not NULL. COUNT(*) does not skip rows with NULLs, and neither one counts distinct values unless DISTINCT is written.",
+    "points": 15
+   },
+   {
+    "type": "CHOOSE_APPROACH",
+    "text": "From order_items(product_id, qty, price), you need the 3 products with the highest total revenue. Which query is right?",
+    "options": [
+     "SELECT product_id, qty * price FROM order_items ORDER BY qty * price DESC LIMIT 3",
+     "SELECT product_id, SUM(qty * price) AS rev FROM order_items GROUP BY product_id ORDER BY rev DESC LIMIT 3",
+     "SELECT product_id FROM order_items WHERE SUM(qty * price) > 0 LIMIT 3",
+     "SELECT DISTINCT product_id FROM order_items ORDER BY price DESC LIMIT 3"
+    ],
+    "answer": "SELECT product_id, SUM(qty * price) AS rev FROM order_items GROUP BY product_id ORDER BY rev DESC LIMIT 3",
+    "explanation": "Revenue per product needs GROUP BY product_id with SUM, then sort and limit. The first query ranks single order lines, so one product could appear several times, the third uses an aggregate in WHERE which is illegal, and the last ranks by unit price, not revenue.",
+    "points": 20
+   }
+  ]
+ }
+}
